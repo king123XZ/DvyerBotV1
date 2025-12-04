@@ -15,13 +15,23 @@ module.exports = {
     await m.reply("🕑 Procesando tu video...");
 
     try {
-      const videoUrl = args[0];
+      let videoUrl = args[0];
+
+      // Si es un enlace corto, resolvemos la URL final
+      if (videoUrl.includes("vm.tiktok.com")) {
+        const res = await fetch(videoUrl, { redirect: "follow" });
+        videoUrl = res.url;
+      }
+
       const apiKey = "AvTYmkABPtmG";
 
       const res = await fetch(
         `https://api-sky.ultraplus.click/api/download/tiktok.js?url=${encodeURIComponent(videoUrl)}`,
         {
-          headers: { Authorization: `Bearer ${apiKey}` }
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+          }
         }
       );
 
@@ -31,11 +41,12 @@ module.exports = {
 
       const data = await res.json();
 
-      // Verificamos posibles rutas de video
+      // Buscamos URL de video
       const downloadUrl = data.url || data.result?.url || data.downloadUrl;
 
       if (!downloadUrl) {
-        return m.reply("❌ No se pudo obtener el video. Verifica el enlace.");
+        console.log("Respuesta completa de la API:", data); // Para depuración
+        return m.reply("❌ No se pudo obtener el video. Verifica el enlace o intenta con otro.");
       }
 
       const caption = `TikTok Downloader\n\nTítulo: ${data.title || "Desconocido"}`;
@@ -52,8 +63,9 @@ module.exports = {
       );
 
     } catch (e) {
-      console.error(e);
+      console.error("Error en TikTok:", e);
       m.reply("❌ Ocurrió un error al procesar el video de TikTok");
     }
   },
 };
+
