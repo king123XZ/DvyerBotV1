@@ -22,6 +22,7 @@ module.exports = {
         videoUrl = videos[0].url;
       }
 
+      // Llamada a la API para descargar solo audio
       const res = await axios.get("https://api-sky.ultraplus.click/api/download/yt.js", {
         params: { url: videoUrl, format: "audio" },
         headers: {
