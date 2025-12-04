@@ -17,36 +17,34 @@ module.exports = {
     try {
       let videoUrl = args[0];
 
-      // Si es un enlace corto de TikTok, obtenemos la URL final
+      // Resolver enlaces cortos de TikTok (vm.tiktok.com)
       if (videoUrl.includes("vm.tiktok.com")) {
         const resRedirect = await fetch(videoUrl, { redirect: "follow" });
         videoUrl = resRedirect.url;
       }
 
-      const apiKey = "AvTYmkABPtmG";
+      const apiKey = "AvTYmkABPtmG"; // Tu API Key
+      const apiEndpoint = `https://api-sky.ultraplus.click/api/download/tiktok.js?url=${encodeURIComponent(videoUrl)}`;
 
-      const res = await fetch(
-        `https://api-sky.ultraplus.click/api/download/tiktok.js?url=${encodeURIComponent(videoUrl)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-          }
+      const res = await fetch(apiEndpoint, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" // Algunas APIs necesitan esto
         }
-      );
+      });
 
       if (!res.ok) {
-        return m.reply("❌ Error al conectar con la API de TikTok");
+        return m.reply(`❌ Error al conectar con la API. Código: ${res.status}`);
       }
 
       const data = await res.json();
 
-      // Buscamos URL de video
+      // Intentar obtener URL del video desde distintos campos
       const downloadUrl = data.url || data.result?.url || data.downloadUrl;
 
       if (!downloadUrl) {
         console.log("Respuesta completa de la API:", data); // Para depuración
-        return m.reply("❌ No se pudo obtener el video. Verifica el enlace o intenta con otro.");
+        return m.reply("❌ No se pudo obtener el video. Verifica el enlace o intenta otro.");
       }
 
       const caption = `TikTok Downloader\n\nTítulo: ${data.title || "Desconocido"}`;
