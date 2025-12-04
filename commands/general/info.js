@@ -42,7 +42,7 @@ module.exports = {
     await client.sendMessage(
       m.chat,
       {
-        image: { url: "https://iili.io/FsijNdG.jpg" },
+        image: { url: "https://i.ibb.co/49ksCj2/20251204-0607-Transformaci-n-Digital-Violeta-remix-01kbmgknw2frx8dt55hnz8pmwc.png" },
         caption: info,
       },
       { quoted: m },
