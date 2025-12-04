@@ -124,6 +124,6 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 handler.help = ['play']
 handler.tags = ['downloader']
 handler.command = ['play']
-handler.group = true
+//handler.group = true
 
 export default handler
