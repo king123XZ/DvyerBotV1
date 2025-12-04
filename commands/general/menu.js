@@ -40,25 +40,17 @@ module.exports = {
 
     await delay(500);
 
-    // Organizar comandos por categoría
-    const categories = {};
-    cmds.forEach(cmd => {
-      if (!cmd.command) return;
-      const cat = (cmd.category || "sin categoría").toLowerCase();
-      if (!categories[cat]) categories[cat] = [];
-      if (!categories[cat].some(c => c.command[0] === cmd.command[0])) {
-        categories[cat].push(cmd);
-      }
-    });
+    // Categorías que se mostrarán como botones
+    const buttonCategories = ["Downloader", "General", "Entretenimiento", "Otros"];
 
-    // Crear botones dinámicos por categoría
-    const buttons = Object.keys(categories).map(cat => ({
-      buttonId: `category_${cat}`,
-      buttonText: { displayText: cat.charAt(0).toUpperCase() + cat.slice(1) },
+    // Crear botones
+    const buttons = buttonCategories.map(cat => ({
+      buttonId: `category_${cat.toLowerCase()}`,
+      buttonText: { displayText: cat },
       type: 1
     }));
 
-    // Enviar imagen con botones (headerType: 4) en privado o grupo
+    // Enviar imagen con botones
     await client.sendMessage(chatId, {
       image: buffer,
       caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
@@ -67,12 +59,12 @@ module.exports = {
       headerType: 4
     });
 
+    // Limpiar flag
     setTimeout(() => {
       delete menuSent[chatId];
     }, 10000);
   },
 
-  // Función para manejar botón pulsado en privado o grupo
   handleButton: async (client, m) => {
     const chatId = m.chat;
     const payload = m.selectedButtonId;
@@ -81,16 +73,24 @@ module.exports = {
 
     const category = payload.replace("category_", "");
     const cmds = [...global.comandos.values()];
-    const commandsInCategory = cmds.filter(c => (c.category || "sin categoría").toLowerCase() === category);
 
-    if (!commandsInCategory.length) return;
+    // Filtrar solo comandos de la categoría seleccionada
+    const commandsInCategory = cmds
+      .filter(c => (c.category || "otros").toLowerCase() === category)
+      .sort((a, b) => a.command[0].localeCompare(b.command[0])); // Orden alfabético
 
-    // Crear texto con los comandos de esa categoría
-    let text = `*${category.charAt(0).toUpperCase() + category.slice(1)}*\n\n`;
+    if (!commandsInCategory.length) {
+      return client.sendMessage(chatId, { text: `No hay comandos disponibles en la categoría *${category}*.` });
+    }
+
+    // Construir mensaje profesional
+    let text = `╭───❮ Comandos: ${category.charAt(0).toUpperCase() + category.slice(1)} ❯───╮\n\n`;
     commandsInCategory.forEach(cmd => {
-      text += `- !${cmd.command.join(', !')} : ${cmd.description || ""}\n`;
+      text += `• !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n`;
     });
+    text += `\n╰──────────────────────────╯`;
 
     await client.sendMessage(chatId, { text });
   }
 };
+
