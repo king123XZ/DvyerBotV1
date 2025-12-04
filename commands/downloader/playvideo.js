@@ -2,7 +2,7 @@ const axios = require('axios');
 const yts = require('yt-search');
 
 module.exports = {
-  command: ["youtube", "yt", "ytvideo"],
+  command: ["ytvideo"],
   description: "Descarga solo video de YouTube usando tu API",
   category: "downloader",
   use: "https://www.youtube.com/",
