@@ -1,92 +1,82 @@
-// commands/tiktok.js
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-const { promisify } = require("util");
-const { pipeline } = require("stream");
-const streamPipe = promisify(pipeline);
+import axios from 'axios'
 
-// Config de tu API
-const API_BASE = "https://api-sky.ultraplus.click/tools"; // Tu endpoint
-const API_KEY = "AvTYmkABPtmG";                           // Tu API Key
-
-// Función para descargar archivos a disco
-async function downloadToFile(url, filePath) {
-  const res = await axios.get(url, { responseType: "stream" });
-  await streamPipe(res.data, fs.createWriteStream(filePath));
-  return filePath;
-}
-
-// Tamaño del archivo en MB
-function fileSizeMB(filePath) {
-  const b = fs.statSync(filePath).size;
-  return b / (1024 * 1024);
-}
-
-module.exports = {
-  command: ["tiktok"],
-  description: "Descarga videos de TikTok automáticamente",
-  category: "descargas",
-
-  run: async (client, m, args) => {
-    const text = args.join(" ");
-    if (!text) {
-      return client.sendMessage(m.chat, {
-        text: "✳️ Usa: .tiktok <url>\nEj: .tiktok https://www.tiktok.com/@user/video/123"
-      }, { quoted: m });
-    }
-
-    const chatId = m.chat;
-
-    // Reacción de carga
-    await client.sendMessage(chatId, { react: { text: "⏳", key: m.key } });
-
-    try {
-      // Llamada a tu API
-      const res = await axios.get(`${API_BASE}/tiktok.js`, {
-        params: { url: text },
-        headers: { 
-          Authorization: `Bearer ${API_KEY}`,
-          "X-API-Key": API_KEY
-        },
-        timeout: 60000
-      });
-
-      // Tu API devuelve { data: { video: "url_del_video", title: "titulo" } }
-      const data = res.data.data;
-      if (!data || !data.video) {
-        return client.sendMessage(chatId, { text: "❌ No se pudo obtener el video." }, { quoted: m });
-      }
-
-      // Crear carpeta tmp si no existe
-      const tmp = path.join(__dirname, "../tmp");
-      if (!fs.existsSync(tmp)) fs.mkdirSync(tmp, { recursive: true });
-
-      const file = path.join(tmp, `${Date.now()}_video.mp4`);
-      await downloadToFile(data.video, file);
-
-      // Validar tamaño (WhatsApp ~99MB)
-      if (fileSizeMB(file) > 99) {
-        await client.sendMessage(chatId, { text: `❌ El video pesa demasiado (${fileSizeMB(file).toFixed(2)}MB)` }, { quoted: m });
-        fs.unlinkSync(file);
-        return;
-      }
-
-      // Enviar video directamente
-      await client.sendMessage(chatId, {
-        video: fs.readFileSync(file),
-        mimetype: "video/mp4",
-        fileName: `${data.title || "video"}.mp4`,
-        caption: `🎬 TikTok descargado automáticamente`
-      }, { quoted: m });
-
-      // Borrar archivo temporal
-      fs.unlinkSync(file);
-
-    } catch (e) {
-      console.error(e);
-      await client.sendMessage(chatId, { text: "❌ Error al descargar el video." }, { quoted: m });
-    }
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) {
+    return conn.reply(m.chat, `> ⓘ \`Debes proporcionar un enlace o término de búsqueda\``, m)
   }
-};
 
+  const isUrl = /(?:https:?\/{2})?(?:www\.|vm\.|vt\.|t\.)?tiktok\.com\/([^\s&]+)/gi.test(text)
+  try {
+    await m.react('🕒')
+
+    if (isUrl) {
+      const res = await axios.get(`https://www.tikwm.com/api/?url=${encodeURIComponent(text)}?hd=1`)
+      const data = res.data?.data
+      if (!data?.play && !data?.music) return conn.reply(m.chat, '> ⓘ \`Enlace inválido o sin contenido descargable\`', m)
+
+      const { title, duration, author, play, music } = data
+
+      // Si el comando es para audio
+      if (command === 'tiktokaudio' || command === 'tta' || command === 'ttaudio') {
+        if (!music) {
+          return conn.reply(m.chat, '> ⓘ \`No se pudo obtener el audio del video\`', m)
+        }
+
+        await conn.sendMessage(
+          m.chat,
+          {
+            audio: { url: music },
+            mimetype: 'audio/mpeg',
+            fileName: `tiktok_audio.mp3`,
+            ptt: false
+          },
+          { quoted: m }
+        )
+
+        await m.react('✅')
+        return
+      }
+
+      // Comando normal de TikTok (video)
+      const caption = `> ⓘ \`Título:\` *${title || 'No disponible'}*\n> ⓘ \`Autor:\` *${author?.nickname || 'No disponible'}*`
+
+      await conn.sendMessage(m.chat, { video: { url: play }, caption }, { quoted: m })
+
+    } else {
+      // Búsqueda por texto (solo para comando normal)
+      if (command === 'tiktokaudio' || command === 'tta' || command === 'ttaudio') {
+        return conn.reply(m.chat, '> ⓘ \`Para descargar audio necesitas un enlace de TikTok\`', m)
+      }
+
+      const res = await axios({
+        method: 'POST',
+        url: 'https://tikwm.com/api/feed/search',
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        data: { keywords: text, count: 5, cursor: 0, HD: 1 }
+      })
+
+      const results = res.data?.data?.videos?.filter(v => v.play) || []
+      if (results.length === 0) return conn.reply(m.chat, '> ⓘ \`No se encontraron videos\`', m)
+
+      // Enviar solo el primer resultado
+      const video = results[0]
+      const caption = `> ⓘ \`Título:\` *${video.title || 'No disponible'}*\n> ⓘ \`Autor:\` *${video.author?.nickname || 'No disponible'}*`
+      
+      await conn.sendMessage(m.chat, { video: { url: video.play }, caption }, { quoted: m })
+    }
+
+    await m.react('✅')
+  } catch (e) {
+    await m.react('❌')
+    await conn.reply(m.chat, `> ⓘ \`Error:\` *${e.message}*`, m)
+  }
+}
+
+handler.help = ['tiktok', 'tiktokaudio']
+handler.tags = ['downloader']
+handler.command = ['tiktok', 'tt', 'tiktokaudio', 'tta', 'ttaudio']
+handler.group = true
+
+export default handler
