@@ -1,5 +1,5 @@
-import fetch from 'node-fetch'
-import yts from 'yt-search'
+const fetch = require("node-fetch")
+const yts = require("yt-search")
 
 let handler = async (m, { conn, text, usedPrefix }) => {
 
@@ -19,43 +19,42 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
   try {
     // React inicial
-    await conn.sendMessage(m.chat, { react: { text: '🕑', key: m.key } })
+    await conn.sendMessage(m.chat, { react: { text: "🕑", key: m.key } })
 
-    // Buscar en YouTube
+    // Buscar
     const search = await yts(text)
-    if (!search.videos.length) throw new Error('No encontré resultados')
+    if (!search.videos.length) throw new Error("No encontré resultados")
 
     const video = search.videos[0]
     const { title, url, thumbnail } = video
 
-    // Miniatura opcional
+    // Miniatura
     let thumbBuffer = null
     if (thumbnail) {
       try {
         const resp = await fetch(thumbnail)
         thumbBuffer = Buffer.from(await resp.arrayBuffer())
       } catch (err) {
-        console.log("No se pudo obtener la miniatura:", err.message)
+        console.log("No se pudo obtener miniatura:", err.message)
       }
     }
 
-    // APIs (fallback)
+    // APIs fallback
     const fuentes = [
       {
-        api: 'Adonix',
+        api: "Adonix",
         endpoint: `https://api-adonix.ultraplus.click/download/ytaudio?apikey=${global.apikey}&url=${encodeURIComponent(url)}`,
-        extractor: res => res?.data?.url
+        extractor: (res) => res?.data?.url
       },
       {
-        api: 'MayAPI',
+        api: "MayAPI",
         endpoint: `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=mp3&apikey=${global.APIKeys['https://mayapi.ooguy.com']}`,
-        extractor: res => res.result.url
+        extractor: (res) => res.result.url
       }
     ]
 
     let audioUrl = null
 
-    // Probar APIs
     for (let fuente of fuentes) {
       try {
         const response = await fetch(fuente.endpoint)
@@ -63,26 +62,23 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
         const data = await response.json()
         const link = fuente.extractor(data)
-
         if (link) {
           audioUrl = link
           break
         }
 
-      } catch (err) {
-        console.log(`Error con ${fuente.api}:`, err.message)
+      } catch (e) {
+        console.log(`Error con ${fuente.api}:`, e.message)
       }
     }
 
-    // Si ninguna API funciona
     if (!audioUrl) {
-      await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+      await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
       return conn.reply(
         m.chat,
 `> ⓘ ERROR
 
-> ❌ No se pudo obtener el audio
-
+> ❌ No se pudo obtener el audio  
 > 💡 Las APIs están temporalmente fuera de servicio`,
         m
       )
@@ -101,29 +97,28 @@ let handler = async (m, { conn, text, usedPrefix }) => {
       { quoted: m }
     )
 
-    // React de éxito
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+    // React OK
+    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } })
 
   } catch (e) {
     console.error("Error en play:", e)
-
     await conn.reply(
       m.chat,
 `> ⓘ ERROR
 
 > ❌ ${e.message}
 
-> 💡 Verifica el nombre o intenta más tarde`,
+> 💡 Intenta otra canción o nuevamente más tarde`,
       m
     )
-
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
   }
 }
 
-handler.help = ['play']
-handler.tags = ['downloader']
-handler.command = ['play']
+handler.help = ["play"]
+handler.tags = ["downloader"]
+handler.command = ["play"]
 //handler.group = true
 
-export default handler
+module.exports = handler
+
