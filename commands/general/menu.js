@@ -6,14 +6,14 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Objeto para controlar si ya se envió el menú
+// Control de menú enviado
 const menuSent = {};
 
 module.exports = {
   command: ["help", "ayuda", "menu"],
   description: "Muestra los comandos",
   category: "general",
-  run: async (client, m, args, extra) => {
+  run: async (client, m, args) => {
     const chatId = m.chat;
 
     // Evitar duplicados
@@ -38,14 +38,7 @@ module.exports = {
       console.error("Error descargando la imagen:", e);
     }
 
-    if (buffer) {
-      await client.sendMessage(chatId, {
-        image: buffer,
-        caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`
-      });
-    }
-
-    await delay(1000);
+    await delay(500);
 
     // Organizar comandos por categoría
     const categories = {};
@@ -80,18 +73,19 @@ module.exports = {
 
       await client.sendMessage(chatId, listMessage);
     } else {
-      // Grupo: botones por categoría
+      // Grupo: botones con imagen (headerType: 4)
       const buttons = Object.keys(categories).map(cat => ({
-        buttonId: `category_${cat}`, // Se detecta luego
+        buttonId: `category_${cat}`,
         buttonText: { displayText: cat.charAt(0).toUpperCase() + cat.slice(1) },
         type: 1
       }));
 
       await client.sendMessage(chatId, {
-        text: "Selecciona una categoría 👇",
+        image: buffer,
+        caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
         footer: "DevYer",
         buttons,
-        headerType: 1
+        headerType: 4
       });
     }
 
@@ -100,10 +94,10 @@ module.exports = {
     }, 10000);
   },
 
-  // Función para manejar cuando se pulsa un botón en grupo
+  // Función para manejar botón pulsado en grupo
   handleButton: async (client, m) => {
     const chatId = m.chat;
-    const payload = m.selectedButtonId; // Ej: category_general
+    const payload = m.selectedButtonId;
 
     if (!payload.startsWith("category_")) return;
 
@@ -121,3 +115,4 @@ module.exports = {
     await client.sendMessage(chatId, { text });
   }
 };
+
