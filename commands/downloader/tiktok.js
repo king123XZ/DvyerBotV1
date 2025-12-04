@@ -1,4 +1,4 @@
-import axios from 'axios'
+const axios = require('axios')
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
@@ -12,14 +12,14 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     if (isUrl) {
       const res = await axios.get(`https://www.tikwm.com/api/?url=${encodeURIComponent(text)}?hd=1`)
       const data = res.data?.data
-      if (!data?.play && !data?.music) return conn.reply(m.chat, '> ⓘ \`Enlace inválido o sin contenido descargable\`', m)
+      if (!data?.play && !data?.music) return conn.reply(m.chat, '> ⓘ `Enlace inválido o sin contenido descargable`', m)
 
       const { title, duration, author, play, music } = data
 
-      // Si el comando es para audio
+      // Audio
       if (command === 'tiktokaudio' || command === 'tta' || command === 'ttaudio') {
         if (!music) {
-          return conn.reply(m.chat, '> ⓘ \`No se pudo obtener el audio del video\`', m)
+          return conn.reply(m.chat, '> ⓘ `No se pudo obtener el audio del video`', m)
         }
 
         await conn.sendMessage(
@@ -37,15 +37,15 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
         return
       }
 
-      // Comando normal de TikTok (video)
+      // Video
       const caption = `> ⓘ \`Título:\` *${title || 'No disponible'}*\n> ⓘ \`Autor:\` *${author?.nickname || 'No disponible'}*`
 
       await conn.sendMessage(m.chat, { video: { url: play }, caption }, { quoted: m })
 
     } else {
-      // Búsqueda por texto (solo para comando normal)
+      // Búsqueda por texto
       if (command === 'tiktokaudio' || command === 'tta' || command === 'ttaudio') {
-        return conn.reply(m.chat, '> ⓘ \`Para descargar audio necesitas un enlace de TikTok\`', m)
+        return conn.reply(m.chat, '> ⓘ `Para descargar audio necesitas un enlace de TikTok`', m)
       }
 
       const res = await axios({
@@ -58,9 +58,8 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       })
 
       const results = res.data?.data?.videos?.filter(v => v.play) || []
-      if (results.length === 0) return conn.reply(m.chat, '> ⓘ \`No se encontraron videos\`', m)
+      if (results.length === 0) return conn.reply(m.chat, '> ⓘ `No se encontraron videos`', m)
 
-      // Enviar solo el primer resultado
       const video = results[0]
       const caption = `> ⓘ \`Título:\` *${video.title || 'No disponible'}*\n> ⓘ \`Autor:\` *${video.author?.nickname || 'No disponible'}*`
       
@@ -79,4 +78,4 @@ handler.tags = ['downloader']
 handler.command = ['tiktok', 'tt', 'tiktokaudio', 'tta', 'ttaudio']
 handler.group = true
 
-export default handler
+module.exports = handler
