@@ -13,10 +13,10 @@ module.exports = {
   command: ["help", "ayuda", "menu"],
   description: "Muestra los comandos",
   category: "general",
+
   run: async (client, m, args) => {
     const chatId = m.chat;
 
-    // Evitar duplicados
     if (menuSent[chatId]) return;
     menuSent[chatId] = true;
 
@@ -54,7 +54,7 @@ module.exports = {
     const isGroup = chatId.endsWith("@g.us");
 
     if (!isGroup) {
-      // Privado: lista interactiva
+      // Privado: lista interactiva con todas las categorías
       const sections = Object.entries(categories).map(([cat, commands]) => ({
         title: cat.charAt(0).toUpperCase() + cat.slice(1),
         rows: commands.map(cmd => ({
@@ -73,9 +73,9 @@ module.exports = {
 
       await client.sendMessage(chatId, listMessage);
     } else {
-      // Grupo: botones con imagen (headerType: 4)
+      // Grupo: imagen + botones por categoría
       const buttons = Object.keys(categories).map(cat => ({
-        buttonId: `category_${cat}`,
+        buttonId: `category_${cat}`, // Se detecta luego
         buttonText: { displayText: cat.charAt(0).toUpperCase() + cat.slice(1) },
         type: 1
       }));
@@ -107,12 +107,26 @@ module.exports = {
 
     if (!commandsInCategory.length) return;
 
-    let text = `*${category.charAt(0).toUpperCase() + category.slice(1)}*\n\n`;
-    commandsInCategory.forEach(cmd => {
-      text += `- !${cmd.command.join(', !')} : ${cmd.description || ""}\n`;
-    });
+    // Crear lista interactiva solo para la categoría seleccionada
+    const sections = [
+      {
+        title: category.charAt(0).toUpperCase() + category.slice(1),
+        rows: commandsInCategory.map(cmd => ({
+          title: `!${cmd.command.join(', !')}`,
+          description: cmd.description || "",
+          rowId: `!${cmd.command[0]}`
+        }))
+      }
+    ];
 
-    await client.sendMessage(chatId, { text });
+    const listMessage = {
+      text: `Comandos de la categoría: *${category.charAt(0).toUpperCase() + category.slice(1)}*`,
+      footer: "DevYer",
+      buttonText: "Ver comandos",
+      sections
+    };
+
+    await client.sendMessage(chatId, listMessage);
   }
 };
 
