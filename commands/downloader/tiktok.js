@@ -12,15 +12,15 @@ module.exports = {
       );
     }
 
-    await m.reply("🕑 Procesando tu video...");
+    await m.reply("⏳ Procesando tu video...");
 
     try {
       let videoUrl = args[0];
 
-      // Si es un enlace corto, resolvemos la URL final
+      // Si es un enlace corto de TikTok, obtenemos la URL final
       if (videoUrl.includes("vm.tiktok.com")) {
-        const res = await fetch(videoUrl, { redirect: "follow" });
-        videoUrl = res.url;
+        const resRedirect = await fetch(videoUrl, { redirect: "follow" });
+        videoUrl = resRedirect.url;
       }
 
       const apiKey = "AvTYmkABPtmG";
@@ -68,4 +68,3 @@ module.exports = {
     }
   },
 };
-
