@@ -72,7 +72,7 @@ module.exports = {
     // Lista final
     const listMessage = {
       text: "Selecciona un comando de la lista 👇",
-      footer: "Creador: +52 33 3232 9453",
+      footer: "DevYer",
       buttonText: "Ver comandos",
       sections
     };
