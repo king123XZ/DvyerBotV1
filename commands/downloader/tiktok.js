@@ -27,14 +27,17 @@ module.exports = {
 
       const data = await res.json();
 
-      if (!data || !data.url) {
+      // Verificamos posibles rutas de video
+      const downloadUrl = data.url || data.result?.url || data.downloadUrl;
+
+      if (!downloadUrl) {
         return m.reply("❌ No se pudo obtener el video. Verifica el enlace.");
       }
 
       await client.sendMessage(
         m.chat,
         {
-          video: { url: data.url },
+          video: { url: downloadUrl },
           caption: `TikTok Downloader\n\nTítulo: ${data.title || "Desconocido"}`,
           mimetype: "video/mp4",
           fileName: "tiktok.mp4"
@@ -47,3 +50,4 @@ module.exports = {
     }
   },
 };
+
