@@ -51,50 +51,28 @@ module.exports = {
       }
     });
 
-    const isGroup = chatId.endsWith("@g.us");
+    // Crear botones dinámicos por categoría
+    const buttons = Object.keys(categories).map(cat => ({
+      buttonId: `category_${cat}`,
+      buttonText: { displayText: cat.charAt(0).toUpperCase() + cat.slice(1) },
+      type: 1
+    }));
 
-    if (!isGroup) {
-      // Privado: lista interactiva con todas las categorías
-      const sections = Object.entries(categories).map(([cat, commands]) => ({
-        title: cat.charAt(0).toUpperCase() + cat.slice(1),
-        rows: commands.map(cmd => ({
-          title: `!${cmd.command.join(', !')}`,
-          description: cmd.description || "",
-          rowId: `!${cmd.command[0]}`
-        }))
-      }));
-
-      const listMessage = {
-        text: "Selecciona un comando de la lista 👇",
-        footer: "DevYer",
-        buttonText: "Ver comandos",
-        sections
-      };
-
-      await client.sendMessage(chatId, listMessage);
-    } else {
-      // Grupo: imagen + botones por categoría
-      const buttons = Object.keys(categories).map(cat => ({
-        buttonId: `category_${cat}`, // Se detecta luego
-        buttonText: { displayText: cat.charAt(0).toUpperCase() + cat.slice(1) },
-        type: 1
-      }));
-
-      await client.sendMessage(chatId, {
-        image: buffer,
-        caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
-        footer: "DevYer",
-        buttons,
-        headerType: 4
-      });
-    }
+    // Enviar imagen con botones (headerType: 4) en privado o grupo
+    await client.sendMessage(chatId, {
+      image: buffer,
+      caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
+      footer: "DevYer",
+      buttons,
+      headerType: 4
+    });
 
     setTimeout(() => {
       delete menuSent[chatId];
     }, 10000);
   },
 
-  // Función para manejar botón pulsado en grupo
+  // Función para manejar botón pulsado en privado o grupo
   handleButton: async (client, m) => {
     const chatId = m.chat;
     const payload = m.selectedButtonId;
@@ -107,26 +85,12 @@ module.exports = {
 
     if (!commandsInCategory.length) return;
 
-    // Crear lista interactiva solo para la categoría seleccionada
-    const sections = [
-      {
-        title: category.charAt(0).toUpperCase() + category.slice(1),
-        rows: commandsInCategory.map(cmd => ({
-          title: `!${cmd.command.join(', !')}`,
-          description: cmd.description || "",
-          rowId: `!${cmd.command[0]}`
-        }))
-      }
-    ];
+    // Crear texto con los comandos de esa categoría
+    let text = `*${category.charAt(0).toUpperCase() + category.slice(1)}*\n\n`;
+    commandsInCategory.forEach(cmd => {
+      text += `- !${cmd.command.join(', !')} : ${cmd.description || ""}\n`;
+    });
 
-    const listMessage = {
-      text: `Comandos de la categoría: *${category.charAt(0).toUpperCase() + category.slice(1)}*`,
-      footer: "DevYer",
-      buttonText: "Ver comandos",
-      sections
-    };
-
-    await client.sendMessage(chatId, listMessage);
+    await client.sendMessage(chatId, { text });
   }
 };
-
