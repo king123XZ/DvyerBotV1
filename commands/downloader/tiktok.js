@@ -29,7 +29,7 @@ module.exports = {
       const res = await fetch(apiEndpoint, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" // Algunas APIs necesitan esto
+          "User-Agent": "Mozilla/5.0"
         }
       });
 
@@ -37,17 +37,18 @@ module.exports = {
         return m.reply(`❌ Error al conectar con la API. Código: ${res.status}`);
       }
 
-      const data = await res.json();
+      const json = await res.json();
 
-      // Intentar obtener URL del video desde distintos campos
-      const downloadUrl = data.url || data.result?.url || data.downloadUrl;
+      // Aquí accedemos al objeto correcto que contiene los datos del video
+      const videoData = json.data;
 
-      if (!downloadUrl) {
-        console.log("Respuesta completa de la API:", data); // Para depuración
-        return m.reply("❌ No se pudo obtener el video. Verifica el enlace o intenta otro.");
+      if (!videoData || !videoData.video) {
+        console.log("Respuesta completa de la API:", json);
+        return m.reply("❌ No se pudo obtener el video. Verifica el enlace.");
       }
 
-      const caption = `TikTok Downloader\n\nTítulo: ${data.title || "Desconocido"}`;
+      const downloadUrl = videoData.video;
+      const caption = `TikTok Downloader\n\nTítulo: ${videoData.title || "Desconocido"}\nAutor: ${videoData.author?.name || "Desconocido"}`;
 
       await client.sendMessage(
         m.chat,
@@ -66,3 +67,4 @@ module.exports = {
     }
   },
 };
+
