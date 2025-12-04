@@ -1,44 +1,57 @@
-const ytdl = require('ytdl-core');
+const axios = require('axios');
+const yts = require('yt-search');
 
 module.exports = {
-  command: ["ytaudio", "yta"],
-  description: "Descarga solo el audio exacto de YouTube",
+  command: ["youtube", "yt", "ytaudio"],
+  description: "Descarga solo el audio de YouTube usando tu API, mejorando búsqueda",
   category: "downloader",
   use: "https://www.youtube.com/",
   run: async (client, m, args) => {
-    if (!args[0]) return m.reply("Ingresa el enlace directo de YouTube.");
+    if (!args[0]) return m.reply("Ingresa el enlace o nombre de un video de YouTube.");
+
+    await m.reply("⏳ Procesando audio...");
 
     try {
-      const url = args[0];
+      let videoUrl = args[0];
+      const apiKey = "AvTYmkABPtmG";
 
-      // Verificar que el enlace es válido
-      if (!ytdl.validateURL(url)) return m.reply("❌ Enlace de YouTube inválido.");
+      // Si no es enlace, buscar por nombre con yt-search
+      if (!videoUrl.startsWith("http")) {
+        const { videos } = await yts(videoUrl);
+        if (!videos.length) return m.reply("❌ No se encontraron resultados.");
+        
+        // Elegir el video más relevante (primer resultado)
+        videoUrl = videos[0].url;
+      }
 
-      await m.reply("⏳ Procesando audio...");
+      // Llamada a la API para descargar audio
+      const res = await axios.get("https://api-sky.ultraplus.click/api/download/yt.js", {
+        params: { url: videoUrl, format: "audio" },
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "X-API-Key": apiKey
+        }
+      });
 
-      // Obtener info del video
-      const info = await ytdl.getInfo(url);
-      const title = info.videoDetails.title;
-      const thumbnail = info.videoDetails.thumbnails.pop().url;
-      const duration = info.videoDetails.lengthSeconds;
+      const data = res.data.data;
+      if (!data || !data.audio) return m.reply("❌ No se pudo obtener el audio.");
 
-      // Descargar solo audio y enviarlo
-      const audioStream = ytdl(url, { filter: 'audioonly' });
+      const caption = `🎵 YouTube Audio\nTítulo: ${data.title}\nDuración: ${data.duration || "Desconocida"}s`;
 
       await client.sendMessage(
         m.chat,
         {
-          audio: audioStream,
+          audio: { url: data.audio },
           mimetype: "audio/mpeg",
-          fileName: `${title}.mp3`,
-          caption: `🎵 YouTube Audio\nTítulo: ${title}\nDuración: ${duration}s`,
+          fileName: `${data.title || "youtube"}.mp3`,
+          caption,
           contextInfo: {
             externalAdReply: {
-              mediaUrl: url,
+              mediaUrl: videoUrl,
               mediaType: 2,
-              description: title,
-              title,
-              thumbnailUrl: thumbnail
+              description: data.title,
+              title: data.title,
+              thumbnailUrl: data.thumbnail
             }
           }
         },
@@ -46,8 +59,16 @@ module.exports = {
       );
 
     } catch (e) {
-      console.error("Error al descargar audio:", e);
-      m.reply("❌ Ocurrió un error al descargar el audio de YouTube.");
+      if (e.response) {
+        const code = e.response.status;
+        if (code === 401) return m.reply("❌ Key inválida o no enviada.");
+        if (code === 402) return m.reply("❌ No tienes solicitudes restantes.");
+        if (code === 429) return m.reply("❌ Límite de solicitudes alcanzado. Intenta más tarde.");
+        if (code === 500) return m.reply("❌ Error interno de la API.");
+      }
+      console.error("Error al descargar audio de YouTube:", e);
+      m.reply("❌ Ocurrió un error al procesar el audio de YouTube.");
     }
   },
 };
+
