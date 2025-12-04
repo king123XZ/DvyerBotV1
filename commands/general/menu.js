@@ -13,7 +13,7 @@ module.exports = {
   command: ["help", "ayuda", "menu"],
   description: "Muestra los comandos",
   category: "general",
-  run: async (client, m, args) => {
+  run: async (client, m, args, extra) => {
     const chatId = m.chat;
 
     // Evitar duplicados
@@ -29,7 +29,7 @@ module.exports = {
       hour < 19 ? "Buenas tardes" :
       "Buenas noches";
 
-    // Descargar imagen como buffer
+    // Descargar imagen
     let buffer;
     try {
       const response = await axios.get("https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png", { responseType: "arraybuffer" });
@@ -38,7 +38,6 @@ module.exports = {
       console.error("Error descargando la imagen:", e);
     }
 
-    // Enviar la imagen primero
     if (buffer) {
       await client.sendMessage(chatId, {
         image: buffer,
@@ -46,7 +45,7 @@ module.exports = {
       });
     }
 
-    await delay(3000);
+    await delay(1000);
 
     // Organizar comandos por categoría
     const categories = {};
@@ -59,23 +58,10 @@ module.exports = {
       }
     });
 
-    // Detectar si es grupo
     const isGroup = chatId.endsWith("@g.us");
 
-    // Verificar si el bot es administrador (para enviar lista interactiva en grupo)
-    let isAdmin = false;
-    if (isGroup) {
-      try {
-        const metadata = await client.groupMetadata(chatId);
-        const botId = client.user.id.split(":")[0] + "@s.whatsapp.net";
-        isAdmin = metadata.participants.some(p => p.id === botId && (p.admin === "admin" || p.admin === "superadmin"));
-      } catch (e) {
-        console.error("Error obteniendo metadata del grupo:", e);
-      }
-    }
-
-    if (!isGroup || isAdmin) {
-      // Privado o grupo admin: lista interactiva
+    if (!isGroup) {
+      // Privado: lista interactiva
       const sections = Object.entries(categories).map(([cat, commands]) => ({
         title: cat.charAt(0).toUpperCase() + cat.slice(1),
         rows: commands.map(cmd => ({
@@ -94,22 +80,44 @@ module.exports = {
 
       await client.sendMessage(chatId, listMessage);
     } else {
-      // Grupo sin admin: enviar menú en texto plano
-      let text = "╭───❮ Menú de comandos ❯───╮\n";
-      text += `${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯\n\n`;
-      Object.entries(categories).forEach(([cat, commands]) => {
-        text += `*${cat.charAt(0).toUpperCase() + cat.slice(1)}*\n`;
-        commands.forEach(cmd => {
-          text += `- !${cmd.command.join(', !')} : ${cmd.description || ""}\n`;
-        });
-        text += "\n";
+      // Grupo: botones por categoría
+      const buttons = Object.keys(categories).map(cat => ({
+        buttonId: `category_${cat}`, // Se detecta luego
+        buttonText: { displayText: cat.charAt(0).toUpperCase() + cat.slice(1) },
+        type: 1
+      }));
+
+      await client.sendMessage(chatId, {
+        text: "Selecciona una categoría 👇",
+        footer: "DevYer",
+        buttons,
+        headerType: 1
       });
-      await client.sendMessage(chatId, { text });
     }
 
-    // Limpiar flag después de 10 segundos
     setTimeout(() => {
       delete menuSent[chatId];
     }, 10000);
   },
+
+  // Función para manejar cuando se pulsa un botón en grupo
+  handleButton: async (client, m) => {
+    const chatId = m.chat;
+    const payload = m.selectedButtonId; // Ej: category_general
+
+    if (!payload.startsWith("category_")) return;
+
+    const category = payload.replace("category_", "");
+    const cmds = [...global.comandos.values()];
+    const commandsInCategory = cmds.filter(c => (c.category || "sin categoría").toLowerCase() === category);
+
+    if (!commandsInCategory.length) return;
+
+    let text = `*${category.charAt(0).toUpperCase() + category.slice(1)}*\n\n`;
+    commandsInCategory.forEach(cmd => {
+      text += `- !${cmd.command.join(', !')} : ${cmd.description || ""}\n`;
+    });
+
+    await client.sendMessage(chatId, { text });
+  }
 };
