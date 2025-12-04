@@ -12,7 +12,7 @@ module.exports = {
       );
     }
 
-    await m.reply("⏳ Procesando tu video...");
+    await m.reply("🕑 Procesando tu video...");
 
     try {
       const videoUrl = args[0];
@@ -25,6 +25,10 @@ module.exports = {
         }
       );
 
+      if (!res.ok) {
+        return m.reply("❌ Error al conectar con la API de TikTok");
+      }
+
       const data = await res.json();
 
       // Verificamos posibles rutas de video
@@ -34,20 +38,22 @@ module.exports = {
         return m.reply("❌ No se pudo obtener el video. Verifica el enlace.");
       }
 
+      const caption = `TikTok Downloader\n\nTítulo: ${data.title || "Desconocido"}`;
+
       await client.sendMessage(
         m.chat,
         {
           video: { url: downloadUrl },
-          caption: `TikTok Downloader\n\nTítulo: ${data.title || "Desconocido"}`,
+          caption,
           mimetype: "video/mp4",
           fileName: "tiktok.mp4"
         },
         { quoted: m }
       );
+
     } catch (e) {
       console.error(e);
       m.reply("❌ Ocurrió un error al procesar el video de TikTok");
     }
   },
 };
-
