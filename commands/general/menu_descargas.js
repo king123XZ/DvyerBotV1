@@ -11,7 +11,7 @@ module.exports = {
 
 • ytmp3 → Descargar música de YouTube url
 • ytmp4 → Descargar video de YouTube url
-• play →  descargar música y videos(recomendado)
+• play → Descargar música y videos (recomendado)
 • tiktok → Descargar video de TikTok
 • facebook → Descargar video de Facebook
 
@@ -26,10 +26,12 @@ module.exports = {
     ];
 
     await client.sendMessage(m.chat, {
-      text,
+      image: { url: "https://i.ibb.co/1Ytc8hcq/4715021777a54cfb94cd3bac0d53ead4.jpg" },
+      caption: text,
       footer: "YerTX Bot",
-      buttons,
-      headerType: 1
+      buttons: buttons,
+      headerType: 4
     });
   }
 };
+
