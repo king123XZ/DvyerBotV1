@@ -1,125 +1,68 @@
 const moment = require("moment-timezone");
 const { version } = require("../../package.json");
-const axios = require("axios");
-const path = require("path");
-
-// Función para delay
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Control de menú enviado para evitar duplicados
-const menuSent = {};
 
 module.exports = {
-  command: ["help", "ayuda", "menu"],
-  description: "Muestra los comandos",
+  command: ["help", "ayuda", "menu", "comandos"],
+  description: "Muestra el menú completo del bot",
   category: "general",
 
   run: async (client, m, args) => {
     const chatId = m.chat;
 
-    if (menuSent[chatId]) return;
-    menuSent[chatId] = true;
-
-    // Saludo según hora
+    // Hora y saludo
     const hour = parseInt(moment.tz("America/Mexico_City").format("HH"));
-    const ucapan =
-      hour < 5 ? "Buen día" :
-      hour < 12 ? "Buen día" :
-      hour < 19 ? "Buenas tardes" :
-      "Buenas noches";
+    const saludo =
+      hour < 5 ? "🌙 Buenas madrugadas" :
+      hour < 12 ? "🌅 Buenos días" :
+      hour < 19 ? "🌇 Buenas tardes" :
+      "🌙 Buenas noches";
 
-    // Descargar imagen del menú
-    let buffer;
-    try {
-      const response = await axios.get(
-        "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png",
-        { responseType: "arraybuffer" }
-      );
-      buffer = Buffer.from(response.data, "binary");
-    } catch (e) {
-      console.error("Error descargando la imagen:", e);
-    }
+    // Obtener todos los comandos
+    const cmds = [...global.comandos.values()];
 
-    await delay(500);
+    // Categorías con iconos PRO
+    const iconos = {
+      downloader: "⬇️",
+      general: "🧭",
+      entretenimiento: "🎭",
+      info: "📘",
+      utilidad: "⚙️",
+      otros: "📁"
+    };
 
-    // Categorías predefinidas para botones
-    const buttonCategories = ["Downloader", "General", "Entretenimiento", "Otros"];
-
-    // Crear botones dinámicos
-    const buttons = buttonCategories.map(cat => ({
-      buttonId: `category_${cat.toLowerCase()}`,
-      buttonText: { displayText: cat },
-      type: 1
-    }));
-
-    // Enviar imagen con botones
-    await client.sendMessage(chatId, {
-      image: buffer,
-      caption:
-`╭───❮ Menú de comandos ❯───╮
-${ucapan}, ${m.pushName || "Usuario"}
-Versión: ${version}
-╰─────────────────────╯`,
-      footer: "DevYer",
-      buttons,
-      headerType: 4
+    // Organizar comandos por categoría
+    const categorias = {};
+    cmds.forEach(cmd => {
+      const cat = (cmd.category || "otros").toLowerCase();
+      if (!categorias[cat]) categorias[cat] = [];
+      categorias[cat].push(cmd);
     });
 
-    // Limpiar flag después de 10 segundos
-    setTimeout(() => {
-      delete menuSent[chatId];
-    }, 10000);
-  },
+    // 🎨 MENÚ PRO
+    let menu = `
+╭━━━〔 *𝗠𝗘𝗡𝗨 𝗣𝗥𝗢* 〕━━━╮
+┃ 👋 ${saludo}, *${m.pushName || "Usuario"}*
+┃ 🚀 Versión del bot: *${version}*
+┃ 👑 Creador: *DevYer*
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+`;
 
-  // Función para manejar botón pulsado
-  handleButton: async (client, message) => {
-    const chatId = message.chat;
-    const payload = message.selectedButtonId;
+    // Agregar categorías al menú
+    for (const cat in categorias) {
+      const icon = iconos[cat] || "📁";
 
-    if (!payload.startsWith("category_")) return;
+      menu += `\n┌─── ${icon} *${cat.toUpperCase()}*\n`;
 
-    const category = payload.replace("category_", "");
+      categorias[cat].forEach(cmd => {
+        menu += `│ • *!${cmd.command.join(", !")}*\n│    ${cmd.description}\n`;
+      });
 
-    let commandsInCategory = [];
-
-    // ============================
-    // 📂 CATEGORÍA: DOWNLOADER
-    // ============================
-    if (category === "downloader") {
-      try {
-        commandsInCategory = require(path.join(__dirname, "../comandos-descarga.js"));
-      } catch (e) {
-        console.error("❌ Error cargando comandos-descarga.js:", e);
-        return client.sendMessage(chatId, { text: "Error cargando comandos de descargas." });
-      }
+      menu += "└──────────────────────\n";
     }
 
-    // ============================
-    // 📂 OTRAS CATEGORÍAS
-    // ============================
-    else {
-      const cmds = [...global.comandos.values()];
-      commandsInCategory = cmds.filter(
-        c => (c.category || "otros").toLowerCase() === category
-      );
-    }
+    menu += `\n✨ Para usar un comando escribe: *!comando*\n`;
 
-    // Sin comandos
-    if (!commandsInCategory.length) {
-      return client.sendMessage(chatId, { text: `⚠️ No hay comandos disponibles en la categoría *${category}*.` });
-    }
-
-    // Crear mensaje profesional con los comandos
-    let text = `╭───❮ Comandos: ${category.toUpperCase()} ❯───╮\n\n`;
-
-    commandsInCategory.forEach(cmd => {
-      text += `• !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n`;
-    });
-
-    text += `\n╰──────────────────────────╯`;
-
-    await client.sendMessage(chatId, { text });
+    // Enviar menú
+    await client.sendMessage(chatId, { text: menu });
   }
 };
