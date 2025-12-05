@@ -11,7 +11,6 @@ function delay(ms) {
 // Control de menú enviado para evitar duplicados
 const menuSent = {};
 
-// Comando principal
 module.exports = {
   command: ["help", "ayuda", "menu"],
   description: "Muestra los comandos",
@@ -36,7 +35,10 @@ module.exports = {
     // Descargar imagen del menú
     let buffer;
     try {
-      const response = await axios.get("https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png", { responseType: "arraybuffer" });
+      const response = await axios.get(
+        "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png",
+        { responseType: "arraybuffer" }
+      );
       buffer = Buffer.from(response.data, "binary");
     } catch (e) {
       console.error("Error descargando la imagen:", e);
@@ -49,7 +51,7 @@ module.exports = {
 
     // Crear botones dinámicos
     const buttons = buttonCategories.map(cat => ({
-      buttonId: category_${cat.toLowerCase()},
+      buttonId: `category_${cat.toLowerCase()}`, // ⚠ Backticks necesarios
       buttonText: { displayText: cat },
       type: 1
     }));
@@ -57,7 +59,7 @@ module.exports = {
     // Enviar imagen con botones
     await client.sendMessage(chatId, {
       image: buffer,
-      caption: ╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯,
+      caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
       footer: "DevYer",
       buttons,
       headerType: 4
@@ -83,7 +85,7 @@ module.exports = {
     if (category === "downloader") {
       // Leer solo comandos de descarga desde tu archivo
       try {
-        commandsInCategory = require(path.join(__dirname, "commands/comandos-descarga.js"));
+        commandsInCategory = require(path.join(__dirname, "../comandos-descarga.js"));
       } catch (e) {
         console.error("Error cargando comandos-descarga.js:", e);
       }
@@ -94,16 +96,16 @@ module.exports = {
     }
 
     if (!commandsInCategory.length) {
-      return client.sendMessage(chatId, { text: No hay comandos disponibles en la categoría *${category}*. });
+      return client.sendMessage(chatId, { text: `No hay comandos disponibles en la categoría *${category}*.` });
     }
 
     // Crear mensaje profesional con los comandos
-    let text = ╭───❮ Comandos: ${category.charAt(0).toUpperCase() + category.slice(1)} ❯───╮\n\n;
+    let text = `╭───❮ Comandos: ${category.charAt(0).toUpperCase() + category.slice(1)} ❯───╮\n\n`;
     commandsInCategory.forEach(cmd => {
-      text += • !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n;
+      text += `• !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n`;
     });
-    text += \n╰──────────────────────────╯;
+    text += `\n╰──────────────────────────╯`;
 
     await client.sendMessage(chatId, { text });
   }
-};  no responde el menu
+};
