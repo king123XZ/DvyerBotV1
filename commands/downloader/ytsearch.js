@@ -5,11 +5,11 @@ const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
   command: ["play","ytsearch","yt"],
-  description: "Buscar un video de YouTube y mostrar opciones de descarga",
+  description: "Buscar videos de YouTube y enviar enlace con botones",
   category: "downloader",
   run: async (client, m, args) => {
-    const chatId = m?.chat || m?.key?.remoteJid;
-    if (!chatId) return console.warn("⚠️ No se pudo obtener chatId del mensaje");
+    const chatId = m.chat || (m.key && m.key.remoteJid);
+    if (!chatId) return console.log("⚠️ No se pudo obtener chatId del mensaje");
 
     if (!args[0]) {
       return client.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: m });
@@ -19,6 +19,7 @@ module.exports = {
     await client.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: m });
 
     try {
+      // Llamada a la API de búsqueda
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: query },
         headers: { Authorization: `Bearer ${API_KEY}` }
@@ -29,64 +30,26 @@ module.exports = {
         return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
       }
 
-      const video = results[0]; // Primer resultado
+      // Tomamos el primer resultado
+      const video = results[0];
+      const caption = `🎬 *Título:* ${video.titulo}\n📌 *Canal:* ${video.canal}\n⏱ *Duración:* ${video.duracion}\n👁 *Vistas:* ${video.vistas}\n🔗 *Enlace:* ${video.url}`;
 
-      const caption = `
-🎬 *Título:* ${video.titulo}
-📌 *Canal:* ${video.canal}
-⏱ *Duración:* ${video.duracion}
-👁 *Vistas:* ${video.vistas}
-🔗 *Enlace:* ${video.url}
-      `.trim();
-
-      // Botones que llaman al código existente directamente
+      // Botones para Audio, Video y Documento
       const buttons = [
-        {
-          buttonId: `ytAudio_${video.url}`, 
-          buttonText: { displayText: "🎵 Descargar Audio" }, 
-          type: 1 
-        },
-        {
-          buttonId: `ytVideo_${video.url}`, 
-          buttonText: { displayText: "🎥 Descargar Video" }, 
-          type: 1 
-        },
-        {
-          buttonId: `ytDocument_${video.url}`, 
-          buttonText: { displayText: "📄 Descargar Documento" }, 
-          type: 1 
-        }
+        { buttonId: `ytaudio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
+        { buttonId: `ytvideo ${video.url}`, buttonText: { displayText: '📹 Video' }, type: 1 },
+        { buttonId: `ytdoc ${video.url}`, buttonText: { displayText: '📄 Documento' }, type: 1 },
       ];
 
       const buttonMessage = {
         image: { url: video.miniatura },
         caption,
-        footer: "Seleccione una opción de descarga",
         buttons,
-        headerType: 4
+        headerType: 4, // 4 = imagen con botones
+        footer: "_La Suki Bot_"
       };
 
       await client.sendMessage(chatId, buttonMessage, { quoted: m });
-
-      // Manejo de los botones
-      client.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg?.message?.buttonsResponseMessage) return;
-
-        const selectedId = msg.message.buttonsResponseMessage.selectedButtonId;
-        const [type, url] = selectedId.split('_'); // ytAudio, ytVideo, ytDocument
-
-        if (type === 'ytAudio') {
-          // Llamamos a tu código de ytaudio
-          require('./ytaudio.js').run(client, msg, [url]);
-        }
-        if (type === 'ytVideo') {
-          require('./ytvideo.js').run(client, msg, [url]);
-        }
-        if (type === 'ytDocument') {
-          require('./ytdocument.js').run(client, msg, [url]);
-        }
-      });
 
     } catch (err) {
       console.error("❌ Error al usar API de búsqueda:", err);
