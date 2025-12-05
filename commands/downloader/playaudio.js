@@ -1,24 +1,21 @@
 const axios = require('axios');
-
-const pending = {};
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   command: ["play"],
-  description: "Busca y descarga audio usando Neoxr API",
+  description: "Descarga audio usando Neoxr API",
   run: async (client, m, args) => {
     const chatId = m.key.remoteJid;
     const query = args.join(" ");
     const pref = global.prefixes?.[0] || ".";
 
-    if (!query) {
-      return client.sendMessage(chatId, {
-        text: `⚠️ Uso:\n${pref}play <nombre de la canción>\nEj: ${pref}play Komang`
-      }, { quoted: m });
-    }
+    if (!query) return client.sendMessage(chatId, { text: `⚠️ Uso:\n${pref}play <canción>` }, { quoted: m });
 
     await client.sendMessage(chatId, { react: { text: "⏳", key: m.key } });
 
     try {
+      // Llamada a Neoxr API
       const res = await axios.get("https://api.neoxr.eu/api/play", {
         params: { q: query, apikey: "zMqDtV" },
         timeout: 60000
@@ -29,58 +26,25 @@ module.exports = {
 
       const { title, artist, url: audioUrl, thumbnail, duration } = data;
 
-      const caption =
-        `🎵 𝙎𝙤𝙣𝙜 𝙁𝙤𝙪𝙣𝙙\n` +
-        `✦ Título: ${title}\n` +
-        `✦ Artista: ${artist}\n` +
-        `✦ Duración: ${duration || "Desconocida"}\n\n` +
-        `Reacciona 👍 para Audio, ❤️ para Documento`;
+      // Descarga el audio a un buffer temporal
+      const audioRes = await axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 120000 });
+      const audioBuffer = Buffer.from(audioRes.data, 'binary');
 
-      const preview = await client.sendMessage(chatId, {
-        image: { url: thumbnail },
-        caption
+      // Carpeta temporal
+      const tmpDir = path.join(__dirname, '../tmp');
+      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+      const filePath = path.join(tmpDir, `${Date.now()}_${title}.mp3`);
+      fs.writeFileSync(filePath, audioBuffer);
+
+      // Enviar audio
+      await client.sendMessage(chatId, {
+        audio: fs.readFileSync(filePath),
+        mimetype: 'audio/mpeg',
+        fileName: `${title}.mp3`,
+        caption: `🎵 ${title} - ${artist}\nDuración: ${duration || "Desconocida"}`
       }, { quoted: m });
 
-      pending[preview.key.id] = { chatId, audioUrl, title, quoted: m };
-
-      if (!client._playListener) {
-        client._playListener = true;
-        client.ev.on("messages.upsert", async ev => {
-          for (const mm of ev.messages) {
-            try {
-              // Reacciones
-              if (mm.message?.reactionMessage) {
-                const { key: reactKey, text: emoji } = mm.message.reactionMessage;
-                const job = pending[reactKey.id];
-                if (job) {
-                  const asDoc = emoji === "❤️";
-                  await sendAudio(client, job, asDoc, mm);
-                  delete pending[reactKey.id];
-                }
-              }
-
-              // Respuestas citadas
-              const ctx = mm.message?.extendedTextMessage?.contextInfo;
-              const replyTo = ctx?.stanzaId;
-              const texto = (mm.message?.conversation || "").trim().toLowerCase();
-              if (replyTo && pending[replyTo]) {
-                const job = pending[replyTo];
-                if (texto === "1" || texto === "audio") {
-                  await sendAudio(client, job, false, mm);
-                  delete pending[replyTo];
-                } else if (texto === "2" || texto === "doc") {
-                  await sendAudio(client, job, true, mm);
-                  delete pending[replyTo];
-                } else {
-                  await client.sendMessage(job.chatId, {
-                    text: "⚠️ Responde con *1* (Audio) o *2* (Documento), o reacciona 👍 / ❤️."
-                  }, { quoted: job.quoted });
-                }
-              }
-            } catch (e) { console.error(e); }
-          }
-        });
-      }
+      fs.unlinkSync(filePath); // Limpieza
 
       await client.sendMessage(chatId, { react: { text: "✅", key: m.key } });
 
@@ -92,20 +56,3 @@ module.exports = {
   }
 };
 
-async function sendAudio(client, job, asDoc, mm) {
-  const { chatId, audioUrl, title, quoted } = job;
-
-  try {
-    // Enviar directamente usando la URL
-    await client.sendMessage(chatId, {
-      [asDoc ? "document" : "audio"]: { url: audioUrl },
-      mimetype: "audio/mpeg",
-      fileName: `${title}.mp3`
-    }, { quoted });
-
-    await client.sendMessage(chatId, { react: { text: "✅", key: mm.key } });
-  } catch (e) {
-    console.error("Error enviando audio:", e);
-    await client.sendMessage(chatId, { text: `❌ Error al enviar el audio: ${e.message}` }, { quoted });
-  }
-}
