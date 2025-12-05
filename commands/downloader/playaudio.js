@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const pending = {}; // para trabajos pendientes de audio/documento
+const pending = {};
 
 module.exports = {
   command: ["play"],
@@ -96,11 +96,9 @@ async function sendAudio(client, job, asDoc, mm) {
   const { chatId, audioUrl, title, quoted } = job;
 
   try {
-    const audioRes = await axios.get(audioUrl, { responseType: "arraybuffer" });
-    const buffer = Buffer.from(audioRes.data);
-
+    // Enviar directamente usando la URL
     await client.sendMessage(chatId, {
-      [asDoc ? "document" : "audio"]: buffer,
+      [asDoc ? "document" : "audio"]: { url: audioUrl },
       mimetype: "audio/mpeg",
       fileName: `${title}.mp3`
     }, { quoted });
@@ -111,4 +109,3 @@ async function sendAudio(client, job, asDoc, mm) {
     await client.sendMessage(chatId, { text: `❌ Error al enviar el audio: ${e.message}` }, { quoted });
   }
 }
-
