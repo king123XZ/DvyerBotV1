@@ -5,27 +5,38 @@ const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
   command: ["play","ytsearch","yt"],
-  description: "Buscar videos de YouTube y enviar enlace",
+  description: "Buscar videos de YouTube usando la API y enviar info",
   category: "downloader",
   run: async (msg, { conn, args }) => {
-    const chatId = msg.key?.remoteJid;
-    if (!chatId) return console.log('⚠️ No se pudo obtener chatId del mensaje');
-
-    if (!args[0]) return conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
-
-    const query = args.join(" ");
-    await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
-
     try {
+      // --- OBTENER chatId ---
+      const chatId = msg.key?.remoteJid || msg.chat || (msg?.from) || null;
+      if (!chatId) {
+        console.log('⚠️ No se pudo obtener chatId del mensaje');
+        return;
+      }
+
+      if (!args[0]) {
+        await conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
+        return;
+      }
+
+      const query = args.join(" ");
+      await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
+
+      // --- LLAMADA A LA API ---
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: query },
         headers: { Authorization: `Bearer ${API_KEY}` }
       });
 
       const results = res.data?.Result;
-      if (!results || results.length === 0) return conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
+      if (!results || results.length === 0) {
+        await conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
+        return;
+      }
 
-      // Primer resultado
+      // --- TOMAMOS EL PRIMER RESULTADO ---
       const video = results[0];
       const replyText = `
 🎬 *Título:* ${video.titulo}
@@ -43,8 +54,10 @@ module.exports = {
 
     } catch (err) {
       console.error("❌ Error al usar API de búsqueda:", err);
-      await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
+      const chatId = msg.key?.remoteJid || msg.chat || (msg?.from) || null;
+      if (chatId) {
+        await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
+      }
     }
   }
 };
-
