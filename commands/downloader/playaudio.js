@@ -10,10 +10,16 @@ module.exports = {
   run: async (msg, { conn, args }) => {
     const chatId = msg.key.remoteJid;
 
-    if (!args[0]) return conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
+    if (!args || args.length === 0) {
+      return conn.sendMessage(chatId, {
+        text: "⚠️ Ingresa el nombre de la canción o artista a buscar."
+      }, { quoted: msg });
+    }
 
     const query = args.join(" ");
-    await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
+    await conn.sendMessage(chatId, {
+      text: `⏳ Buscando: *${query}* ...`
+    }, { quoted: msg });
 
     try {
       // Llamada a la API de búsqueda
@@ -23,7 +29,11 @@ module.exports = {
       });
 
       const results = res.data?.result;
-      if (!results || results.length === 0) return conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
+      if (!results || results.length === 0) {
+        return conn.sendMessage(chatId, {
+          text: "❌ No se encontraron resultados."
+        }, { quoted: msg });
+      }
 
       // Tomamos el primer resultado
       const video = results[0];
@@ -42,8 +52,9 @@ module.exports = {
 
     } catch (err) {
       console.error("❌ Error al usar API de búsqueda:", err);
-      await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
+      await conn.sendMessage(chatId, {
+        text: "❌ Ocurrió un error al buscar la canción."
+      }, { quoted: msg });
     }
   }
 };
-
