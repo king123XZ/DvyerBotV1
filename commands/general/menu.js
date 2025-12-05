@@ -21,12 +21,12 @@ module.exports = {
         type: 1
       },
       {
-        buttonId: "menu_utilidades",
+        buttonId: ".menu_utilidades",
         buttonText: { displayText: "🛠 Utilidades" },
         type: 1
       },
       {
-        buttonId: "menu_infobot",
+        buttonId: ".menu_infobot",
         buttonText: { displayText: "🤖 InfoBot" },
         type: 1
       }
