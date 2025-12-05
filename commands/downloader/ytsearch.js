@@ -19,14 +19,18 @@ module.exports = {
       const query = args.join(" ");
       await client.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
 
+      // Codificar la query
+      const encodedQuery = encodeURIComponent(query);
+
       // Llamada a la API
-      const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
-        params: { q: query },
+      const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js?q=${encodedQuery}`, {
         headers: { Authorization: `Bearer ${API_KEY}` }
       });
 
-      // UltraPlus a veces devuelve "result" o "data"
+      // UltraPlus devuelve resultados en "result" o "data"
       const results = res.data?.result || res.data?.data || [];
+      console.log("Resultados crudos de la API:", results);
+
       if (!results || results.length === 0) {
         return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
       }
@@ -39,12 +43,11 @@ module.exports = {
 
       await client.sendMessage(chatId, {
         text: replyText,
-        // opcional: agregar imagen del primer video
         ...(results[0]?.thumbnail ? { image: { url: results[0].thumbnail } } : {})
       }, { quoted: msg });
 
     } catch (err) {
-      console.error("❌ Error al usar API de búsqueda:", err);
+      console.error("❌ Error al usar API de búsqueda:", err.message, err.response?.data || '');
       const chatId = msg?.key?.remoteJid || msg?.message?.chatId;
       if (chatId) {
         await client.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
