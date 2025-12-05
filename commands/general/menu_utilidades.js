@@ -1,16 +1,34 @@
 module.exports = {
   command: ["menu_utilidades"],
-
+  description: "Muestra el menú de utilidades",
   run: async (client, m) => {
-    const text = `
-⧼ 𝐔𝐓𝐈𝐋𝐈𝐃𝐀𝐃𝐄𝐒 ⧽
 
-🖼 Sticker
-📸 ToImg
-📺 HD
-🔗 QR
+    const text = `
+⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦 ⧽
+──────────────────────────────
+
+🛠 Comandos disponibles:
+
+• sticker → Crear sticker
+• toimg → Convertir sticker a imagen
+• hd → Descargar imagen HD
+• qr → Generar código QR
+
+──────────────────────────────
+🔹 Usa los botones para navegar:
 `;
 
-    await client.sendMessage(m.chat, { text });
+    const buttons = [
+      { buttonId: "menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
+      { buttonId: "menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
+      { buttonId: "menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+    ];
+
+    await client.sendMessage(m.chat, {
+      text,
+      footer: "YerTX Bot",
+      buttons,
+      headerType: 1
+    });
   }
 };
