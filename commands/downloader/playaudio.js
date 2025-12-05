@@ -4,22 +4,20 @@ const API_KEY = 'M8EQKBf7LhgH';
 const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
-  command: ["play","ytsearch","yt"],
+  command: ["play", "ytsearch", "yt"],
   description: "Buscar videos de YouTube y enviar enlace",
   category: "downloader",
   run: async (msg, { conn, args }) => {
-    const chatId = msg.key.remoteJid;
+    // Obtener chatId de forma segura
+    const chatId = msg?.key?.remoteJid || msg?.chat || msg?.chatId;
+    if (!chatId) return console.log("⚠️ No se pudo obtener chatId del mensaje");
 
     if (!args || args.length === 0) {
-      return conn.sendMessage(chatId, {
-        text: "⚠️ Ingresa el nombre de la canción o artista a buscar."
-      }, { quoted: msg });
+      return conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
     }
 
     const query = args.join(" ");
-    await conn.sendMessage(chatId, {
-      text: `⏳ Buscando: *${query}* ...`
-    }, { quoted: msg });
+    await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
 
     try {
       // Llamada a la API de búsqueda
@@ -30,9 +28,7 @@ module.exports = {
 
       const results = res.data?.result;
       if (!results || results.length === 0) {
-        return conn.sendMessage(chatId, {
-          text: "❌ No se encontraron resultados."
-        }, { quoted: msg });
+        return conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
       }
 
       // Tomamos el primer resultado
@@ -51,10 +47,8 @@ module.exports = {
       }, { quoted: msg });
 
     } catch (err) {
-      console.error("❌ Error al usar API de búsqueda:", err);
-      await conn.sendMessage(chatId, {
-        text: "❌ Ocurrió un error al buscar la canción."
-      }, { quoted: msg });
+      console.error("❌ Error al usar API de búsqueda:", err.message || err);
+      await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
     }
   }
 };
