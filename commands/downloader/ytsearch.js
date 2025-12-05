@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_KEY = 'M8EQKBf7LhgH'; // Tu key
+const API_KEY = 'M8EQKBf7LhgH'; 
 const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
@@ -9,8 +9,9 @@ module.exports = {
   category: "downloader",
   run: async (msg, { conn, args }) => {
     try {
-      const chatId = msg.key.remoteJid || (msg.key?.fromMe ? msg.key.participant : null);
-      if (!chatId) return conn.sendMessage(chatId, { text: "⚠️ No se pudo obtener chatId del mensaje." }, { quoted: msg });
+      // ✅ Obtener chatId de manera segura
+      const chatId = msg.key?.remoteJid || msg.chat || (msg.key?.fromMe ? msg.key.participant : null);
+      if (!chatId) return console.log("⚠️ No se pudo obtener chatId del mensaje");
 
       if (!args[0]) return conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
 
@@ -52,7 +53,7 @@ module.exports = {
 
     } catch (err) {
       console.error("❌ Error al usar API de búsqueda:", err);
-      const chatId = msg.key?.remoteJid || (msg.key?.fromMe ? msg.key.participant : null);
+      const chatId = msg.key?.remoteJid || msg.chat || (msg.key?.fromMe ? msg.key.participant : null);
       if (chatId) await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
     }
   }
