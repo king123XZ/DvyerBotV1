@@ -1,39 +1,39 @@
 module.exports = {
-  command: ["menu", "help", "ayuda"], // 👈 AQUÍ ESTÁ EL COMANDO
+  command: ["menu", "help", "ayuda"],
   category: "general",
-  description: "Muestra el menú del bot",
+  description: "Muestra el menú del bot en modo hacker oscuro",
 
-  run: async (client, m, { prefix }) => {
+  run: async (client, m) => {
 
     const menu = `
-⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝐌𝐄𝐍𝐔 𝐇𝐀𝐂𝐊𝐄𝐑 ⧽
-──────────────────────────────
+⫷✦ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝐌𝐄𝐍𝐔 𝐇𝐀𝐂𝐊𝐄𝐑 ✦⫸
+┏━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🧬 Usuario: ${m.pushName}
+┃ 🛰️ Modo: Hacker Oscuro
+┃ ⚙️ Versión: 2.5 PRO
+┗━━━━━━━━━━━━━━━━━━━━━━┛
 
-👤 *Usuario:* ${m.pushName}
-🏴 *Modo:* Hacker Oscuro
-🕶️ *Versión:* 2.0
+『 ⚡ DESCARGAS ⚡ 』
+» ytmp3        ⟢ Descargar MP3
+» ytmp4        ⟢ Descargar MP4
+» play         ⟢ Reproducir música
+» tiktok       ⟢ Videos TikTok
+» facebook     ⟢ Videos Facebook
 
-⛧ 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦
-❯ ${prefix}ytmp3
-❯ ${prefix}ytmp4
-❯ ${prefix}play
-❯ ${prefix}tiktok
-❯ ${prefix}facebook
+『 🛠️ UTILIDADES 🛠️ 』
+» sticker      ⟢ Crear sticker
+» toimg        ⟢ Sticker a imagen
+» hd           ⟢ Mejora tu foto
+» qr           ⟢ Generar QR
 
-⛧ 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦
-❯ ${prefix}sticker
-❯ ${prefix}toimg
-❯ ${prefix}hd
-❯ ${prefix}qr
+『 📡 INFO BOT 📡 』
+» ping         ⟢ Latencia
+» owner        ⟢ Creador
+» runtime      ⟢ Tiempo activo
+» estado       ⟢ Estado del bot
 
-⛧ 𝗜𝗡𝗙𝗢𝗕𝗢𝗧
-❯ ${prefix}ping
-❯ ${prefix}owner
-❯ ${prefix}runtime
-❯ ${prefix}estado
-
-──────────────────────────────
-⚠ 𝙐𝙨𝙤 𝙗𝙖𝙟𝙤 𝙧𝙚𝙨𝙥𝙤𝙣𝙨𝙖𝙗𝙞𝙡𝙞𝙙𝙖𝙙.
+━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Uso exclusivo para fines legales.
 `;
 
     await client.sendMessage(m.chat, {
@@ -42,6 +42,5 @@ module.exports = {
     });
   }
 };
-
 
 
