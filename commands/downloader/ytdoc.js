@@ -9,7 +9,7 @@ const API_DOWNLOAD = 'https://api-sky.ultraplus.click/api/download/yt.js';
 const API_BACKUP = 'https://api-ultra.yersonapis.workers.dev/ytvideo';
 
 module.exports = {
-  command: ["ytdocument"],
+  command: ["yytdoc"],
   description: "Descargar un video de YouTube en doc",
   category: "downloader",
 
