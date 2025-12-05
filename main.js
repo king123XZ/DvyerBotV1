@@ -1,144 +1,207 @@
+/**
+ * ================================
+ *        Mini Lurus - WaBot
+ * ================================
+ * Creado por: Carlos Alexis (Zam)
+ * Año: 2025
+ * Librería: Baileys
+ * 
+ * Nota: No borres los créditos.
+ * ================================
+ **/
 
-mi main es require("./settings");
+require("./settings");
+require("./lib/database");
+const {
+  default: makeWASocket,
+  makeCacheableSignalKeyStore,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  jidDecode,
+  DisconnectReason,
+} = require("@whiskeysockets/baileys");
+const pino = require("pino");
+const chalk = require("chalk");
 const fs = require("fs");
 const path = require("path");
-const moment = require("moment");
-const chalk = require("chalk");
-const gradient = require("gradient-string");
-const seeCommands = require("./lib/system/commandLoader");
-const initDB = require("./lib/system/initDB");
-const antilink = require("./commands/antilink");
-const { resolveLidToRealJid } = require("./lib/utils");
+const readline = require("readline");
+const os = require("os");
+const qrcode = require("qrcode-terminal");
+const parsePhoneNumber = require("awesome-phonenumber");
+const { smsg } = require("./lib/message");
+const { app, server } = require("./lib/server");
+const { Boom } = require("@hapi/boom");
+const { exec } = require("child_process");
 
-seeCommands();
-
-module.exports = async (client, m) => {
-  let body = "";
-
-  if (m.message) {
-    if (m.message.conversation) body = m.message.conversation;
-    else if (m.message.extendedTextMessage?.text)
-      body = m.message.extendedTextMessage.text;
-    else if (m.message.imageMessage?.caption)
-      body = m.message.imageMessage.caption;
-    else if (m.message.videoMessage?.caption)
-      body = m.message.videoMessage.caption;
-    else if (m.message.buttonsResponseMessage?.selectedButtonId)
-      body = m.message.buttonsResponseMessage.selectedButtonId;
-    else if (m.message.listResponseMessage?.singleSelectReply?.selectedRowId)
-      body = m.message.listResponseMessage.singleSelectReply.selectedRowId;
-    else if (m.message.templateButtonReplyMessage?.selectedId)
-      body = m.message.templateButtonReplyMessage.selectedId;
-  }
-
-  initDB(m);
-  antilink(client, m);
-
-  const prefa = ['.', '!', '#', '/']
-  const prefix = prefa.find((p) => body.startsWith(p))
-  if (!prefix) return
-
-  const from = m.key.remoteJid;
-  const args = body.trim().split(/ +/).slice(1);
-  const text = args.join(" ");
-  const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net";
-
-  const command = body
-    .slice(prefix.length)
-    .trim()
-    .split(/\s+/)[0]
-    .toLowerCase();
-  const pushname = m.pushName || "Sin nombre";
-  const sender = m.isGroup
-    ? m.key.participant || m.participant
-    : m.key.remoteJid;
-
-  let groupMetadata,
-    groupAdmins,
-    resolvedAdmins = [],
-    groupName = "";
-  if (m.isGroup) {
-    groupMetadata = await client.groupMetadata(m.chat).catch((_) => null);
-    groupName = groupMetadata?.subject || "";
-    groupAdmins =
-      groupMetadata?.participants.filter(
-        (p) => p.admin === "admin" || p.admin === "superadmin",
-      ) || [];
-    resolvedAdmins = await Promise.all(
-      groupAdmins.map((adm) =>
-        resolveLidToRealJid(adm.jid, client, m.chat).then((realJid) => ({
-          ...adm,
-          jid: realJid,
-        })),
-      ),
-    );
-  }
-
-  const isBotAdmins = m.isGroup
-    ? resolvedAdmins.some((p) => p.jid === botJid)
-    : false;
-  const isAdmins = m.isGroup
-    ? resolvedAdmins.some((p) => p.jid === m.sender)
-    : false;
-
-  const h = chalk.bold.blue("************************************");
-  const v = chalk.bold.white("*");
-  const date = chalk.bold.yellow(
-    `\n${v} Fecha: ${chalk.whiteBright(moment().format("DD/MM/YY HH:mm:ss"))}`,
+const print = (label, value) =>
+  console.log(
+    `${chalk.green.bold("║")} ${chalk.cyan.bold(label.padEnd(16))}${chalk.magenta.bold(":")} ${value}`,
   );
-  const userPrint = chalk.bold.blueBright(
-    `\n${v} Usuario: ${chalk.whiteBright(pushname)}`,
-  );
-  const senderPrint = chalk.bold.magentaBright(
-    `\n${v} Remitente: ${gradient("deepskyblue", "darkorchid")(sender)}`,
-  );
-  const groupPrint = m.isGroup
-    ? chalk.bold.cyanBright(
-        `\n${v} Grupo: ${chalk.greenBright(groupName)}\n${v} ID: ${gradient("violet", "midnightblue")(from)}\n`,
-      )
-    : chalk.bold.greenBright(`\n${v} Chat privado\n`);
-  console.log(`\n${h}${date}${userPrint}${senderPrint}${groupPrint}${h}`);
+const question = (text) => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise((resolve) => {
+    rl.question(text, resolve);
+  });
+};
+const usePairingCode = true;
 
-  if (global.comandos.has(command)) {
-    const cmdData = global.comandos.get(command);
-    if (!cmdData) return;
+const log = {
+  info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
+  success: (msg) => console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
+  warn: (msg) => console.log(chalk.bgYellowBright.blueBright.bold(`WARNING`), chalk.yellow(msg)),
+  warning: (msg) => console.log(chalk.bgYellowBright.red.bold(`WARNING`), chalk.yellow(msg)),
+  error: (msg) => console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg)),
+};
 
-    if (
-      cmdData.isOwner &&
-      !global.owner.map((num) => num + "@s.whatsapp.net").includes(m.sender)
-    )
-      return m.reply(mess.owner);
-    if (cmdData.isReg && !db.data.users[m.sender]?.registered)
-      return m.reply(mess.registered);
-    if (cmdData.isGroup && !m.isGroup) return m.reply(mess.group);
-    if (cmdData.isAdmin && !isAdmins) return m.reply(mess.admin);
-    if (cmdData.isBotAdmin && !isBotAdmins) return m.reply(mess.botAdmin);
-    if (cmdData.isPrivate && m.isGroup) return m.reply(mess.private);
-
-    try {
-      await cmdData.run(client, m, args, { text });
-    } catch (error) {
-      console.error(chalk.red(`Error ejecutando comando ${command}:`), error);
-      await client.sendMessage(
-        m.chat,
-        { text: "Error al ejecutar el comando" },
-        { quoted: m },
-      );
-    }
+const userInfoSyt = () => {
+  try {
+    return os.userInfo().username;
+  } catch (e) {
+    return process.env.USER || process.env.USERNAME || "desconocido";
   }
 };
 
-const mainFile = require.resolve(__filename);
-fs.watchFile(mainFile, () => {
-  fs.unwatchFile(mainFile);
-  console.log(
-    chalk.yellowBright(
-      `\nSe actualizó ${path.basename(__filename)}, recargando...`,
-    ),
-  );
-  delete require.cache[mainFile];
-  require(mainFile);
+console.log(
+  chalk.yellow.bold(
+    `╔═════[${`${chalk.yellowBright(userInfoSyt())}${chalk.white.bold("@")}${chalk.yellowBright(os.hostname())}`}]═════`,
+  ),
+);
+print("OS", `${os.platform()} ${os.release()} ${os.arch()}`);
+print("Actividad", `${Math.floor(os.uptime() / 3600)} h ${Math.floor((os.uptime() % 3600) / 60)} m`);
+print("Shell", process.env.SHELL || process.env.COMSPEC || "desconocido");
+print("CPU", os.cpus()[0]?.model.trim() || "unknown");
+print("Memoria", `${(os.freemem() / 1024 / 1024).toFixed(0)} MiB / ${(os.totalmem() / 1024 / 1024).toFixed(0)} MiB`);
+print("Script version", `v${require("./package.json").version}`);
+print("Node.js", process.version);
+print("Baileys", `WhiskeySockets/baileys`);
+print(
+  "Fecha & Tiempo",
+  new Date().toLocaleString("en-US", {
+    timeZone: "America/Mexico_City",
+    hour12: false,
+  }),
+);
+console.log(chalk.yellow.bold("╚" + "═".repeat(30)));
+
+async function startBot() {
+  const { state, saveCreds } = await useMultiFileAuthState(global.sessionName);
+  const { version } = await fetchLatestBaileysVersion();
+
+  console.info = () => {};
+  console.debug = () => {};
+
+  const client = makeWASocket({
+    version,
+    logger: pino({ level: "silent" }),
+    printQRInTerminal: false,
+    browser: ["Linux", "Opera"],
+    auth: state,
+  });
+
+  if (!client.authState.creds.registered) {
+    const phoneNumber = await question(
+      log.warn("Ingrese su número de WhatsApp\n") +
+        log.info("Ejemplo: 5212345678900\n"),
+    );
+    try {
+      log.info("Solicitando código de emparejamiento...");
+      const pairing = await client.requestPairingCode(phoneNumber, "1234MINI");
+      log.success(
+        `Código de emparejamiento: ${chalk.cyanBright(pairing)} (expira en 15s)`
+      );
+    } catch (err) {
+      log.error("Error al solicitar el código:", err);
+      exec("rm -rf ./lurus_session/*");
+      process.exit(1);
+    }
+  }
+
+  await global.loadDatabase();
+  console.log(chalk.yellow("Base de datos cargada correctamente."));
+
+  client.sendText = (jid, text, quoted = "", options) =>
+    client.sendMessage(jid, { text, ...options }, { quoted });
+
+  // =====================================================
+  // 🔥 ARREGLO ANTI-MENSAJES DUPLICADOS
+  // =====================================================
+  client.ev.on("messages.upsert", async ({ messages }) => {
+    try {
+      let m = messages[0];
+      if (!m.message) return;
+
+      // 🔥 FILTROS IMPORTANTES (NUEVOS)
+      if (m.key.fromMe) return; // evita duplicados
+      if (m.message.protocolMessage) return; // evita mensajes del sistema
+      if (m?.message?.senderKeyDistributionMessage) return; // evita spam MD
+
+      m.message =
+        Object.keys(m.message)[0] === "ephemeralMessage"
+          ? m.message.ephemeralMessage.message
+          : m.message;
+
+      if (m.key && m.key.remoteJid === "status@broadcast") return;
+
+      m = smsg(client, m);
+
+      require("./main")(client, m, messages);
+    } catch (err) {
+      console.log(err);
+    }
+  });
+
+  client.decodeJid = (jid) => {
+    if (!jid) return jid;
+    if (/:\d+@/gi.test(jid)) {
+      const decode = jidDecode(jid) || {};
+      return decode.user && decode.server
+        ? decode.user + "@" + decode.server
+        : jid;
+    }
+    return jid;
+  };
+
+  client.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+    const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+
+    if (connection === "close") {
+      switch (reason) {
+        case DisconnectReason.connectionLost:
+        case DisconnectReason.connectionClosed:
+        case DisconnectReason.restartRequired:
+        case DisconnectReason.timedOut:
+        case DisconnectReason.badSession:
+          log.warning("Reconectando...");
+          return startBot();
+
+        case DisconnectReason.loggedOut:
+        case DisconnectReason.forbidden:
+        case DisconnectReason.multideviceMismatch:
+          log.warning("Debe escanear nuevamente...");
+          exec("rm -rf ./lurus_session/*");
+          return process.exit(0);
+      }
+    }
+
+    if (connection === "open") {
+      log.success("Conexión exitosa 🚀");
+    }
+  });
+
+  client.ev.on("creds.update", saveCreds);
+}
+
+startBot();
+
+let file = require.resolve(__filename);
+fs.watchFile(file, () => {
+  fs.unwatchFile(file);
+  console.log(chalk.yellowBright(`Archivo actualizado: ${__filename}`));
+  delete require.cache[file];
+  require(file);
 });
 
-
-// Mini Lurus © 2025 - Creado por Zam  | GataNina-Li | DevAlexJs | Elrebelde21
