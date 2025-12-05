@@ -24,7 +24,7 @@ module.exports = {
     await client.sendMessage(chatId, { react: { text: '⏳', key: m.key } });
 
     try {
-      const apiUrl = `https://api.neoxr.eu/api/spotify?url=${encodeURIComponent(text)}&apikey=russellxz`;
+      const apiUrl = `https://api.neoxr.eu/api/spotify?url=${encodeURIComponent(text)}&apikey=zMqDtV`;
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`API error: ${response.statusText}`);
 
@@ -39,7 +39,7 @@ module.exports = {
           `🎵 Título: ${song.title}\n` +
           `👤 Artista: ${song.artist.name}\n` +
           `⏱️ Duración: ${song.duration}\n` +
-          `🔗 Enlace: ${song.url}\n\n────────────\n🎧 La Suki Bot`,
+          `🔗 Enlace: ${song.url}\n\n────────────\n🎧 devyer`,
         mimetype: 'image/jpeg'
       }, { quoted: m });
 
