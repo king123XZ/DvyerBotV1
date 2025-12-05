@@ -1,57 +1,69 @@
-const fs = require("fs"); // ← ESTO FALTABA Y GENERABA EL ERROR
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
   command: ["menu", "help", "ayuda"],
-  description: "Muestra el menú del bot",
   category: "general",
+  description: "Muestra el menú del bot",
 
   run: async (client, m) => {
+    try {
+      // Buscar imagen válida
+      const mediaFolder = "./media";
+      const imageFiles = ["menu.jpg", "menu.png"];
 
-    // Imagen del menú (asegúrate de tenerla)
-    const PP = fs.readFileSync("./media/menu.png");
+      let menuImage = null;
 
-    // ————————————————
-    // 📌 Extraer categorías dinámicas
-    // ————————————————
-    const categorias = {};
-    for (const [name, cmd] of global.comandos.entries()) {
-      const cat = cmd.category || "otros";
-      if (!categorias[cat]) categorias[cat] = [];
-      categorias[cat].push(name);
-    }
+      for (const file of imageFiles) {
+        const filePath = path.join(mediaFolder, file);
+        if (fs.existsSync(filePath)) {
+          menuImage = filePath;
+          break;
+        }
+      }
 
-    // ————————————————
-    // 📌 Construcción del menú
-    // ————————————————
-    let menuTexto = `🌙 *𝗠𝗘𝗡𝗨 𝗛𝗔𝗖𝗞𝗘𝗥 - 𝗠𝗜𝗡𝗜 𝗟𝗨𝗥𝗨𝗦*  
-┈┈┈┈┈┈┈┈┈┈┈┈  
-👤 *Usuario:* ${m.pushName}
-📅 *Fecha:* ${new Date().toLocaleDateString()}
-⌚ *Hora:* ${new Date().toLocaleTimeString()}
-┈┈┈┈┈┈┈┈┈┈┈┈  
+      const menuText = `
+╔═━「 *📀 MENÚ DEL BOT* 」
+┃
+┃  ✦  .menu
+┃  ✦  .ytdoc
+┃  ✦  .play
+┃  ✦  .info
+┃  ✦  .owner
+┃
+╚═━「 *Mini Lurus — 2025* 」
 `;
 
-    for (const cat of Object.keys(categorias)) {
-      menuTexto += `\n🔥 *${cat.toUpperCase()}*\n`;
-      categorias[cat].forEach(cmd => {
-        menuTexto += `▪︎ .${cmd}\n`;
-      });
-    }
+      if (!menuImage) {
+        // Si no hay imagen, enviar solo texto
+        return client.sendMessage(
+          m.chat,
+          { text: menuText },
+          { quoted: m }
+        );
+      }
 
-    // ————————————————
-    // 📌 Menú con botones
-    // ————————————————
-    await client.sendMessage(m.chat, {
-      image: PP,
-      caption: menuTexto,
-      footer: "Mini Lurus — Powered by Zam & Yerson",
-      buttons: [
-        { buttonId: ".menu", buttonText: { displayText: "📜 MENU" }, type: 1 },
-        { buttonId: ".descargas", buttonText: { displayText: "⬇️ DESCARGAS" }, type: 1 },
-        { buttonId: ".owner", buttonText: { displayText: "💻 OWNER" }, type: 1 }
-      ],
-      headerType: 4
-    });
+      // Si hay imagen JPG o PNG → se envía
+      const imgBuffer = fs.readFileSync(menuImage);
+
+      await client.sendMessage(
+        m.chat,
+        {
+          image: imgBuffer,
+          caption: menuText
+        },
+        { quoted: m }
+      );
+
+    } catch (err) {
+      console.log("❌ Error en menú:", err);
+      return client.sendMessage(
+        m.chat,
+        { text: "❌ Error cargando el menú." },
+        { quoted: m }
+      );
+    }
   }
 };
+
 
