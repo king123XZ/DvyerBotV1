@@ -43,7 +43,7 @@ module.exports = {
 
       // Botones
       const buttons = [
-        { buttonId: `ytaudio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
+        { buttonId: `.ytaudio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
         { buttonId: `ytvideo ${video.url}`, buttonText: { displayText: '🎬 Video' }, type: 1 },
         { buttonId: `ytdoc ${video.url}`, buttonText: { displayText: '📄 Documento' }, type: 1 }
       ];
