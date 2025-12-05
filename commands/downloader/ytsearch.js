@@ -1,16 +1,15 @@
 const axios = require('axios');
 
-const API_KEY = 'M8EQKBf7LhgH'; 
+const API_KEY = 'M8EQKBf7LhgH';
 const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
   command: ["play","ytsearch","yt"],
-  description: "Buscar videos de YouTube y mostrar botones de descarga",
+  description: "Buscar videos de YouTube y mostrar botones",
   category: "downloader",
   run: async (msg, { conn, args }) => {
     try {
-      // ✅ Obtener chatId de manera segura
-      const chatId = msg.key?.remoteJid || msg.chat || (msg.key?.fromMe ? msg.key.participant : null);
+      const chatId = (msg.key && msg.key.remoteJid) || msg.chat || (msg.key && msg.key.participant);
       if (!chatId) return console.log("⚠️ No se pudo obtener chatId del mensaje");
 
       if (!args[0]) return conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
@@ -18,7 +17,6 @@ module.exports = {
       const query = args.join(" ");
       await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
 
-      // Llamada a la API de búsqueda
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: query },
         headers: { Authorization: `Bearer ${API_KEY}` }
@@ -27,8 +25,8 @@ module.exports = {
       const results = res.data?.Result;
       if (!results || results.length === 0) return conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
 
-      // Tomamos el primer resultado
       const video = results[0];
+
       const caption = `
 🎬 *Título:* ${video.titulo}
 📌 *Canal:* ${video.canal}
@@ -53,7 +51,7 @@ module.exports = {
 
     } catch (err) {
       console.error("❌ Error al usar API de búsqueda:", err);
-      const chatId = msg.key?.remoteJid || msg.chat || (msg.key?.fromMe ? msg.key.participant : null);
+      const chatId = (msg.key && msg.key.remoteJid) || msg.chat || (msg.key && msg.key.participant);
       if (chatId) await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
     }
   }
