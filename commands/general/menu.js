@@ -16,7 +16,7 @@ module.exports = {
     // Botones de categorías
     const buttons = [
       {
-        buttonId: "menu_descargas",
+        buttonId: ".menu_descargas",
         buttonText: { displayText: "📥 Descargas" },
         type: 1
       },
