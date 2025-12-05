@@ -3,13 +3,19 @@ const axios = require('axios');
 const API_KEY = 'M8EQKBf7LhgH';
 const API_BASE = 'https://api-sky.ultraplus.click';
 
+function getChatId(msg) {
+  if (msg?.key?.remoteJid) return msg.key.remoteJid;
+  if (msg?.chat) return msg.chat;
+  if (msg?.chatId) return msg.chatId;
+  return null;
+}
+
 module.exports = {
   command: ["play", "ytsearch", "yt"],
   description: "Buscar videos de YouTube y enviar enlace",
   category: "downloader",
   run: async (msg, { conn, args }) => {
-    // Obtener chatId de forma segura
-    const chatId = msg?.key?.remoteJid || msg?.chat || msg?.chatId;
+    const chatId = getChatId(msg);
     if (!chatId) return console.log("⚠️ No se pudo obtener chatId del mensaje");
 
     if (!args || args.length === 0) {
@@ -20,7 +26,6 @@ module.exports = {
     await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
 
     try {
-      // Llamada a la API de búsqueda
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: query },
         headers: { Authorization: `Bearer ${API_KEY}` }
@@ -31,7 +36,6 @@ module.exports = {
         return conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
       }
 
-      // Tomamos el primer resultado
       const video = results[0];
       const replyText = `
 🎬 *Título:* ${video.title}
@@ -52,3 +56,4 @@ module.exports = {
     }
   }
 };
+
