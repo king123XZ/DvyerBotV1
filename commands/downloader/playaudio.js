@@ -13,7 +13,7 @@ module.exports = {
 
     try {
       let videoUrl = args[0];
-      const apiKey = "AvTYmkABPtmG";
+      const apiKey = "M8EQKBf7LhgH";
 
       // Si no es enlace, buscar por nombre con yt-search
       if (!videoUrl.startsWith("http")) {
