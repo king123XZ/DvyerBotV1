@@ -1,6 +1,7 @@
 const moment = require("moment-timezone");
 const { version } = require("../../package.json");
 const axios = require("axios");
+const path = require("path");
 
 // Función para delay
 function delay(ms) {
@@ -76,12 +77,21 @@ module.exports = {
     if (!payload.startsWith("category_")) return;
 
     const category = payload.replace("category_", "");
-    const cmds = [...global.comandos.values()];
 
-    // Filtrar comandos por categoría
-    const commandsInCategory = cmds
-      .filter(c => (c.category || "otros").toLowerCase() === category)
-      .sort((a, b) => a.command[0].localeCompare(b.command[0]));
+    let commandsInCategory = [];
+
+    if (category === "downloader") {
+      // Leer solo comandos de descarga desde tu archivo
+      try {
+        commandsInCategory = require(path.join(__dirname, "commands/comandos-descarga.js"));
+      } catch (e) {
+        console.error("Error cargando comandos-descarga.js:", e);
+      }
+    } else {
+      // Para otras categorías, usar global.comandos
+      const cmds = [...global.comandos.values()];
+      commandsInCategory = cmds.filter(c => (c.category || "otros").toLowerCase() === category);
+    }
 
     if (!commandsInCategory.length) {
       return client.sendMessage(chatId, { text: `No hay comandos disponibles en la categoría *${category}*.` });
@@ -97,25 +107,3 @@ module.exports = {
     await client.sendMessage(chatId, { text });
   }
 };
-
-// ----------------------------
-// Integración con el bot (ejemplo Baileys)
-// ----------------------------
-/*
-En tu archivo principal del bot, agrega esto para capturar los botones:
-
-client.on('messages.upsert', async (m) => {
-  try {
-    const message = m.messages[0];
-    if (!message) return;
-
-    // Revisar si es un botón pulsado
-    if (message.type === 'buttonsResponseMessage') {
-      await require('./ruta/a/tu/comando/help').handleButton(client, message);
-    }
-
-  } catch (err) {
-    console.error(err);
-  }
-});
-*/
