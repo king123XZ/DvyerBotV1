@@ -9,9 +9,9 @@ module.exports = {
 
 📥 Comandos disponibles:
 
-• ytmp3 → Descargar música de YouTube
-• ytmp4 → Descargar video de YouTube
-• play → Reproducir y descargar música
+• ytmp3 → Descargar música de YouTube url
+• ytmp4 → Descargar video de YouTube url
+• play →  descargar música y videos(recomendado)
 • tiktok → Descargar video de TikTok
 • facebook → Descargar video de Facebook
 
