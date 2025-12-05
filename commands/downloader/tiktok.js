@@ -23,7 +23,7 @@ module.exports = {
         videoUrl = resRedirect.url;
       }
 
-      const apiKey = "AvTYmkABPtmG"; // Tu API Key
+      const apiKey = "M8EQKBf7LhgH"; // Tu API Key
       const apiEndpoint = `https://api-sky.ultraplus.click/api/download/tiktok.js?url=${encodeURIComponent(videoUrl)}`;
 
       const res = await fetch(apiEndpoint, {
