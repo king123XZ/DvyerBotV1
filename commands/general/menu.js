@@ -1,6 +1,8 @@
 module.exports = {
-  name: "menu",
-  alias: ["help", "ayuda"],
+  command: ["menu", "help", "ayuda"], // 👈 AQUÍ ESTÁ EL COMANDO
+  category: "general",
+  description: "Muestra el menú del bot",
+
   run: async (client, m, { prefix }) => {
 
     const menu = `
@@ -40,5 +42,6 @@ module.exports = {
     });
   }
 };
+
 
 
