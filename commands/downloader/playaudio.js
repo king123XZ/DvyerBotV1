@@ -1,95 +1,74 @@
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-const ffmpeg = require("fluent-ffmpeg");
-const { promisify } = require("util");
-const { pipeline } = require("stream");
-const streamPipe = promisify(pipeline);
-
-const API_KEY = "zMqDtV";
-const API_BASE = "https://api.neoxr.eu/api/play";
-
-async function downloadToFile(url, filePath) {
-  const res = await axios.get(url, { responseType: "stream" });
-  await streamPipe(res.data, fs.createWriteStream(filePath));
-  return filePath;
-}
-
-function fileSizeMB(filePath) {
-  const b = fs.statSync(filePath).size;
-  return b / (1024 * 1024);
-}
-
-async function transcodeToMp3(inFile) {
-  const outFile = inFile.replace(path.extname(inFile), ".mp3");
-  await new Promise((resolve, reject) => {
-    ffmpeg(inFile)
-      .audioCodec("libmp3lame")
-      .audioBitrate("128k")
-      .format("mp3")
-      .save(outFile)
-      .on("end", resolve)
-      .on("error", reject);
-  });
-  return outFile;
-}
-
-const handler = async (client, m, args) => {
-  const chatId = m.chat || m.key.remoteJid;
-  const query = args.join(" ").trim();
-  const pref = global.prefixes?.[0] || ".";
-
-  if (!query) {
-    return client.sendMessage(chatId, { text: `⚠️ Uso incorrecto.\nEjemplo: ${pref}play Bad Bunny Diles` }, { quoted: m });
-  }
-
-  await client.sendMessage(chatId, { react: { text: "⏳", key: m.key } });
-
-  try {
-    const res = await axios.get(API_BASE, { params: { q: query, apikey: API_KEY } });
-    const data = res.data?.data;
-    if (!res.data?.status || !data?.url) return client.sendMessage(chatId, { text: "❌ No se encontró la canción." }, { quoted: m });
-
-    const tmpDir = path.join(__dirname, "../tmp");
-    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-
-    const inFile = path.join(tmpDir, `song_${Date.now()}${path.extname(data.url)}`);
-    await downloadToFile(data.url, inFile);
-
-    let outFile = inFile;
-    if (path.extname(inFile).toLowerCase() !== ".mp3") {
-      outFile = await transcodeToMp3(inFile);
-      try { fs.unlinkSync(inFile); } catch {}
-    }
-
-    const sizeMB = fileSizeMB(outFile);
-    if (sizeMB > 99) {
-      try { fs.unlinkSync(outFile); } catch {}
-      return client.sendMessage(chatId, { text: `❌ El archivo pesa ${sizeMB.toFixed(2)}MB (>99MB).` }, { quoted: m });
-    }
-
-    const caption = `🎵 ${data.title || "Canción"}\nArtista: ${data.artist || "Desconocido"}\nDuración: ${data.duration || "Desconocida"}`;
-
-    const buffer = fs.readFileSync(outFile);
-    await client.sendMessage(chatId, {
-      audio: buffer,
-      mimetype: "audio/mpeg",
-      fileName: `${data.title || "song"}.mp3`,
-      caption
-    }, { quoted: m });
-
-    try { fs.unlinkSync(outFile); } catch {}
-    await client.sendMessage(chatId, { react: { text: "✅", key: m.key } });
-
-  } catch (err) {
-    console.error("❌ Error al usar Neoxr API:", err);
-    await client.sendMessage(chatId, { text: `❌ Error: ${err.message}` }, { quoted: m });
-    await client.sendMessage(chatId, { react: { text: "❌", key: m.key } });
-  }
-};
+const axios = require('axios');
+const yts = require('yt-search');
 
 module.exports = {
-  run: handler,
-  command: ["play", "ytplay", "ytmp3"]
+  command: ["youtube", "yt", "ytaudio"],
+  description: "Descarga solo el audio de YouTube usando tu API, mejorando búsqueda",
+  category: "downloader",
+  use: "https://www.youtube.com/",
+  run: async (client, m, args) => {
+    if (!args[0]) return m.reply("Ingresa el enlace o nombre de un video de YouTube.");
+
+    await m.reply("⏳ Procesando audio...");
+
+    try {
+      let videoUrl = args[0];
+      const apiKey = "M8EQKBf7LhgH";
+
+      // Si no es enlace, buscar por nombre con yt-search
+      if (!videoUrl.startsWith("http")) {
+        const { videos } = await yts(videoUrl);
+        if (!videos.length) return m.reply("❌ No se encontraron resultados.");
+        
+        // Elegir el video más relevante (primer resultado)
+        videoUrl = videos[0].url;
+      }
+
+      // Llamada a la API para descargar audio
+      const res = await axios.get("https://api-sky.ultraplus.click/api/download/yt.js", {
+        params: { url: videoUrl, format: "audio" },
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "X-API-Key": apiKey
+        }
+      });
+
+      const data = res.data.data;
+      if (!data || !data.audio) return m.reply("❌ No se pudo obtener el audio.");
+
+      const caption = `🎵 YouTube Audio\nTítulo: ${data.title}\nDuración: ${data.duration || "Desconocida"}s`;
+
+      await client.sendMessage(
+        m.chat,
+        {
+          audio: { url: data.audio },
+          mimetype: "audio/mpeg",
+          fileName: `${data.title || "youtube"}.mp3`,
+          caption,
+          contextInfo: {
+            externalAdReply: {
+              mediaUrl: videoUrl,
+              mediaType: 2,
+              description: data.title,
+              title: data.title,
+              thumbnailUrl: data.thumbnail
+            }
+          }
+        },
+        { quoted: m }
+      );
+
+    } catch (e) {
+      if (e.response) {
+        const code = e.response.status;
+        if (code === 401) return m.reply("❌ Key inválida o no enviada.");
+        if (code === 402) return m.reply("❌ No tienes solicitudes restantes.");
+        if (code === 429) return m.reply("❌ Límite de solicitudes alcanzado. Intenta más tarde.");
+        if (code === 500) return m.reply("❌ Error interno de la API.");
+      }
+      console.error("Error al descargar audio de YouTube:", e);
+      m.reply("❌ Ocurrió un error al procesar el audio de YouTube.");
+    }
+  },
 };
 
