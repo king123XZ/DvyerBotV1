@@ -1,51 +1,80 @@
-const axios = require('axios');
+const axios = require("axios");
 
-const API_KEY = 'M8EQKBf7LhgH';
-const API_BASE = 'https://api-sky.ultraplus.click';
+const API_KEY = "M8EQKBf7LhgH";
+const API_BASE = "https://api-sky.ultraplus.click";
+
+// segunda API de respaldo estable
+const BACKUP_API = "https://api.ryzendesu.vip/download/ytmp4?url=";
 
 module.exports = {
   command: ["ytvideo"],
-  description: "Descarga automáticamente un video de YouTube",
+  description: "Descargar video de YouTube con fallback",
   category: "downloader",
+
   run: async (client, m, args) => {
     const chatId = m?.chat || m?.key?.remoteJid;
     if (!chatId) return console.warn("⚠️ No se pudo obtener chatId del mensaje");
 
-    if (!args[0]) return client.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista." }, { quoted: m });
+    if (!args[0])
+      return client.sendMessage(chatId, { text: "⚠️ Escribe el nombre del video." }, { quoted: m });
 
     try {
-      // Buscar el primer video
-      const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
+      // Buscar el video
+      const r = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: args.join(" ") },
         headers: { Authorization: `Bearer ${API_KEY}` }
       });
 
-      const video = res.data?.Result?.[0];
-      if (!video) return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
+      const video = r.data?.Result?.[0];
+      if (!video)
+        return client.sendMessage(chatId, { text: "❌ No se encontró ningún video." }, { quoted: m });
 
-      // Mensaje de descarga
-      await client.sendMessage(chatId, { text: `⏳ Descargando: *${video.titulo}* ...` }, { quoted: m });
+      // Aviso de descarga
+      await client.sendMessage(chatId, { text: `⏳ Descargando: *${video.titulo}*` }, { quoted: m });
 
-      // Descargar video
-      const downloadRes = await axios.get(`${API_BASE}/api/download/yt.js`, {
-        params: { url: video.url, format: "video" },
-        headers: { Authorization: `Bearer ${API_KEY}`, "X-API-Key": API_KEY }
-      });
+      // Primer intento (API-SKY)
+      try {
+        const d1 = await axios.get(`${API_BASE}/api/download/yt.js`, {
+          params: { url: video.url, format: "video" },
+          headers: { Authorization: `Bearer ${API_KEY}` }
+        });
 
-      const data = downloadRes.data.data;
-      if (!data?.video) return client.sendMessage(chatId, { text: "❌ No se pudo obtener el video." }, { quoted: m });
+        const data = d1.data?.data;
+        if (data?.video) {
+          return await client.sendMessage(
+            chatId,
+            {
+              video: { url: data.video },
+              mimetype: "video/mp4",
+              fileName: `${video.titulo}.mp4`,
+              caption: `🎬 ${video.titulo}`
+            },
+            { quoted: m }
+          );
+        }
+      } catch (e) {
+        console.log("⚠️ API-SKY falló, usando API de respaldo...");
+      }
 
-      // Enviar video directamente
-      await client.sendMessage(chatId, {
-        video: { url: data.video },
-        mimetype: "video/mp4",
-        fileName: `${video.titulo || "video"}.mp4`,
-        caption: `🎬 ${video.titulo}\n📌 Canal: ${video.canal}\n⏱ Duración: ${video.duracion}`
-      }, { quoted: m });
+      // Segundo intento (BACKUP API)
+      const d2 = await axios.get(BACKUP_API + video.url);
+      if (!d2.data?.result?.url)
+        return client.sendMessage(chatId, { text: "❌ Ambas APIs fallaron." }, { quoted: m });
+
+      await client.sendMessage(
+        chatId,
+        {
+          video: { url: d2.data.result.url },
+          mimetype: "video/mp4",
+          fileName: `${video.titulo}.mp4`,
+          caption: `🎬 ${video.titulo}`
+        },
+        { quoted: m }
+      );
 
     } catch (err) {
-      console.error("❌ Error al descargar el video:", err);
-      await client.sendMessage(chatId, { text: "❌ Ocurrió un error al descargar el video." }, { quoted: m });
+      console.log("❌ Error total:", err);
+      await client.sendMessage(chatId, { text: "❌ Error inesperado descargando el video." }, { quoted: m });
     }
   }
 };
