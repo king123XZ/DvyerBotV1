@@ -1,35 +1,44 @@
 module.exports = {
-    name: "menu",
-    alias: ["help", "cmd", "comandos"],
-    desc: "Menú con categorías expandibles",
-    run: async (client, m, args) => {
-        try {
-            const menuImage = "https://i.ibb.co/XxdTkYNq/menu.png";
+  name: "menu",
+  alias: ["help", "ayuda"],
+  run: async (client, m, { prefix }) => {
 
-            const message = {
-                image: { url: menuImage },
-                caption: `
-⛧━━━━━━🜸 *HACKER MENU* 🜸━━━━━━⛧
+    const menu = `
+⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝐌𝐄𝐍𝐔 𝐇𝐀𝐂𝐊𝐄𝐑 ⧽
+──────────────────────────────
 
-Selecciona una categoría para ver los comandos 👇
-                `.trim(),
-                footer: "SonGoku Bot • YerTX2",
-                templateButtons: [
-                    { index: 1, quickReplyButton: { displayText: "🔥 DESCARGAS", id: "cat_descargas" }},
-                    { index: 2, quickReplyButton: { displayText: "🧰 UTILIDADES", id: "cat_utilidades" }},
-                    { index: 3, quickReplyButton: { displayText: "🎭 DIVERSIÓN", id: "cat_diversion" }},
-                    { index: 4, quickReplyButton: { displayText: "🛠 SISTEMA", id: "cat_sistema" }},
-                ]
-            };
+👤 *Usuario:* ${m.pushName}
+🏴 *Modo:* Hacker Oscuro
+🕶️ *Versión:* 2.0
 
-            await client.sendMessage(m.chat, message, { quoted: m });
+⛧ 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦
+❯ ${prefix}ytmp3
+❯ ${prefix}ytmp4
+❯ ${prefix}play
+❯ ${prefix}tiktok
+❯ ${prefix}facebook
 
-        } catch (e) {
-            console.error(e);
-            client.sendMessage(m.chat, { text: "❌ Error al mostrar el menú." }, { quoted: m });
-        }
-    }
+⛧ 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦
+❯ ${prefix}sticker
+❯ ${prefix}toimg
+❯ ${prefix}hd
+❯ ${prefix}qr
+
+⛧ 𝗜𝗡𝗙𝗢𝗕𝗢𝗧
+❯ ${prefix}ping
+❯ ${prefix}owner
+❯ ${prefix}runtime
+❯ ${prefix}estado
+
+──────────────────────────────
+⚠ 𝙐𝙨𝙤 𝙗𝙖𝙟𝙤 𝙧𝙚𝙨𝙥𝙤𝙣𝙨𝙖𝙗𝙞𝙡𝙞𝙙𝙖𝙙.
+`;
+
+    await client.sendMessage(m.chat, {
+      image: { url: "https://i.ibb.co/XxdTkYNq/menu.png" },
+      caption: menu
+    });
+  }
 };
-
 
 
