@@ -25,10 +25,12 @@ module.exports = {
     ];
 
     await client.sendMessage(m.chat, {
-      text,
+      image: { url: "https://i.ibb.co/Hc4WW2s/b937a90c8a578fc77451f47fa43650b1.jpg" },
+      caption: text,
       footer: "YerTX Bot",
-      buttons,
-      headerType: 1
+      buttons: buttons,
+      headerType: 4
     });
   }
 };
+
