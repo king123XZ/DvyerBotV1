@@ -51,7 +51,7 @@ module.exports = {
       const buttonMessage = {
         image: { url: video.miniatura },
         caption,
-        footer: 'La Suki Bot',
+        footer: 'DevYER ',
         buttons,
         headerType: 4
       };
