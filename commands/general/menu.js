@@ -1,68 +1,91 @@
 const moment = require("moment-timezone");
-const { version } = require("../../package.json");
+const axios = require("axios");
 
 module.exports = {
-  command: ["help", "ayuda", "menu", "comandos"],
-  description: "Muestra el menú completo del bot",
+  command: ["menu", "help", "ayuda"],
+  description: "Muestra el menú estilo hacker oscuro",
   category: "general",
 
-  run: async (client, m, args) => {
+  run: async (client, m) => {
     const chatId = m.chat;
+    const { version } = require("../../package.json");
 
-    // Hora y saludo
+    // SALUDO SEGÚN HORA
     const hour = parseInt(moment.tz("America/Mexico_City").format("HH"));
     const saludo =
-      hour < 5 ? "🌙 Buenas madrugadas" :
-      hour < 12 ? "🌅 Buenos días" :
-      hour < 19 ? "🌇 Buenas tardes" :
-      "🌙 Buenas noches";
+      hour < 5 ? "⌁ Noche Profunda" :
+      hour < 12 ? "⌁ Buenos Días" :
+      hour < 19 ? "⌁ Buenas Tardes" :
+      "⌁ Buenas Noches";
 
-    // Obtener todos los comandos
-    const cmds = [...global.comandos.values()];
+    // DESCARGAR LA IMAGEN DEL BANNER
+    let banner;
+    try {
+      const res = await axios.get(
+        "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png",
+        { responseType: "arraybuffer" }
+      );
+      banner = Buffer.from(res.data, "binary");
+    } catch (err) {
+      console.error("Error descargando banner:", err);
+    }
 
-    // Categorías con iconos PRO
+    // OBTENER TODOS LOS COMANDOS
+    const allCmds = [...global.comandos.values()];
+
+    // ICONOS HACKER POR CATEGORÍA
     const iconos = {
-      downloader: "⬇️",
-      general: "🧭",
-      entretenimiento: "🎭",
-      info: "📘",
-      utilidad: "⚙️",
-      otros: "📁"
+      downloader: "▣",
+      general: "◇",
+      entretenimiento: "◆",
+      utilidad: "○",
+      info: "◎",
+      otros: "▪"
     };
 
-    // Organizar comandos por categoría
+    // ORGANIZAR POR CATEGORÍA
     const categorias = {};
-    cmds.forEach(cmd => {
+    allCmds.forEach(cmd => {
       const cat = (cmd.category || "otros").toLowerCase();
       if (!categorias[cat]) categorias[cat] = [];
       categorias[cat].push(cmd);
     });
 
-    // 🎨 MENÚ PRO
+    // DISEÑO HACKER DARK
     let menu = `
-╭━━━〔 *𝗠𝗘𝗡𝗨 𝗣𝗥𝗢* 〕━━━╮
-┃ 👋 ${saludo}, *${m.pushName || "Usuario"}*
-┃ 🚀 Versión del bot: *${version}*
-┃ 👑 Creador: *DevYer*
-╰━━━━━━━━━━━━━━━━━━━━━━╯
+𖤐═━「 *DARK SYSTEM ONLINE* 」━═𖤐
+
+⚫ Estado: *ACTIVO*
+⚫ Usuario: *${m.pushName || "Desconocido"}*
+⚫ Versión: *${version}*
+⚫ Hora del sistema: ${saludo}
+
+⛧ *CATEGORIES LOADED:*  
 `;
 
-    // Agregar categorías al menú
+    // LISTAR CATEGORÍAS Y COMANDOS
     for (const cat in categorias) {
-      const icon = iconos[cat] || "📁";
+      const symbol = iconos[cat] || "▪";
 
-      menu += `\n┌─── ${icon} *${cat.toUpperCase()}*\n`;
+      menu += `\n${symbol}  *${cat.toUpperCase()}*\n`;
 
       categorias[cat].forEach(cmd => {
-        menu += `│ • *!${cmd.command.join(", !")}*\n│    ${cmd.description}\n`;
+        menu += `   ╰─ ⟦ !${cmd.command.join(", !")} ⟧  
+       ↳ ${cmd.description}\n`;
       });
-
-      menu += "└──────────────────────\n";
     }
 
-    menu += `\n✨ Para usar un comando escribe: *!comando*\n`;
+    menu += `
+━━━━━━━━━━━━━━━━━━━━
+⌁ *USA:* !comando  
+⌁ Modo: Hacker Oscuro  
+━━━━━━━━━━━━━━━━━━━━
+`;
 
-    // Enviar menú
-    await client.sendMessage(chatId, { text: menu });
+    // ENVÍO FINAL (IMAGEN + MENÚ)
+    await client.sendMessage(chatId, {
+      image: banner,
+      caption: menu
+    });
   }
 };
