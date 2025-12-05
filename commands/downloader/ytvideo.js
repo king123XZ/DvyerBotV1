@@ -5,57 +5,42 @@ const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
   command: ["ytvideo"],
-  description: "Descarga un video de YouTube directamente",
+  description: "Descarga automáticamente un video de YouTube",
   category: "downloader",
   run: async (client, m, args) => {
     const chatId = m?.chat || m?.key?.remoteJid;
-    if (!chatId) {
-      console.warn("⚠️ No se pudo obtener chatId del mensaje");
-      console.log("Mensaje recibido:", m);
-      return;
-    }
+    if (!chatId) return console.warn("⚠️ No se pudo obtener chatId del mensaje");
 
-    if (!args[0]) {
-      return client.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: m });
-    }
-
-    const query = args.join(" ");
-    await client.sendMessage(chatId, { text: `⏳ Buscando video: *${query}* ...` }, { quoted: m });
+    if (!args[0]) return client.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista." }, { quoted: m });
 
     try {
-      // Buscar el video
+      // Buscar el primer video
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
-        params: { q: query },
+        params: { q: args.join(" ") },
         headers: { Authorization: `Bearer ${API_KEY}` }
       });
 
-      const results = res.data?.Result;
-      if (!results || results.length === 0) {
-        return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
-      }
+      const video = res.data?.Result?.[0];
+      if (!video) return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
 
-      const video = results[0]; // Primer resultado
+      // Mensaje de descarga
+      await client.sendMessage(chatId, { text: `⏳ Descargando: *${video.titulo}* ...` }, { quoted: m });
 
-      // Aviso de descarga
-      await client.sendMessage(chatId, { text: `⏳ Descargando video: *${video.titulo}* ...` }, { quoted: m });
-
-      // Llamada a la API de descarga
+      // Descargar video
       const downloadRes = await axios.get(`${API_BASE}/api/download/yt.js`, {
         params: { url: video.url, format: "video" },
         headers: { Authorization: `Bearer ${API_KEY}`, "X-API-Key": API_KEY }
       });
 
       const data = downloadRes.data.data;
-      if (!data || !data.video) {
-        return client.sendMessage(chatId, { text: "❌ No se pudo obtener el video." }, { quoted: m });
-      }
+      if (!data?.video) return client.sendMessage(chatId, { text: "❌ No se pudo obtener el video." }, { quoted: m });
 
-      // Enviar video
+      // Enviar video directamente
       await client.sendMessage(chatId, {
         video: { url: data.video },
         mimetype: "video/mp4",
         fileName: `${video.titulo || "video"}.mp4`,
-        caption: `🎬 *${video.titulo}*\n📌 Canal: ${video.canal}\n⏱ Duración: ${video.duracion}`
+        caption: `🎬 ${video.titulo}\n📌 Canal: ${video.canal}\n⏱ Duración: ${video.duracion}`
       }, { quoted: m });
 
     } catch (err) {
