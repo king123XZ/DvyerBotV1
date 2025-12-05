@@ -76,12 +76,12 @@ module.exports = {
       let outFile = inFile;
       if (path.extname(inFile) !== ".mp3") {
         outFile = await convertToMp3(inFile);
-        fs.unlinkSync(inFile).catch(() => {});
+        try { fs.unlinkSync(inFile); } catch(e) {}
       }
 
       // Limitar a 99MB
       if (fileSizeMB(outFile) > 99) {
-        fs.unlinkSync(outFile).catch(() => {});
+        try { fs.unlinkSync(outFile); } catch(e) {}
         return m.reply("❌ El archivo es demasiado grande (>99MB).");
       }
 
@@ -95,7 +95,8 @@ module.exports = {
         caption
       }, { quoted: m });
 
-      fs.unlinkSync(outFile).catch(() => {});
+      try { fs.unlinkSync(outFile); } catch(e) {}
+
       await client.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 
     } catch (err) {
@@ -104,5 +105,3 @@ module.exports = {
     }
   }
 };
-
-
