@@ -6,8 +6,7 @@
  * Año: 2025
  * Librería: Baileys
  * 
- * Nota: No borres los créditos, ni te pongas
- * créditos que no son tuyos, respeta el trabajo.
+ * Nota: No borres los créditos.
  * ================================
  **/
 
@@ -51,17 +50,10 @@ const usePairingCode = true;
 
 const log = {
   info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
-  success: (msg) =>
-    console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
-  warn: (msg) =>
-    console.log(
-      chalk.bgYellowBright.blueBright.bold(`WARNING`),
-      chalk.yellow(msg),
-    ),
-  warning: (msg) =>
-    console.log(chalk.bgYellowBright.red.bold(`WARNING`), chalk.yellow(msg)),
-  error: (msg) =>
-    console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg)),
+  success: (msg) => console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
+  warn: (msg) => console.log(chalk.bgYellowBright.blueBright.bold(`WARNING`), chalk.yellow(msg)),
+  warning: (msg) => console.log(chalk.bgYellowBright.red.bold(`WARNING`), chalk.yellow(msg)),
+  error: (msg) => console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg)),
 };
 
 const userInfoSyt = () => {
@@ -78,16 +70,10 @@ console.log(
   ),
 );
 print("OS", `${os.platform()} ${os.release()} ${os.arch()}`);
-print(
-  "Actividad",
-  `${Math.floor(os.uptime() / 3600)} h ${Math.floor((os.uptime() % 3600) / 60)} m`,
-);
+print("Actividad", `${Math.floor(os.uptime() / 3600)} h ${Math.floor((os.uptime() % 3600) / 60)} m`);
 print("Shell", process.env.SHELL || process.env.COMSPEC || "desconocido");
 print("CPU", os.cpus()[0]?.model.trim() || "unknown");
-print(
-  "Memoria",
-  `${(os.freemem() / 1024 / 1024).toFixed(0)} MiB / ${(os.totalmem() / 1024 / 1024).toFixed(0)} MiB`,
-);
+print("Memoria", `${(os.freemem() / 1024 / 1024).toFixed(0)} MiB / ${(os.totalmem() / 1024 / 1024).toFixed(0)} MiB`);
 print("Script version", `v${require("./package.json").version}`);
 print("Node.js", process.version);
 print("Baileys", `WhiskeySockets/baileys`);
@@ -106,6 +92,7 @@ async function startBot() {
 
   console.info = () => {};
   console.debug = () => {};
+
   const client = makeWASocket({
     version,
     logger: pino({ level: "silent" }),
@@ -123,10 +110,10 @@ async function startBot() {
       log.info("Solicitando código de emparejamiento...");
       const pairing = await client.requestPairingCode(phoneNumber, "1234MINI");
       log.success(
-        `Código de emparejamiento: ${chalk.cyanBright(pairing)} (expira en 15s)`,
+        `Código de emparejamiento: ${chalk.cyanBright(pairing)} (expira en 15s)`
       );
     } catch (err) {
-      log.error("Error al solicitar el código de emparejamiento:", err);
+      log.error("Error al solicitar el código:", err);
       exec("rm -rf ./lurus_session/*");
       process.exit(1);
     }
@@ -138,62 +125,28 @@ async function startBot() {
   client.sendText = (jid, text, quoted = "", options) =>
     client.sendMessage(jid, { text, ...options }, { quoted });
 
-  client.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
-    if (connection === "close") {
-      const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-      if (reason === DisconnectReason.connectionLost) {
-        log.warning(
-          "Se perdió la conexión al servidor, intento reconectarme..",
-        );
-        startBot();
-      } else if (reason === DisconnectReason.connectionClosed) {
-        log.warning("Conexión cerrada, intentando reconectarse...");
-        startBot();
-      } else if (reason === DisconnectReason.restartRequired) {
-        log.warning("Es necesario reiniciar..");
-        startBot();
-      } else if (reason === DisconnectReason.timedOut) {
-        log.warning("Tiempo de conexión agotado, intentando reconectarse...");
-        startBot();
-      } else if (reason === DisconnectReason.badSession) {
-        log.warning("Eliminar sesión y escanear nuevamente...");
-        startBot();
-      } else if (reason === DisconnectReason.connectionReplaced) {
-        log.warning("Primero cierre la sesión actual...");
-      } else if (reason === DisconnectReason.loggedOut) {
-        log.warning("Escanee nuevamente y ejecute...");
-        exec("rm -rf ./lurus_session/*");
-        process.exit(1);
-      } else if (reason === DisconnectReason.forbidden) {
-        log.error("Error de conexión, escanee nuevamente y ejecute...");
-        exec("rm -rf ./lurus_session/*");
-        process.exit(1);
-      } else if (reason === DisconnectReason.multideviceMismatch) {
-        log.warning("Inicia nuevamente");
-        exec("rm -rf ./lurus_session/*");
-        process.exit(0);
-      } else {
-        client.end(
-          `Motivo de desconexión desconocido : ${reason}|${connection}`,
-        );
-      }
-    }
-    if (connection === "open") {
-      log.success("Su conexión fue exitosa");
-    }
-  });
-
+  // =====================================================
+  // 🔥 ARREGLO ANTI-MENSAJES DUPLICADOS
+  // =====================================================
   client.ev.on("messages.upsert", async ({ messages }) => {
     try {
       let m = messages[0];
       if (!m.message) return;
+
+      // 🔥 FILTROS IMPORTANTES (NUEVOS)
+      if (m.key.fromMe) return; // evita duplicados
+      if (m.message.protocolMessage) return; // evita mensajes del sistema
+      if (m?.message?.senderKeyDistributionMessage) return; // evita spam MD
+
       m.message =
         Object.keys(m.message)[0] === "ephemeralMessage"
           ? m.message.ephemeralMessage.message
           : m.message;
+
       if (m.key && m.key.remoteJid === "status@broadcast") return;
+
       m = smsg(client, m);
+
       require("./main")(client, m, messages);
     } catch (err) {
       console.log(err);
@@ -211,14 +164,44 @@ async function startBot() {
     return jid;
   };
 
+  client.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+    const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+
+    if (connection === "close") {
+      switch (reason) {
+        case DisconnectReason.connectionLost:
+        case DisconnectReason.connectionClosed:
+        case DisconnectReason.restartRequired:
+        case DisconnectReason.timedOut:
+        case DisconnectReason.badSession:
+          log.warning("Reconectando...");
+          return startBot();
+
+        case DisconnectReason.loggedOut:
+        case DisconnectReason.forbidden:
+        case DisconnectReason.multideviceMismatch:
+          log.warning("Debe escanear nuevamente...");
+          exec("rm -rf ./lurus_session/*");
+          return process.exit(0);
+      }
+    }
+
+    if (connection === "open") {
+      log.success("Conexión exitosa 🚀");
+    }
+  });
+
   client.ev.on("creds.update", saveCreds);
 }
 
 startBot();
+
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
   fs.unwatchFile(file);
-  console.log(chalk.yellowBright(`Se actualizo el archivo ${__filename}`));
+  console.log(chalk.yellowBright(`Archivo actualizado: ${__filename}`));
   delete require.cache[file];
   require(file);
 });
+
