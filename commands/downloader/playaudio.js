@@ -1,64 +1,88 @@
 const axios = require('axios');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+
+const API_KEY = 'M8EQKBf7LhgH';
+const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
-  command: ["play", "playaudio"],
-  description: "Buscar y descargar audio de YouTube usando Sky API",
+  command: ["play","ytplay","ytaudio"],
+  description: "Buscar y descargar audio de YouTube",
   category: "downloader",
   run: async (client, m, args) => {
     const chatId = m.chat;
     if (!args[0]) return m.reply("⚠️ Ingresa el nombre de la canción o enlace.");
 
-    const query = args.join(" ");
-    const SKY_API_KEY = "M8EQKBf7LhgH";
-    const TMP_DIR = path.join(__dirname, "../tmp");
-    if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR);
-
-    await m.reply("⏳ Buscando canción...");
+    await m.reply("⏳ Buscando la canción...");
 
     try {
-      // 1️⃣ Buscar con Sky API ytsearch
-      const searchRes = await axios.get('https://api-sky.ultraplus.click/api/utilidades/ytsearch.js', {
-        params: { q: query },
-        headers: { Authorization: `Bearer ${SKY_API_KEY}` }
+      // 1) Buscar con ytsearch.js
+      let search = args.join(" ");
+      const searchRes = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
+        params: { q: search },
+        headers: { Authorization: `Bearer ${API_KEY}` }
       });
+      const videos = searchRes.data?.result;
+      if (!videos || videos.length === 0) return m.reply("❌ No se encontraron resultados.");
 
-      const videos = searchRes.data?.data;
-      if (!videos || !videos.length) return m.reply("❌ No se encontraron resultados.");
-
-      // Tomar el primer resultado
-      const video = videos[0];
+      const video = videos[0]; // Primer resultado
       const videoUrl = video.url;
       const title = video.title;
+      const thumbnail = video.thumbnail;
 
-      await m.reply(`✅ Encontrado: ${title}\n⏳ Descargando audio...`);
+      await m.reply(`✅ Encontrado: *${title}*\n⏳ Descargando audio...`);
 
-      // 2️⃣ Descargar audio con Sky API
-      const downloadRes = await axios.get('https://api-sky.ultraplus.click/api/download/yt.js', {
-        params: { url: videoUrl, format: "audio" },
-        headers: { Authorization: `Bearer ${SKY_API_KEY}` }
+      // 2) Descargar audio con download/yt.js
+      const downloadRes = await axios.get(`${API_BASE}/api/download/yt.js`, {
+        params: { url: videoUrl, format: 'audio' },
+        headers: { Authorization: `Bearer ${API_KEY}` }
       });
 
-      const audioUrl = downloadRes.data.data?.audio;
-      if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
+      const data = downloadRes.data.data;
+      if (!data || !data.audio) return m.reply("❌ No se pudo obtener el audio.");
 
-      // 3️⃣ Descargar el audio a buffer
-      const audioResp = await axios.get(audioUrl, { responseType: 'arraybuffer' });
-      const audioBuffer = Buffer.from(audioResp.data);
+      // 3) Descargar audio al servidor temporalmente
+      const tmpDir = path.join(__dirname, '../tmp');
+      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
-      // 4️⃣ Enviar a WhatsApp
+      const audioPath = path.join(tmpDir, `${Date.now()}_in.mp3`);
+      const audioResStream = await axios.get(data.audio, { responseType: 'stream' });
+      const writer = fs.createWriteStream(audioPath);
+      audioResStream.data.pipe(writer);
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+
+      // 4) Opcional: convertir a mp3 128k si no lo es
+      const outPath = path.join(tmpDir, `${Date.now()}_out.mp3`);
+      await new Promise((resolve, reject) => {
+        ffmpeg(audioPath)
+          .audioCodec('libmp3lame')
+          .audioBitrate('128k')
+          .format('mp3')
+          .save(outPath)
+          .on('end', resolve)
+          .on('error', reject);
+      });
+      fs.unlinkSync(audioPath); // borrar original
+      const finalPath = outPath;
+
+      // 5) Enviar audio a WhatsApp
+      const buffer = fs.readFileSync(finalPath);
       await client.sendMessage(chatId, {
-        audio: audioBuffer,
+        audio: buffer,
         mimetype: 'audio/mpeg',
-        fileName: `${title}.mp3`
+        fileName: `${title}.mp3`,
+        caption: `🎵 *${title}*`
       }, { quoted: m });
 
-      await m.reply("✅ Audio enviado correctamente.");
+      fs.unlinkSync(finalPath);
 
-    } catch (e) {
-      console.error("❌ Error al procesar .play:", e);
-      await m.reply("❌ Ocurrió un error al buscar o descargar la canción.");
+    } catch (err) {
+      console.error("❌ Error al usar la API:", err);
+      m.reply("❌ Ocurrió un error al procesar la canción.");
     }
   }
 };
