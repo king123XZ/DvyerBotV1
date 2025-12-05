@@ -20,9 +20,9 @@ module.exports = {
 `;
 
     const buttons = [
-      { buttonId: "menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
-      { buttonId: "menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: "menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
+      { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
     ];
 
     await client.sendMessage(m.chat, {
