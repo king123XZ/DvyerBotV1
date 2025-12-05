@@ -22,8 +22,6 @@ module.exports = {
     if (menuSent[chatId]) return;
     menuSent[chatId] = true;
 
-    const cmds = [...global.comandos.values()];
-
     // Saludo según hora
     const hour = parseInt(moment.tz("America/Mexico_City").format("HH"));
     const ucapan =
@@ -47,11 +45,11 @@ module.exports = {
     await delay(500);
 
     // Categorías predefinidas para botones
-    const buttonCategories = [".downloader", "General", "Entretenimiento", "Otros"];
+    const buttonCategories = ["Downloader", "General", "Entretenimiento", "Otros"];
 
     // Crear botones dinámicos
     const buttons = buttonCategories.map(cat => ({
-      buttonId: `category_${cat.toLowerCase()}`, // ⚠ Backticks necesarios
+      buttonId: `category_${cat.toLowerCase()}`,
       buttonText: { displayText: cat },
       type: 1
     }));
@@ -59,7 +57,11 @@ module.exports = {
     // Enviar imagen con botones
     await client.sendMessage(chatId, {
       image: buffer,
-      caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
+      caption:
+`╭───❮ Menú de comandos ❯───╮
+${ucapan}, ${m.pushName || "Usuario"}
+Versión: ${version}
+╰─────────────────────╯`,
       footer: "DevYer",
       buttons,
       headerType: 4
@@ -82,28 +84,40 @@ module.exports = {
 
     let commandsInCategory = [];
 
+    // ============================
+    // 📂 CATEGORÍA: DOWNLOADER
+    // ============================
     if (category === "downloader") {
-      // Leer solo comandos de descarga desde tu archivo
       try {
         commandsInCategory = require(path.join(__dirname, "../comandos-descarga.js"));
       } catch (e) {
-        console.error("Error cargando comandos-descarga.js:", e);
+        console.error("❌ Error cargando comandos-descarga.js:", e);
+        return client.sendMessage(chatId, { text: "Error cargando comandos de descargas." });
       }
-    } else {
-      // Para otras categorías, usar global.comandos
-      const cmds = [...global.comandos.values()];
-      commandsInCategory = cmds.filter(c => (c.category || "otros").toLowerCase() === category);
     }
 
+    // ============================
+    // 📂 OTRAS CATEGORÍAS
+    // ============================
+    else {
+      const cmds = [...global.comandos.values()];
+      commandsInCategory = cmds.filter(
+        c => (c.category || "otros").toLowerCase() === category
+      );
+    }
+
+    // Sin comandos
     if (!commandsInCategory.length) {
-      return client.sendMessage(chatId, { text: `No hay comandos disponibles en la categoría *${category}*.` });
+      return client.sendMessage(chatId, { text: `⚠️ No hay comandos disponibles en la categoría *${category}*.` });
     }
 
     // Crear mensaje profesional con los comandos
-    let text = `╭───❮ Comandos: ${category.charAt(0).toUpperCase() + category.slice(1)} ❯───╮\n\n`;
+    let text = `╭───❮ Comandos: ${category.toUpperCase()} ❯───╮\n\n`;
+
     commandsInCategory.forEach(cmd => {
       text += `• !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n`;
     });
+
     text += `\n╰──────────────────────────╯`;
 
     await client.sendMessage(chatId, { text });
