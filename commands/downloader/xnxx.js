@@ -4,8 +4,8 @@ const axios = require('axios');
 const API_BASE = 'https://api-sky.ultraplus.click';
 const API_KEY  = 'M8EQKBf7LhgH'; // tu API Key
 
-async function handler({ msg, conn, args, command }) {
-  const chatId = msg?.key?.remoteJid || (msg?.from || msg?.chat?.id);
+async function handler(msg, { conn, args, command }) {
+  const chatId = msg?.key?.remoteJid || msg?.from;
   if (!chatId) return;
 
   const text = args.join(" ");
@@ -30,7 +30,7 @@ async function handler({ msg, conn, args, command }) {
       throw new Error('No se pudo obtener el video de la URL.');
     }
 
-    const data = res.data.data; // { title, video, thumbnail, duration }
+    const data = res.data.data;
 
     // Enviar miniatura con info
     if (data.thumbnail) {
@@ -61,7 +61,7 @@ async function handler({ msg, conn, args, command }) {
   }
 }
 
-// Exportando en formato compatible con tu bot
+// Exporta como tu bot espera
 module.exports = {
   run: handler,
   command: ["xnxx", "xn"]
