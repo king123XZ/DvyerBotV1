@@ -1,59 +1,73 @@
 const axios = require('axios');
-
-const API_KEY = 'M8EQKBf7LhgH';
-const API_BASE = 'https://api-sky.ultraplus.click';
-
-function getChatId(msg) {
-  if (msg?.key?.remoteJid) return msg.key.remoteJid;
-  if (msg?.chat) return msg.chat;
-  if (msg?.chatId) return msg.chatId;
-  return null;
-}
+const yts = require('yt-search');
 
 module.exports = {
-  command: ["play", "ytsearch", "yt"],
-  description: "Buscar videos de YouTube y enviar enlace",
+  command: ["youtube", "yt", "ytaudio"],
+  description: "Descarga solo el audio de YouTube usando tu API, mejorando búsqueda",
   category: "downloader",
-  run: async (msg, { conn, args }) => {
-    const chatId = getChatId(msg);
-    if (!chatId) return console.log("⚠️ No se pudo obtener chatId del mensaje");
+  use: "https://www.youtube.com/",
+  run: async (client, m, args) => {
+    if (!args[0]) return m.reply("Ingresa el enlace o nombre de un video de YouTube.");
 
-    if (!args || args.length === 0) {
-      return conn.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: msg });
-    }
-
-    const query = args.join(" ");
-    await conn.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: msg });
+    await m.reply("⏳ Procesando audio...");
 
     try {
-      const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
-        params: { q: query },
-        headers: { Authorization: `Bearer ${API_KEY}` }
-      });
+      let videoUrl = args[0];
+      const apiKey = "M8EQKBf7LhgH";
 
-      const results = res.data?.result;
-      if (!results || results.length === 0) {
-        return conn.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: msg });
+      // Si no es enlace, buscar por nombre con yt-search
+      if (!videoUrl.startsWith("http")) {
+        const { videos } = await yts(videoUrl);
+        if (!videos.length) return m.reply("❌ No se encontraron resultados.");
+        
+        // Elegir el video más relevante (primer resultado)
+        videoUrl = videos[0].url;
       }
 
-      const video = results[0];
-      const replyText = `
-🎬 *Título:* ${video.title}
-📌 *Canal:* ${video.author}
-⏱ *Duración:* ${video.duration}
-👁 *Vistas:* ${video.views}
-🔗 *Enlace:* ${video.url}
-      `.trim();
+      // Llamada a la API para descargar audio
+      const res = await axios.get("https://api-sky.ultraplus.click/api/download/yt.js", {
+        params: { url: videoUrl, format: "audio" },
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "X-API-Key": apiKey
+        }
+      });
 
-      await conn.sendMessage(chatId, {
-        image: { url: video.thumbnail },
-        caption: replyText
-      }, { quoted: msg });
+      const data = res.data.data;
+      if (!data || !data.audio) return m.reply("❌ No se pudo obtener el audio.");
 
-    } catch (err) {
-      console.error("❌ Error al usar API de búsqueda:", err.message || err);
-      await conn.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: msg });
+      const caption = `🎵 YouTube Audio\nTítulo: ${data.title}\nDuración: ${data.duration || "Desconocida"}s`;
+
+      await client.sendMessage(
+        m.chat,
+        {
+          audio: { url: data.audio },
+          mimetype: "audio/mpeg",
+          fileName: `${data.title || "youtube"}.mp3`,
+          caption,
+          contextInfo: {
+            externalAdReply: {
+              mediaUrl: videoUrl,
+              mediaType: 2,
+              description: data.title,
+              title: data.title,
+              thumbnailUrl: data.thumbnail
+            }
+          }
+        },
+        { quoted: m }
+      );
+
+    } catch (e) {
+      if (e.response) {
+        const code = e.response.status;
+        if (code === 401) return m.reply("❌ Key inválida o no enviada.");
+        if (code === 402) return m.reply("❌ No tienes solicitudes restantes.");
+        if (code === 429) return m.reply("❌ Límite de solicitudes alcanzado. Intenta más tarde.");
+        if (code === 500) return m.reply("❌ Error interno de la API.");
+      }
+      console.error("Error al descargar audio de YouTube:", e);
+      m.reply("❌ Ocurrió un error al procesar el audio de YouTube.");
     }
-  }
+  },
 };
-
