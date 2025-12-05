@@ -10,6 +10,8 @@ const API_BACKUP = 'https://api-ultra.yersonapis.workers.dev/ytvideo';
 module.exports = {
   command: ["ytdoc"],
   description: "Descargar un video de YouTube en documento 360p",
+
+  // ✅ CATEGORÍA DEFINIDA
   category: "downloader",
 
   run: async (client, m, args) => {
@@ -43,13 +45,13 @@ module.exports = {
 
       let res;
 
-      // Intento principal siempre en 360p
+      // Intento principal (360p)
       try {
         const apiRes = await axios.get(API_DOWNLOAD, {
           params: { 
             url: videoUrl, 
             format: "video",
-            quality: "360"   // 👈 FORZAR 360p
+            quality: "360"
           },
           headers: { Authorization: `Bearer ${API_KEY}` },
           timeout: 15000
@@ -67,7 +69,7 @@ module.exports = {
         const backup = await axios.get(API_BACKUP, {
           params: { 
             url: videoUrl,
-            quality: "360" // 👈 backup también en 360p
+            quality: "360"
           },
           responseType: "arraybuffer"
         });
@@ -75,7 +77,7 @@ module.exports = {
         res = backup;
       }
 
-      // ENVÍO COMO DOCUMENTO .MP4 EN 360p
+      // Enviar como documento MP4
       await client.sendMessage(
         chatId,
         {
@@ -98,3 +100,4 @@ module.exports = {
     }
   }
 };
+
