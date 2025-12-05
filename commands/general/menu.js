@@ -49,7 +49,7 @@ module.exports = {
 
     // Crear botones dinámicos
     const buttons = buttonCategories.map(cat => ({
-      buttonId: `category_${cat.toLowerCase()}`,
+      buttonId: category_${cat.toLowerCase()},
       buttonText: { displayText: cat },
       type: 1
     }));
@@ -57,7 +57,7 @@ module.exports = {
     // Enviar imagen con botones
     await client.sendMessage(chatId, {
       image: buffer,
-      caption: `╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯`,
+      caption: ╭───❮ Menú de comandos ❯───╮\n${ucapan}, ${m.pushName || "Usuario"}\nVersión: ${version}\n╰─────────────────────╯,
       footer: "DevYer",
       buttons,
       headerType: 4
@@ -94,16 +94,16 @@ module.exports = {
     }
 
     if (!commandsInCategory.length) {
-      return client.sendMessage(chatId, { text: `No hay comandos disponibles en la categoría *${category}*.` });
+      return client.sendMessage(chatId, { text: No hay comandos disponibles en la categoría *${category}*. });
     }
 
     // Crear mensaje profesional con los comandos
-    let text = `╭───❮ Comandos: ${category.charAt(0).toUpperCase() + category.slice(1)} ❯───╮\n\n`;
+    let text = ╭───❮ Comandos: ${category.charAt(0).toUpperCase() + category.slice(1)} ❯───╮\n\n;
     commandsInCategory.forEach(cmd => {
-      text += `• !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n`;
+      text += • !${cmd.command.join(', !')} → ${cmd.description || "Sin descripción"}\n;
     });
-    text += `\n╰──────────────────────────╯`;
+    text += \n╰──────────────────────────╯;
 
     await client.sendMessage(chatId, { text });
   }
-};
+};  no responde el menu
