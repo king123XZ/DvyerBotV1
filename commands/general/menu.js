@@ -8,7 +8,7 @@ module.exports = {
   run: async (client, m) => {
 
     // Imagen del menú (asegúrate de tenerla)
-    const PP = fs.readFileSync("./media/menu.jpg");
+    const PP = fs.readFileSync("./media/menu.png");
 
     // ————————————————
     // 📌 Extraer categorías dinámicas
