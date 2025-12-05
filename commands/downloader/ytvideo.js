@@ -5,7 +5,7 @@ const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
   command: ["ytvideo"],
-  description: "Buscar un video de YouTube y mostrar opciones de descarga",
+  description: "Descarga un video de YouTube directamente",
   category: "downloader",
   run: async (client, m, args) => {
     const chatId = m?.chat || m?.key?.remoteJid;
@@ -20,9 +20,10 @@ module.exports = {
     }
 
     const query = args.join(" ");
-    await client.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: m });
+    await client.sendMessage(chatId, { text: `⏳ Buscando video: *${query}* ...` }, { quoted: m });
 
     try {
+      // Buscar el video
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: query },
         headers: { Authorization: `Bearer ${API_KEY}` }
@@ -33,36 +34,33 @@ module.exports = {
         return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
       }
 
-      const video = results[0]; // Solo el primer resultado
+      const video = results[0]; // Primer resultado
 
-      const caption = `
-🎬 *Título:* ${video.titulo}
-📌 *Canal:* ${video.canal}
-⏱ *Duración:* ${video.duracion}
-👁 *Vistas:* ${video.vistas}
-🔗 *Enlace:* ${video.url}
-      `.trim();
+      // Aviso de descarga
+      await client.sendMessage(chatId, { text: `⏳ Descargando video: *${video.titulo}* ...` }, { quoted: m });
 
-      // Botones que llaman a tus comandos existentes con la URL
-      const buttons = [
-        { buttonId: `ytaudio|${video.url}`, buttonText: { displayText: "🎵 Descargar Audio" }, type: 1 },
-        { buttonId: `ytvideo|${video.url}`, buttonText: { displayText: "🎥 Descargar Video" }, type: 1 },
-        { buttonId: `ytdocument|${video.url}`, buttonText: { displayText: "📄 Descargar Documento" }, type: 1 }
-      ];
+      // Llamada a la API de descarga
+      const downloadRes = await axios.get(`${API_BASE}/api/download/yt.js`, {
+        params: { url: video.url, format: "video" },
+        headers: { Authorization: `Bearer ${API_KEY}`, "X-API-Key": API_KEY }
+      });
 
-      const buttonMessage = {
-        image: { url: video.miniatura },
-        caption,
-        footer: "Seleccione una opción de descarga",
-        buttons,
-        headerType: 4
-      };
+      const data = downloadRes.data.data;
+      if (!data || !data.video) {
+        return client.sendMessage(chatId, { text: "❌ No se pudo obtener el video." }, { quoted: m });
+      }
 
-      await client.sendMessage(chatId, buttonMessage, { quoted: m });
+      // Enviar video
+      await client.sendMessage(chatId, {
+        video: { url: data.video },
+        mimetype: "video/mp4",
+        fileName: `${video.titulo || "video"}.mp4`,
+        caption: `🎬 *${video.titulo}*\n📌 Canal: ${video.canal}\n⏱ Duración: ${video.duracion}`
+      }, { quoted: m });
 
     } catch (err) {
-      console.error("❌ Error al usar API de búsqueda:", err);
-      await client.sendMessage(chatId, { text: "❌ Ocurrió un error al buscar la canción." }, { quoted: m });
+      console.error("❌ Error al descargar el video:", err);
+      await client.sendMessage(chatId, { text: "❌ Ocurrió un error al descargar el video." }, { quoted: m });
     }
   }
 };
