@@ -1,3 +1,5 @@
+const fs = require("fs"); // ← ESTO FALTABA Y GENERABA EL ERROR
+
 module.exports = {
   command: ["menu", "help", "ayuda"],
   description: "Muestra el menú del bot",
@@ -5,7 +7,8 @@ module.exports = {
 
   run: async (client, m) => {
 
-    const PP = fs.readFileSync("./media/menu.jpg")
+    // Imagen del menú (asegúrate de tenerla)
+    const PP = fs.readFileSync("./media/menu.jpg");
 
     // ————————————————
     // 📌 Extraer categorías dinámicas
@@ -18,9 +21,9 @@ module.exports = {
     }
 
     // ————————————————
-    // 📌 Construir menú automáticamente
+    // 📌 Construcción del menú
     // ————————————————
-    let menuTexto = `🌙 *𝗠𝗜𝗡𝗜 𝗟𝗨𝗥𝗨𝗦 - 𝗠𝗘𝗡𝗨 𝗛𝗔𝗖𝗞𝗘𝗥*  
+    let menuTexto = `🌙 *𝗠𝗘𝗡𝗨 𝗛𝗔𝗖𝗞𝗘𝗥 - 𝗠𝗜𝗡𝗜 𝗟𝗨𝗥𝗨𝗦*  
 ┈┈┈┈┈┈┈┈┈┈┈┈  
 👤 *Usuario:* ${m.pushName}
 📅 *Fecha:* ${new Date().toLocaleDateString()}
@@ -29,25 +32,26 @@ module.exports = {
 `;
 
     for (const cat of Object.keys(categorias)) {
-      menuTexto += `\n🔥 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗜𝗔: *${cat.toUpperCase()}*\n`;
+      menuTexto += `\n🔥 *${cat.toUpperCase()}*\n`;
       categorias[cat].forEach(cmd => {
-        menuTexto += `▪︎ ${global.prefijo}${cmd}\n`;
+        menuTexto += `▪︎ .${cmd}\n`;
       });
     }
 
     // ————————————————
-    // 📌 Enviar menú con botones
+    // 📌 Menú con botones
     // ————————————————
     await client.sendMessage(m.chat, {
       image: PP,
       caption: menuTexto,
       footer: "Mini Lurus — Powered by Zam & Yerson",
       buttons: [
-        { buttonId: "menu", buttonText: { displayText: "📜 MENU" }, type: 1 },
-        { buttonId: "downloader", buttonText: { displayText: "⬇️ DESCARGAS" }, type: 1 },
-        { buttonId: "owner", buttonText: { displayText: "💻 OWNER" }, type: 1 }
+        { buttonId: ".menu", buttonText: { displayText: "📜 MENU" }, type: 1 },
+        { buttonId: ".descargas", buttonText: { displayText: "⬇️ DESCARGAS" }, type: 1 },
+        { buttonId: ".owner", buttonText: { displayText: "💻 OWNER" }, type: 1 }
       ],
       headerType: 4
     });
   }
 };
+
