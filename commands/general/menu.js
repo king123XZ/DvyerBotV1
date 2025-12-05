@@ -47,7 +47,7 @@ module.exports = {
     await delay(500);
 
     // Categorías predefinidas para botones
-    const buttonCategories = ["Downloader", "General", "Entretenimiento", "Otros"];
+    const buttonCategories = [".downloader", "General", "Entretenimiento", "Otros"];
 
     // Crear botones dinámicos
     const buttons = buttonCategories.map(cat => ({
