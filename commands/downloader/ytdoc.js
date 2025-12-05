@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 
 const API_KEY = 'M8EQKBf7LhgH';
@@ -10,7 +9,7 @@ const API_BACKUP = 'https://api-ultra.yersonapis.workers.dev/ytvideo';
 
 module.exports = {
   command: ["ytdoc"],
-  description: "Descargar un video de YouTube en doc",
+  description: "Descargar un video de YouTube en documento 360p",
   category: "downloader",
 
   run: async (client, m, args) => {
@@ -39,15 +38,19 @@ module.exports = {
       const titulo = result.titulo || "video";
 
       await client.sendMessage(chatId, {
-        text: `⬇️ *Descargando:* ${titulo}`
+        text: `⬇️ *Descargando en 360p:* ${titulo}`
       }, { quoted: m });
 
       let res;
 
-      // Intento principal
+      // Intento principal siempre en 360p
       try {
         const apiRes = await axios.get(API_DOWNLOAD, {
-          params: { url: videoUrl, format: "video" },
+          params: { 
+            url: videoUrl, 
+            format: "video",
+            quality: "360"   // 👈 FORZAR 360p
+          },
           headers: { Authorization: `Bearer ${API_KEY}` },
           timeout: 15000
         });
@@ -62,21 +65,24 @@ module.exports = {
         console.log("⚠ Servidor principal falló → usando backup");
 
         const backup = await axios.get(API_BACKUP, {
-          params: { url: videoUrl },
+          params: { 
+            url: videoUrl,
+            quality: "360" // 👈 backup también en 360p
+          },
           responseType: "arraybuffer"
         });
 
         res = backup;
       }
 
-      // ENVÍO COMO DOCUMENTO .MP4
+      // ENVÍO COMO DOCUMENTO .MP4 EN 360p
       await client.sendMessage(
         chatId,
         {
           document: res.data,
           mimetype: "video/mp4",
-          fileName: `${titulo}.mp4`,
-          caption: `📄🎬 *${titulo}*`
+          fileName: `${titulo} (360p).mp4`,
+          caption: `📄🎬 *${titulo} (360p)*`
         },
         { quoted: m }
       );
