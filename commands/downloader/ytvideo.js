@@ -4,7 +4,7 @@ const API_KEY = 'M8EQKBf7LhgH';
 const API_BASE = 'https://api-sky.ultraplus.click';
 
 module.exports = {
-  command: ["play","ytsearch","yt"],
+  command: ["ytvideo"],
   description: "Buscar un video de YouTube y mostrar opciones de descarga",
   category: "downloader",
   run: async (client, m, args) => {
