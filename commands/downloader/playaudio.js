@@ -1,8 +1,12 @@
+const axios = require('axios');
+
+const pending = {}; // para trabajos pendientes de audio/documento
+
 module.exports = {
   command: ["play"],
   description: "Busca y descarga audio usando Neoxr API",
   run: async (client, m, args) => {
-    const chatId = m.key.remoteJid; // <--- m, no msg
+    const chatId = m.key.remoteJid;
     const query = args.join(" ");
     const pref = global.prefixes?.[0] || ".";
 
@@ -37,10 +41,8 @@ module.exports = {
         caption
       }, { quoted: m });
 
-      // Guardar trabajo pendiente
       pending[preview.key.id] = { chatId, audioUrl, title, quoted: m };
 
-      // Listener único
       if (!client._playListener) {
         client._playListener = true;
         client.ev.on("messages.upsert", async ev => {
@@ -89,3 +91,24 @@ module.exports = {
     }
   }
 };
+
+async function sendAudio(client, job, asDoc, mm) {
+  const { chatId, audioUrl, title, quoted } = job;
+
+  try {
+    const audioRes = await axios.get(audioUrl, { responseType: "arraybuffer" });
+    const buffer = Buffer.from(audioRes.data);
+
+    await client.sendMessage(chatId, {
+      [asDoc ? "document" : "audio"]: buffer,
+      mimetype: "audio/mpeg",
+      fileName: `${title}.mp3`
+    }, { quoted });
+
+    await client.sendMessage(chatId, { react: { text: "✅", key: mm.key } });
+  } catch (e) {
+    console.error("Error enviando audio:", e);
+    await client.sendMessage(chatId, { text: `❌ Error al enviar el audio: ${e.message}` }, { quoted });
+  }
+}
+
