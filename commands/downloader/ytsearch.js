@@ -9,11 +9,7 @@ module.exports = {
   category: "downloader",
   run: async (client, m, args) => {
     const chatId = m?.chat || m?.key?.remoteJid;
-    if (!chatId) {
-      console.warn("⚠️ No se pudo obtener chatId del mensaje");
-      console.log("Mensaje recibido:", m);
-      return;
-    }
+    if (!chatId) return console.warn("⚠️ No se pudo obtener chatId del mensaje");
 
     if (!args[0]) {
       return client.sendMessage(chatId, { text: "⚠️ Ingresa el nombre de la canción o artista a buscar." }, { quoted: m });
@@ -33,7 +29,7 @@ module.exports = {
         return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
       }
 
-      const video = results[0]; // Solo el primer resultado
+      const video = results[0]; // Primer resultado
 
       const caption = `
 🎬 *Título:* ${video.titulo}
@@ -43,10 +39,23 @@ module.exports = {
 🔗 *Enlace:* ${video.url}
       `.trim();
 
+      // Botones que llaman al código existente directamente
       const buttons = [
-        { buttonId: `audio|${video.url}`, buttonText: { displayText: "🎵 Descargar Audio" }, type: 1 },
-        { buttonId: `video|${video.url}`, buttonText: { displayText: "🎥 Descargar Video" }, type: 1 },
-        { buttonId: `document|${video.url}`, buttonText: { displayText: "📄 Descargar Documento" }, type: 1 }
+        {
+          buttonId: `ytAudio_${video.url}`, 
+          buttonText: { displayText: "🎵 Descargar Audio" }, 
+          type: 1 
+        },
+        {
+          buttonId: `ytVideo_${video.url}`, 
+          buttonText: { displayText: "🎥 Descargar Video" }, 
+          type: 1 
+        },
+        {
+          buttonId: `ytDocument_${video.url}`, 
+          buttonText: { displayText: "📄 Descargar Documento" }, 
+          type: 1 
+        }
       ];
 
       const buttonMessage = {
@@ -58,6 +67,26 @@ module.exports = {
       };
 
       await client.sendMessage(chatId, buttonMessage, { quoted: m });
+
+      // Manejo de los botones
+      client.ev.on('messages.upsert', async ({ messages }) => {
+        const msg = messages[0];
+        if (!msg?.message?.buttonsResponseMessage) return;
+
+        const selectedId = msg.message.buttonsResponseMessage.selectedButtonId;
+        const [type, url] = selectedId.split('_'); // ytAudio, ytVideo, ytDocument
+
+        if (type === 'ytAudio') {
+          // Llamamos a tu código de ytaudio
+          require('./ytaudio.js').run(client, msg, [url]);
+        }
+        if (type === 'ytVideo') {
+          require('./ytvideo.js').run(client, msg, [url]);
+        }
+        if (type === 'ytDocument') {
+          require('./ytdocument.js').run(client, msg, [url]);
+        }
+      });
 
     } catch (err) {
       console.error("❌ Error al usar API de búsqueda:", err);
