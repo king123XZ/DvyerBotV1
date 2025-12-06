@@ -3,12 +3,13 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const handler = async (m, { text, conn, usedPrefix }) => {
-    if (!db.data.chats[m.chat].nsfw && m.isGroup) {
-        return m.reply(`ꕥ El contenido *NSFW* está desactivado en este grupo.\n\nUn *administrador* puede activarlo con el comando:\n» *${usedPrefix}nsfw on*`);
-    }
-    if (!text) {
-        return m.reply('❀ Por favor, ingresa el título o URL del video de *(xnxx)*.');
-    }
+    // Aseguramos que db.data.chats exista para que no explote
+    if (!global.db) global.db = { data: { chats: {} } };
+    db.data.chats = db.data.chats || {};
+    db.data.chats[m.chat] = db.data.chats[m.chat] || {};
+
+    // Ya no bloqueamos NSFW, funciona en cualquier chat
+    if (!text) return m.reply('❀ Por favor, ingresa el título o URL del video de *(xnxx)*.');
 
     conn.xnxx = conn.xnxx || {};
     const isUrl = text.includes('xnxx.com');
@@ -162,12 +163,12 @@ async function search(query) {
     });
 }
 
-// ✅ Export compatible con cmd.run
+// ✅ Export compatible con cmd.run y uso universal
 module.exports = {
     run: handler,
     before: handler.before,
     command: ['xnxxsearch', 'xnxxdl', 'xnxx'],
     tags: ['download'],
     help: ['xnxx'],
-    group: true
+    group: false // ahora funciona en cualquier chat
 };
