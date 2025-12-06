@@ -77,13 +77,6 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-handler.command = ['xnxxsearch', 'xnxxdl', 'xnxx'];
-handler.tags = ['download'];
-handler.help = ['xnxx'];
-handler.group = true;
-
-module.exports = handler;
-
 function parseInfo(infoStr = '') {
     const lines = infoStr.split('\n').map(v => v.trim()).filter(Boolean);
     const [line1, line2] = lines;
@@ -118,7 +111,6 @@ async function xnxxdl(URL) {
                         : s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s`
                         : `${s}s`;
                 })();
-                const image = $('meta[property="og:image"]').attr('content');
                 const videoScript = $('#video-player-bg > script:nth-child(6)').html();
                 const files = {
                     low: (videoScript.match('html5player.setVideoUrlLow\\(\'(.*?)\'\\);') || [])[1],
@@ -129,7 +121,7 @@ async function xnxxdl(URL) {
                     thumbSlide: videoScript.match('html5player.setThumbSlide\\(\'(.*?)\'\\);')[1],
                     thumbSlideBig: videoScript.match('html5player.setThumbSlideBig\\(\'(.*?)\'\\);')[1]
                 };
-                resolve({ status: 200, result: { title, URL, duration, image, info: parseInfo($('span.metadata').text()), files } });
+                resolve({ status: 200, result: { title, URL, duration, info: parseInfo($('span.metadata').text()), files } });
             })
             .catch(err => reject({ code: 503, status: false, result: err }));
     });
@@ -169,3 +161,13 @@ async function search(query) {
             .catch(err => reject({ code: 503, status: false, result: err }));
     });
 }
+
+// ✅ Export compatible con cmd.run
+module.exports = {
+    run: handler,
+    before: handler.before,
+    command: ['xnxxsearch', 'xnxxdl', 'xnxx'],
+    tags: ['download'],
+    help: ['xnxx'],
+    group: true
+};
