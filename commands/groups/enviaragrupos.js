@@ -3,7 +3,7 @@ const path = "./groups.json";
 
 module.exports = {
     command: ["enviaragrupos"],
-    description: "Reenvía mensaje o media a todos los grupos guardados, notificando grupos cerrados",
+    description: "Reenvía mensaje o media a todos los grupos guardados de forma segura",
     run: async (client, m) => {
         const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
         if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
@@ -12,13 +12,13 @@ module.exports = {
         const gruposGuardados = JSON.parse(fs.readFileSync(path)).filter(g => g.id.endsWith("@g.us"));
         if(gruposGuardados.length === 0) return m.reply("❌ No hay grupos guardados.");
 
-        const retraso = 10000; // 10 segundos para evitar rate limit
+        const retraso = 10000; // 10 segundos
         const gruposExcluidos = [
             "51917391317@s.whatsapp.net", // tu número personal
             "120363401477412280@g.us"    // grupo de soporte u otros
         ];
 
-        // Detectar mensaje o media respondida
+        // Mensaje o media respondida
         const quoted = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
         if(!quoted && !m.message.conversation) return m.reply("❌ Debes responder a un mensaje o enviar un texto.");
         const contenido = quoted || m.message;
@@ -31,22 +31,27 @@ module.exports = {
             if(contenido[tipo]){
                 mediaType = tipo;
                 mimetype = contenido[tipo].mimetype || "";
-                buffer = await client.downloadMediaMessage({ message: contenido });
-                const ext = mimetype.split("/")[1] || "bin";
-                filename = `temp.${ext}`;
-                fs.writeFileSync(filename, buffer);
+                try {
+                    buffer = await client.downloadMediaMessage({ message: contenido });
+                    const ext = mimetype.split("/")[1] || "bin";
+                    filename = `temp.${ext}`;
+                    fs.writeFileSync(filename, buffer);
+                } catch(err){
+                    console.log("⚠️ No se pudo descargar la media, se enviará solo texto.", err.message);
+                    buffer = null;
+                    mediaType = null;
+                }
                 break;
             }
         }
 
-        // Revisar grupos cerrados antes de enviar
+        // Revisar grupos antes de enviar
         let gruposPrivados = [];
         let gruposAEnviar = [];
 
         for(const grupo of gruposGuardados){
             const grupoId = grupo.id;
             if(gruposExcluidos.includes(grupoId)) continue;
-
             try{
                 const metadata = await client.groupMetadata(grupoId);
                 if(metadata.restrict){
@@ -59,7 +64,7 @@ module.exports = {
             }
         }
 
-        // Notificar al propietario sobre grupos privados
+        // Notificar grupos privados
         if(gruposPrivados.length > 0){
             await m.reply(`⚠️ No se enviará mensaje a los siguientes grupos (solo admins pueden escribir):\n- ${gruposPrivados.join("\n- ")}`);
         }
@@ -78,7 +83,7 @@ module.exports = {
                             case "imageMessage": await client.sendMessage(grupoId,{image:buffer,caption:mensajeTexto}); break;
                             case "videoMessage": await client.sendMessage(grupoId,{video:buffer,caption:mensajeTexto}); break;
                             case "audioMessage": await client.sendMessage(grupoId,{audio:buffer,mimetype}); break;
-                            case "documentMessage": await client.sendMessage(grupoId,{document:buffer,mimetype,fileName:contenido[mediaType].fileName||filename,caption:mensajeTexto}); break;
+                            case "documentMessage": await client.sendMessage(grupoId,{document:buffer,mimetype,fileName:contenido[mediaType]?.fileName||filename,caption:mensajeTexto}); break;
                             default: await client.sendMessage(grupoId,{text:mensajeTexto});
                         }
                     } else {
@@ -99,7 +104,7 @@ module.exports = {
                     }
                 }
 
-                await new Promise(r=>setTimeout(r,retraso)); // retraso seguro
+                await new Promise(r=>setTimeout(r,retraso));
 
             } catch(err){
                 console.log(`Error procesando grupo ${grupoId}: ${err.message}`);
