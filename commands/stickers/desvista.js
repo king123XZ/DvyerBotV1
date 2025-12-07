@@ -1,14 +1,13 @@
 /**
  *  🔓 Código creado por Dvyer
- *  Función: Abrir imágenes y videos enviados como vista única (view once)
+ *  Vista única → enviada directo al privado del dueño del bot
  */
 
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 module.exports = {
   command: ["abrirvista", "openview", "desvista"],
-  category: "stickers",
-  description: "Abre imágenes o videos enviados como vista única",
+  description: "Abre vistas únicas y las envía al privado del dueño",
 
   run: async (client, m) => {
     try {
@@ -18,7 +17,9 @@ module.exports = {
         });
       }
 
-      // 📌 Detectar todas las estructuras posibles de view once
+      // 📌 Dueño del bot (su propio WhatsApp)
+      const owner = client.user.id;  
+
       const qMsg = m.quoted.message;
 
       const view =
@@ -40,18 +41,29 @@ module.exports = {
       // 🖼️ Imagen
       if (img) {
         const buffer = await downloadViewOnce(img);
-        return client.sendMessage(m.chat, {
+
+        // Enviar al privado del dueño
+        await client.sendMessage(owner, {
           image: buffer,
-          caption: "🔓 *Vista única desbloqueada — Creado por Dvyer*"
+          caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
+        });
+
+        return client.sendMessage(m.chat, { 
+          text: "📩 *Vista enviada a tu privado.*" 
         });
       }
 
       // 🎬 Video
       if (vid) {
         const buffer = await downloadViewOnce(vid);
-        return client.sendMessage(m.chat, {
+
+        await client.sendMessage(owner, {
           video: buffer,
-          caption: "🔓 *Vista única desbloqueada — Creado por Dvyer*"
+          caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
+        });
+
+        return client.sendMessage(m.chat, { 
+          text: "📩 *Vista enviada a tu privado.*" 
         });
       }
 
