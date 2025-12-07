@@ -1,66 +1,47 @@
-const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
+/**
+ *  Código creado por Dvyer — VistaOpener
+ */
 
 module.exports = {
-  command: ["abrirvista", "openview", "desvista"],
+    command: ["desvista", "abrirvista"],
+    description: "Abre imágenes o videos enviados como vista previa (view once)",
+    run: async (client, m) => {
+        try {
+            const message = m.message;
 
-  run: async (client, m) => {
-    try {
-      if (!m.quoted) {
-        return client.sendMessage(m.chat, { text: "⚠️ *Responde a una imagen o video de vista única.*" });
-      }
+            // Validar que el contenido sea vista (view once)
+            const viewOnce =
+                message?.viewOnceMessage ||
+                message?.viewOnceMessageV2 ||
+                message?.viewOnceMessageV2Extension;
 
-      // 📌 Extraemos TODAS las posibles estructuras de view once
-      const qMsg = m.quoted.message;
+            if (!viewOnce) {
+                return m.reply("⚠️ *El mensaje que respondiste NO es una vista previa.*\nEnvia o responde a una vista para abrirla.");
+            }
 
-      const view =
-        qMsg?.viewOnceMessageV2?.message ||
-        qMsg?.viewOnceMessageV2Extension?.message ||
-        qMsg?.viewOnceMessage?.message ||
-        qMsg?.imageMessage?.viewOnce === true && qMsg ||
-        qMsg?.videoMessage?.viewOnce === true && qMsg;
+            // Obtener el mensaje real dentro de la vista
+            const inner = viewOnce.message;
 
-      if (!view) {
-        return client.sendMessage(m.chat, { text: "❌ *Ese mensaje no es de vista única.*" });
-      }
+            // Detectar si es imagen
+            if (inner.imageMessage) {
+                const buffer = await client.downloadMediaMessage({ message: inner });
+                await client.sendMessage(m.chat, { image: buffer }, { quoted: m });
+                return;
+            }
 
-      const img = view.imageMessage;
-      const vid = view.videoMessage;
+            // Detectar si es video
+            if (inner.videoMessage) {
+                const buffer = await client.downloadMediaMessage({ message: inner });
+                await client.sendMessage(m.chat, { video: buffer }, { quoted: m });
+                return;
+            }
 
-      // 📸 Imagen
-      if (img) {
-        const buffer = await downloadViewOnce(img);
-        return client.sendMessage(m.chat, {
-          image: buffer,
-          caption: "🔓 *Vista única desbloqueada*"
-        });
-      }
+            // Si no es foto ni video
+            m.reply("⚠️ Esta vista no contiene una imagen ni un video compatible.");
 
-      // 🎥 Video
-      if (vid) {
-        const buffer = await downloadViewOnce(vid);
-        return client.sendMessage(m.chat, {
-          video: buffer,
-          caption: "🔓 *Vista única desbloqueada*"
-        });
-      }
-
-      return client.sendMessage(m.chat, { text: "⚠️ No se pudo abrir la vista única." });
-
-    } catch (err) {
-      console.log("ERROR VISTA:", err);
-      return client.sendMessage(m.chat, { text: "❌ Ocurrió un error al intentar abrir la vista única." });
+        } catch (error) {
+            console.error("Error en desvista.js:", error);
+            m.reply("❌ Error interno al abrir la vista.");
+        }
     }
-  }
 };
-
-
-// 📥 Función para descargar imágenes/videos
-async function downloadViewOnce(msg) {
-  const type = msg.mimetype.split("/")[0];
-  const stream = await downloadContentFromMessage(msg, type);
-
-  let buffer = Buffer.from([]);
-  for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-
-  return buffer;
-}
