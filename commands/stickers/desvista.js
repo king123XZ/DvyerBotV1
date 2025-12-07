@@ -7,6 +7,7 @@ const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 module.exports = {
   command: ["abrirvista", "openview", "desvista"],
+  category: "stickers",
   description: "Abre imágenes o videos enviados como vista única",
 
   run: async (client, m) => {
