@@ -1,18 +1,13 @@
 /**
- *  Desvista Privado con verificación por respuesta
- *  Creado por Dvyer
- *
- *  - El usuario ejecuta: .desvista (respondiendo a una vista única)
- *  - El bot abre el privado del usuario y envía un mensaje pidiendo contraseña
- *  - El usuario debe RESPONDER A ESE MENSAJE en privado con: 1234
- *  - Si la contraseña coincide, el bot envía la imagen/video al privado del usuario
- *  - No se escribe nada en el chat original
+ *  Desvista Privado con verificación por respuesta (versión robusta)
+ *  Creado por Dvyer — versión mejorada para detectar respuestas/quoted en muchas formas
  */
 
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 const PASSWORD = "1234";
 const WAIT_TIMEOUT = 60 * 1000; // 60 segundos
+const DEBUG = false; // Pon true si quieres mensajes de depuración en privado (temporal)
 
 module.exports = {
   command: ["desvista", "abrirvista", "openview"],
@@ -20,11 +15,10 @@ module.exports = {
 
   run: async (client, m) => {
     try {
-      // 1) Validaciones básicas
-      if (!m.quoted) return; // debe responder a un mensaje
+      if (!m.quoted) return; // Debe responder a un mensaje en el chat original
+
       const q = m.quoted.message;
 
-      // 2) Detectar la estructura view-once
       const view =
         q?.viewOnceMessageV2?.message ||
         q?.viewOnceMessageV2Extension?.message ||
@@ -32,146 +26,152 @@ module.exports = {
         (q?.imageMessage?.viewOnce === true && q) ||
         (q?.videoMessage?.viewOnce === true && q);
 
-      if (!view) return; // no es vista única -> silencioso
+      if (!view) {
+        // silencioso: no responde en el chat original
+        if (DEBUG) await client.sendMessage(m.sender, { text: "DEBUG: No detecté view-once en el mensaje citado." });
+        return;
+      }
 
-      // 3) Preparar el contenido para enviar luego
       const IMG = view.imageMessage || null;
       const VID = view.videoMessage || null;
-      if (!IMG && !VID) return; // nada que enviar
+      if (!IMG && !VID) {
+        if (DEBUG) await client.sendMessage(m.sender, { text: "DEBUG: view-once detectado pero sin image/video." });
+        return;
+      }
 
-      // 4) Identificar privado del usuario (owner = quien ejecutó el comando)
-      const userJid = m.sender; // ej: 519xxxxxxxx@s.whatsapp.net
+      const userJid = m.sender; // privado del usuario que ejecutó el comando
 
-      // 5) Enviar mensaje en privado pidiendo que RESPONDA a ese mensaje con la contraseña
+      // 1) Preguntar en privado (el bot envía un mensaje y debe ser RESPONDIDO citándolo)
       const ask = await client.sendMessage(userJid, {
         text: "🔐 Responde a *este mensaje* con la contraseña para abrir la vista única."
       });
 
-      // 6) Esperar la respuesta del usuario en privado que cite (reply) el 'ask'
-      const confirmation = await waitForReplyToMessage(client, {
+      if (DEBUG) await client.sendMessage(userJid, { text: `DEBUG: askId=${ask.key.id}` });
+
+      // 2) Esperar respuesta robusta
+      const confirmation = await waitForReply(client, {
         chatJid: userJid,
-        quotedMsgId: ask.key.id,
         sender: userJid,
+        quotedMsgId: ask.key.id,
         timeout: WAIT_TIMEOUT
       });
 
-      // 7) Si no respondió en tiempo -> informar en privado y salir (silencioso en origen)
       if (!confirmation) {
-        // opcional: avisamos en privado que caducó
+        if (DEBUG) await client.sendMessage(userJid, { text: "DEBUG: no recibí respuesta en tiempo." });
         await client.sendMessage(userJid, { text: "⏳ Tiempo expirado. Vuelve a intentar si lo deseas." });
         return;
       }
 
-      // 8) Obtener texto de la confirmación (soporta conversation o extendedTextMessage)
+      // Extraer texto de confirmación (varias rutas)
       const confText =
         confirmation.message?.conversation ||
         confirmation.message?.extendedTextMessage?.text ||
         "";
 
       if ((confText || "").trim() !== PASSWORD) {
+        // si quiso citar pero puso texto distinto
         await client.sendMessage(userJid, { text: "❌ Contraseña incorrecta." });
         return;
       }
 
-      // 9) Contraseña correcta -> descargar y enviar el contenido AL PRIVADO del usuario
+      // ✅ Contraseña correcta -> descargar y enviar el contenido al privado
       if (IMG) {
         const buffer = await downloadViewOnce(IMG);
-        await client.sendMessage(userJid, {
-          image: buffer,
-          caption: "🔓 Vista única desbloqueada — Creado por Dvyer"
-        });
+        await client.sendMessage(userJid, { image: buffer, caption: "🔓 Vista única desbloqueada — Creado por Dvyer" });
         return;
       }
 
       if (VID) {
         const buffer = await downloadViewOnce(VID);
-        await client.sendMessage(userJid, {
-          video: buffer,
-          caption: "🔓 Vista única desbloqueada — Creado por Dvyer"
-        });
+        await client.sendMessage(userJid, { video: buffer, caption: "🔓 Vista única desbloqueada — Creado por Dvyer" });
         return;
       }
 
     } catch (err) {
       console.error("desvista.js error:", err);
-      // silencioso en el chat original; avisar solo en privado por seguridad
       try { await client.sendMessage(m.sender, { text: "❌ Error interno al procesar la vista." }); } catch(e){/* ignore */ }
     }
   }
 };
 
 /**
- * Espera una respuesta en privado que cite (reply) al mensaje `quotedMsgId`.
- * Devuelve el WebMessageInfo de la respuesta o null si timeout.
+ * waitForReply: escucha mensajes.upsert y resuelve cuando el usuario responde CITANDO ask.key.id,
+ * o cuando envía exactamente la contraseña en el privado (fallback).
+ *
+ * Opciones:
+ * - chatJid: privado del usuario (ej: 519xxxxxxxx@s.whatsapp.net)
+ * - sender: remitente esperado (mismo que chatJid)
+ * - quotedMsgId: id del mensaje que debe haber sido citado por la respuesta
+ * - timeout: ms
  */
-function waitForReplyToMessage(client, { chatJid, quotedMsgId, sender, timeout = 60000 }) {
+function waitForReply(client, { chatJid, sender, quotedMsgId, timeout = 60000 }) {
   return new Promise((resolve) => {
-    let resolved = false;
+    let done = false;
 
-    const handler = async ({ messages }) => {
+    const onUpsert = async ({ messages }) => {
       try {
         for (const msg of messages) {
-          // Solo nos interesan mensajes que vengan al chat privado del usuario
+          // solo mensajes del chat privado del usuario
           if (msg.key.remoteJid !== chatJid) continue;
           if (msg.key.fromMe) continue; // ignorar nuestros propios mensajes
-          // Confirmar remitente exacto si viene de grupo/participant
+
+          // remitente (en grupos msg.key.participant, en privado no)
           const actualSender = msg.key.participant ? msg.key.participant : msg.key.remoteJid;
           if (sender && actualSender !== sender) continue;
 
-          // Texto del mensaje
+          // obtener texto si existe
           const text =
             msg.message?.conversation ||
             msg.message?.extendedTextMessage?.text ||
             "";
 
-          // Verificar que el usuario respondió citando el mensaje (stanzaId / quotedMessage)
-          const ctx = msg.message?.extendedTextMessage?.contextInfo || msg.message?.extendedTextMessage?.contextInfo;
-          const quotedStanzaId = ctx?.stanzaId || ctx?.quotedMessage?.key?.id || ctx?.quotedMessage?.key?._serialized || ctx?.quotedMessage?.key?.id;
+          // EXTRAER contextInfo robustamente
+          const ctx = msg.message?.extendedTextMessage?.contextInfo || msg.message?.contextInfo || {};
+          const quotedId1 = ctx?.stanzaId || null;
+          const quotedId2 = ctx?.quotedMessage?.key?.id || null;
+          const quotedId3 = ctx?.quotedMessage?.key?._serialized || null;
+          const quotedId4 = ctx?.quotedMessage?.key?.remoteJid || null;
 
-          // Algunos forks usan 'contextInfo.stanzaId', otros 'contextInfo.quotedMessage' con key.id
-          const quotedMatches = quotedStanzaId === quotedMsgId;
+          const anyQuotedMatches =
+            quotedId1 === quotedMsgId ||
+            quotedId2 === quotedMsgId ||
+            quotedId3 === quotedMsgId;
 
-          // Aceptar si cita EXACTAMENTE el ask OR (fallback) si NO cita pero el texto es la contraseña
-          if (quotedMatches || (text && text.trim() === PASSWORD && !ctx?.stanzaId && !ctx?.quotedMessage)) {
+          // Aceptar si:
+          // - cita exactamente el ask (anyQuotedMatches true)
+          // OR
+          // - NO cita pero escribe exactamente la contraseña (fallback)
+          if (anyQuotedMatches || (text && text.trim() === PASSWORD)) {
             cleanup();
-            resolved = true;
+            done = true;
             resolve(msg);
             return;
           }
 
-          // También aceptar si contextInfo.quotedMessage.key.id coincide (robusto)
-          const ctxQuotedId = ctx?.quotedMessage?.key?.id;
-          if (ctxQuotedId && ctxQuotedId === quotedMsgId) {
-            cleanup();
-            resolved = true;
-            resolve(msg);
-            return;
-          }
+          // si debug activo, opcionalmente informar (se maneja en caller)
         }
       } catch (e) {
-        // ignore parsing errors
+        // ignore
       }
     };
 
     const cleanup = () => {
-      try {
-        client.ev.off("messages.upsert", handler);
-      } catch (e) { /* ignore */ }
+      try { client.ev.off("messages.upsert", onUpsert); } catch (e) {}
       clearTimeout(timer);
     };
 
-    client.ev.on("messages.upsert", handler);
+    client.ev.on("messages.upsert", onUpsert);
 
     const timer = setTimeout(() => {
-      if (resolved) return;
-      try { client.ev.off("messages.upsert", handler); } catch (e) { /* ignore */ }
+      if (done) return;
+      try { client.ev.off("messages.upsert", onUpsert); } catch (e) {}
       resolve(null);
     }, timeout);
   });
 }
 
 /**
- * Descarga el contenido view-once (image/video) y devuelve Buffer
+ * Descarga view-once (image/video) y devuelve Buffer
  */
 async function downloadViewOnce(msg) {
   const type = (msg.mimetype || "").split("/")[0] || "image";
