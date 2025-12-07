@@ -18,7 +18,7 @@ module.exports = {
             "120363401477412280@g.us"    // grupo de soporte u otros
         ];
 
-        // Mensaje citado o mensaje directo
+        // Detectar si es mensaje citado o mensaje directo
         const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const contenido = quoted || m.message;
 
@@ -94,8 +94,10 @@ module.exports = {
                             case "documentMessage": await client.sendMessage(grupoId,{document:buffer,mimetype,fileName:contenido[mediaType]?.fileName||filename,caption:mensajeTexto}); break;
                             default: await client.sendMessage(grupoId,{text:mensajeTexto});
                         }
-                    } else {
+                    } else if(mensajeTexto){
                         await client.sendMessage(grupoId,{text:mensajeTexto});
+                    } else {
+                        console.log(`⚠️ No hay contenido válido para enviar en ${grupoId}`);
                     }
                 };
 
