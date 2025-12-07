@@ -1,17 +1,20 @@
 const fs = require("fs");
 const path = "./groups.json";
 
+// JID del propietario (tu número vinculado al bot)
+const OWNER_JID = "519XXXXXXXX@c.us"; // reemplaza con tu número completo
+
 // Inicializar JSON si no existe
 if(!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify([]));
 
-module.exports = {
-    command: ["guardargupos"],
-    description: "Guarda automáticamente grupos donde el bot recibe mensajes",
-    
-    run: async (client, m) => {
-        try {
-            if(!m.isGroup) return; // Solo grupos
+client.ev.on("messages.upsert", async ({ messages }) => {
+    const m = messages[0];
+    if(!m.message) return;
+    if(m.key.fromMe) return; // ignorar mensajes del bot
 
+    // GUARDAR GRUPOS AUTOMÁTICAMENTE
+    if(m.isGroup){
+        try {
             let gruposGuardados = JSON.parse(fs.readFileSync(path));
             const grupoId = m.key.remoteJid;
 
@@ -28,25 +31,39 @@ module.exports = {
             if(!grupoExistente){
                 gruposGuardados.push({ id: grupoId, name: nombre });
                 fs.writeFileSync(path, JSON.stringify(gruposGuardados, null, 2));
-                m.reply(`✅ Grupo guardado: ${nombre}`);
-            }else{
-                // Actualizar nombre si cambió
-                if(grupoExistente.name !== nombre){
-                    grupoExistente.name = nombre;
-                    fs.writeFileSync(path, JSON.stringify(gruposGuardados, null, 2));
-                    m.reply(`ℹ️ Nombre del grupo actualizado: ${nombre}`);
-                }
-            }
+                console.log(`✅ Grupo guardado automáticamente: ${nombre}`);
 
+                // Enviar notificación solo al propietario
+                await client.sendMessage(OWNER_JID, { text: `✅ Nuevo grupo agregado: ${nombre}` });
+            } else if(grupoExistente.name !== nombre){
+                grupoExistente.name = nombre;
+                fs.writeFileSync(path, JSON.stringify(gruposGuardados, null, 2));
+                console.log(`ℹ️ Nombre del grupo actualizado automáticamente: ${nombre}`);
+            }
+        } catch(err){
+            console.log("❌ Error guardando grupo automáticamente:", err);
+        }
+    }
+
+    // DETECCIÓN DE COMANDOS SOLO PARA EL PROPIETARIO
+    let text = m.message.conversation || m.message.extendedTextMessage?.text || "";
+    text = text.trim().replace(/^\/+/,"").toLowerCase();
+
+    if(m.key.participant !== OWNER_JID && m.key.remoteJid !== OWNER_JID) return; // solo propietario
+
+    // Aquí puedes agregar tus comandos protegidos, ejemplo:
+    if(text.startsWith("listagrupos")){
+        try{
+            const gruposGuardados = JSON.parse(fs.readFileSync(path));
+            if(gruposGuardados.length === 0) return client.sendMessage(OWNER_JID,{text:"❌ No hay grupos guardados."});
+
+            const lista = gruposGuardados.map((g,i)=>`${i+1}. ${g.name}`).join("\n");
+            client.sendMessage(OWNER_JID,{text:`📋 Lista de grupos guardados (${gruposGuardados.length}):\n\n${lista}`});
         } catch(err){
             console.log(err);
-            m.reply("❌ Error al guardar el grupo.");
+            client.sendMessage(OWNER_JID,{text:"❌ Error al listar los grupos."});
         }
-    },
-
-    // Función para obtener los grupos desde otros comandos
-    getGrupos: () => {
-        if(!fs.existsSync(path)) return [];
-        return JSON.parse(fs.readFileSync(path));
     }
-};
+
+    // Aquí podrías agregar otros comandos como /enviaragrupos protegidos
+});
