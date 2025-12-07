@@ -17,7 +17,7 @@ module.exports = {
         const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
         if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
 
-        // Texto seguro: toma m.text o caption de media
+        // Texto seguro
         const text = m.text || m.message?.conversation || "";
         const comando = text.split(" ")[0].replace("/","").toLowerCase();
 
@@ -40,14 +40,19 @@ module.exports = {
 
             const tiposMedia = ["imageMessage","videoMessage","documentMessage","audioMessage","stickerMessage","animatedStickerMessage"];
             let mediaEncontrada = false;
+            let tipoGuardado = "";
 
             for(let tipo of tiposMedia){
                 if(m.message[tipo]){
+                    tipoGuardado = tipo;
+                    const mediaMessage = m.message[tipo];
                     estado.mediaType = tipo.replace("Message","").toLowerCase();
-                    estado.caption = m.message[tipo].caption || "";
+                    estado.caption = mediaMessage.caption || "";
                     estado.fileName = `data/${Date.now()}.${estado.mediaType === "video" ? "mp4" : estado.mediaType === "audio" ? "mp3" : "jpg"}`;
+
                     try{
-                        const buffer = await client.downloadMediaMessage({ message: m.message });
+                        // Descargar media correctamente
+                        const buffer = await client.downloadMediaMessage({ message: { [tipo]: mediaMessage } });
                         fs.writeFileSync(estado.fileName, buffer);
                         estado.media = estado.fileName;
                         mediaEncontrada = true;
