@@ -1,10 +1,3 @@
-/**
- * 🔹 Comando para iniciar un sub-bot
- * Solo números autorizados pueden usarlo
- * Código de emparejamiento obligatorio
- * Creado por Dvyer
- */
-
 const { useMultiFileAuthState, fetchLatestBaileysVersion, default: makeWASocket } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 
@@ -14,59 +7,52 @@ module.exports = {
 
   run: async (client, m) => {
     try {
-      // Lista de números autorizados (sin @s.whatsapp.net)
       const authorizedNumbers = [
-        "51907376960", // Bot principal / autorizado
-        "51917391317", // Sub-bot 1
-        "519XXXXXXXXX" // Sub-bot 2 (reemplazar con el número real)
-      ]; 
+        "51907376960",
+        "51917391317",
+        "519XXXXXXXXX" // reemplazar
+      ];
 
       const senderNumber = m.sender.split("@")[0];
+      if (!authorizedNumbers.includes(senderNumber)) return;
 
-      if (!authorizedNumbers.includes(senderNumber)) {
-        return client.sendMessage(m.chat, { text: "❌ No estás autorizado para iniciar un sub-bot." });
-      }
+      await client.sendMessage(m.chat, { text: "🔑 Envia tu código de emparejamiento para iniciar el sub-bot." });
 
-      // Pedir código de emparejamiento
-      await client.sendMessage(m.chat, { text: "🔑 Ingresa tu código de emparejamiento para iniciar el sub-bot:" });
+      // Escuchar solo el siguiente mensaje de ese usuario
+      const handler = async ({ messages }) => {
+        let msg = messages[0];
+        if (!msg.message || !msg.key) return;
 
-      // Esperar respuesta del usuario
-      const filter = (msg) => msg.key.fromMe === false && msg.key.remoteJid === m.chat;
-      const collected = await new Promise((resolve) => {
-        const handler = async (msg) => {
-          if (filter(msg)) {
-            resolve(msg);
-            client.ev.off("messages.upsert", handler);
-          }
-        };
-        client.ev.on("messages.upsert", handler);
-      });
+        if (msg.key.remoteJid === m.chat && !msg.key.fromMe) {
+          const pairingCode = msg.message.conversation || msg.message.extendedTextMessage?.text;
+          if (!pairingCode) return;
 
-      const pairingCode = collected.message?.conversation || collected.message?.extendedTextMessage?.text;
-      if (!pairingCode) return;
+          const { state, saveCreds } = await useMultiFileAuthState(`subbot_${senderNumber}`);
+          const { version } = await fetchLatestBaileysVersion();
 
-      // Iniciar sub-bot
-      const { state, saveCreds } = await useMultiFileAuthState(`subbot_${senderNumber}`);
-      const { version } = await fetchLatestBaileysVersion();
+          const subBot = makeWASocket({
+            version,
+            logger: pino({ level: "silent" }),
+            printQRInTerminal: false,
+            browser: ["SubBot", "Chrome", "1.0"],
+            auth: state,
+          });
 
-      const subBot = makeWASocket({
-        version,
-        logger: pino({ level: "silent" }),
-        printQRInTerminal: false,
-        browser: ["SubBot", "Chrome", "1.0"],
-        auth: state,
-      });
+          subBot.ev.on("creds.update", saveCreds);
+          await client.sendMessage(m.chat, { text: "✅ Sub-bot iniciado correctamente." });
 
-      // Guardar credenciales automáticamente
-      subBot.ev.on("creds.update", saveCreds);
+          console.log(`Sub-bot iniciado para ${senderNumber} con código: ${pairingCode}`);
 
-      client.sendMessage(m.chat, { text: "✅ Sub-bot iniciado correctamente." });
+          // Quitar el listener después de usarlo
+          client.ev.off("messages.upsert", handler);
+        }
+      };
 
-      console.log(`Sub-bot iniciado para ${senderNumber} con código ${pairingCode}`);
+      client.ev.on("messages.upsert", handler);
 
     } catch (err) {
       console.error("Error al iniciar sub-bot:", err);
-      client.sendMessage(m.chat, { text: "❌ Ocurrió un error al intentar iniciar el sub-bot." });
+      client.sendMessage(m.chat, { text: "❌ Error al iniciar el sub-bot." });
     }
   },
 };
