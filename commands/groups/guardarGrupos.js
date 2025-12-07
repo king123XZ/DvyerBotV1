@@ -1,31 +1,18 @@
-// commands/groups/guardarGrupos.js
-const fs = require("fs");
-const path = "./groups.json";
-
-// Inicializar JSON
-if(!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify([]));
-
+// commands/owner/registrargrupos.js
 module.exports = {
-    command: ["!registrarme"], // comando interno automático
+    command: ["registrargrupos"],
+    description: "Envía un comando a todos los grupos para que se registren automáticamente",
     run: async (client, m) => {
-        if(!m.isGroup) return;
+        const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
+        if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
 
-        let gruposGuardados = JSON.parse(fs.readFileSync(path));
-        const grupoId = m.key.remoteJid;
+        const chats = Array.from(client.store.chats.values()).filter(c => c.id.endsWith("@g.us"));
 
-        // Verificar duplicado
-        if(!gruposGuardados.find(g => g.id === grupoId)){
-            let nombre = grupoId;
-            try{
-                const metadata = await client.groupMetadata(grupoId);
-                nombre = metadata.subject || grupoId;
-            }catch{}
-
-            gruposGuardados.push({ id: grupoId, name: nombre });
-            fs.writeFileSync(path, JSON.stringify(gruposGuardados, null, 2));
-
-            // Notificación solo al propietario
-            await client.sendMessage(OWNER_JID, { text: `✅ Nuevo grupo registrado: ${nombre}` });
+        for(const chat of chats){
+            await client.sendMessage(chat.id, { text: "!registrarme" });
+            await new Promise(r => setTimeout(r, 1000));
         }
+
+        m.reply(`✅ Se envió el comando a ${chats.length} grupos para registrarlos.`);
     }
 };
