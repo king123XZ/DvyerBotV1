@@ -1,64 +1,92 @@
 /**
- * 🔥 Sistema Anti-ViewOnce Automático
- * Creado por Dvyer
+ *  🔓 Código creado por Dvyer
+ *  Vista única → enviada directo al privado del dueño del bot
  */
 
-import makeWASocket, { downloadContentFromMessage } from "@whiskeysockets/baileys";
+const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
-sock.ev.on("messages.upsert", async ({ messages }) => {
-    const m = messages[0];
-    if (!m.message) return;
+module.exports = {
+  command: ["abrirvista", "openview", "desvista"],
+  description: "Abre vistas únicas y las envía al privado del dueño",
 
-    const from = m.key.remoteJid;
+  run: async (client, m) => {
+    try {
+      if (!m.quoted) {
+        return client.sendMessage(m.chat, { 
+          text: "⚠️ *Responde a una imagen o video de vista única.*" 
+        });
+      }
 
-    // 📌 Identificar vista única en TODOS los chats
-    const view =
-        m.message?.viewOnceMessageV2?.message ||
-        m.message?.viewOnceMessageV2Extension?.message ||
-        m.message?.viewOnceMessage?.message;
+      // 📌 Dueño del bot (su propio WhatsApp)
+      const owner = client.user.id;  
 
-    if (!view) return;
+      const qMsg = m.quoted.message;
 
-    const img = view.imageMessage;
-    const vid = view.videoMessage;
+      const view =
+        qMsg?.viewOnceMessageV2?.message ||
+        qMsg?.viewOnceMessageV2Extension?.message ||
+        qMsg?.viewOnceMessage?.message ||
+        (qMsg?.imageMessage?.viewOnce === true && qMsg) ||
+        (qMsg?.videoMessage?.viewOnce === true && qMsg);
 
-    // 💎 Donde se enviará la vista única — TU PRIVADO
-    const owner = sock.user.id;
+      if (!view) {
+        return client.sendMessage(m.chat, { 
+          text: "❌ *Ese mensaje no es de vista única.*" 
+        });
+      }
 
-    // 🖼️ Imagen
-    if (img) {
+      const img = view.imageMessage;
+      const vid = view.videoMessage;
+
+      // 🖼️ Imagen
+      if (img) {
         const buffer = await downloadViewOnce(img);
 
-        await sock.sendMessage(owner, {
-            image: buffer,
-            caption: "🔓 *Vista única recibida automáticamente — Dvyer Bot*"
+        // Enviar al privado del dueño
+        await client.sendMessage(owner, {
+          image: buffer,
+          caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
         });
 
-        return;
-    }
+        return client.sendMessage(m.chat, { 
+          text: "📩 *Vista enviada a tu privado.*" 
+        });
+      }
 
-    // 🎥 Video
-    if (vid) {
+      // 🎬 Video
+      if (vid) {
         const buffer = await downloadViewOnce(vid);
 
-        await sock.sendMessage(owner, {
-            video: buffer,
-            caption: "🔓 *Vista única recibida automáticamente — Dvyer Bot*"
+        await client.sendMessage(owner, {
+          video: buffer,
+          caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
         });
 
-        return;
-    }
-});
+        return client.sendMessage(m.chat, { 
+          text: "📩 *Vista enviada a tu privado.*" 
+        });
+      }
 
-// 📥 Descargar contenido
+      return client.sendMessage(m.chat, { 
+        text: "⚠️ No se pudo abrir la vista única." 
+      });
+
+    } catch (err) {
+      console.log("ERROR EN VISTA ÚNICA:", err);
+      return client.sendMessage(m.chat, { 
+        text: "❌ Ocurrió un error al intentar abrir la vista única." 
+      });
+    }
+  }
+};
+
+// 📥 Función para descargar imágenes y videos de vista única
 async function downloadViewOnce(msg) {
-    const type = msg.mimetype.split("/")[0];
-    const stream = await downloadContentFromMessage(msg, type);
+  const type = msg.mimetype.split("/")[0];
+  const stream = await downloadContentFromMessage(msg, type);
 
-    let buffer = Buffer.from([]);
-    for await (const chunk of stream) {
-        buffer = Buffer.concat([buffer, chunk]);
-    }
+  let buffer = Buffer.from([]);
+  for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
 
-    return buffer;
+  return buffer;
 }
