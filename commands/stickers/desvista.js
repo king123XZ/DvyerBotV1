@@ -16,7 +16,7 @@ module.exports = {
       // 🔐 LISTA DE NÚMEROS AUTORIZADOS
       const allowedUsers = [
         "51907376960@s.whatsapp.net",  // Tu número
-        "xxxxxxxxxxx@s.whatsapp.net",  // Número 2
+        "51917391317@s.whatsapp.net",  // Número 2
         "xxxxxxxxxxx@s.whatsapp.net"   // Número 3
       ];
 
