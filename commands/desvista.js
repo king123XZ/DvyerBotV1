@@ -1,54 +1,65 @@
-//
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 module.exports = {
-  command: ["abrirvista", "desvista", "openview"],
+  command: ["abrirvista", "openview", "desvista"],
 
   run: async (client, m) => {
     try {
-      // Debe responder al mensaje de vista única
-      if (!m.quoted || !m.quoted.message) {
-        return client.sendMessage(m.chat, { text: "⚠️ Responde a un mensaje de *vista única*." });
+      if (!m.quoted) {
+        return client.sendMessage(m.chat, { text: "⚠️ *Responde a una imagen o video de vista única.*" });
       }
 
-      const view = m.quoted.message.viewOnceMessageV2 || m.quoted.message.viewOnceMessage;
+      // 📌 Extraemos TODAS las posibles estructuras de view once
+      const qMsg = m.quoted.message;
+
+      const view =
+        qMsg?.viewOnceMessageV2?.message ||
+        qMsg?.viewOnceMessageV2Extension?.message ||
+        qMsg?.viewOnceMessage?.message ||
+        qMsg?.imageMessage?.viewOnce === true && qMsg ||
+        qMsg?.videoMessage?.viewOnce === true && qMsg;
+
       if (!view) {
-        return client.sendMessage(m.chat, { text: "❌ Ese mensaje *no es* de vista única." });
+        return client.sendMessage(m.chat, { text: "❌ *Ese mensaje no es de vista única.*" });
       }
 
-      const msg = view.message;
+      const img = view.imageMessage;
+      const vid = view.videoMessage;
 
       // 📸 Imagen
-      if (msg.imageMessage) {
-        const buffer = await downloadView(msg.imageMessage);
+      if (img) {
+        const buffer = await downloadViewOnce(img);
         return client.sendMessage(m.chat, {
           image: buffer,
-          caption: "🔓 Vista única desbloqueada"
+          caption: "🔓 *Vista única desbloqueada*"
         });
       }
 
       // 🎥 Video
-      if (msg.videoMessage) {
-        const buffer = await downloadView(msg.videoMessage);
+      if (vid) {
+        const buffer = await downloadViewOnce(vid);
         return client.sendMessage(m.chat, {
           video: buffer,
-          caption: "🔓 Vista única desbloqueada"
+          caption: "🔓 *Vista única desbloqueada*"
         });
       }
 
+      return client.sendMessage(m.chat, { text: "⚠️ No se pudo abrir la vista única." });
+
     } catch (err) {
-      console.log("Error abrir vista:", err);
-      client.sendMessage(m.chat, { text: "❌ Error al desbloquear la vista única." });
+      console.log("ERROR VISTA:", err);
+      return client.sendMessage(m.chat, { text: "❌ Ocurrió un error al intentar abrir la vista única." });
     }
   }
 };
 
-// Función de descarga
-async function downloadView(msg) {
-  const type = msg.mimetype.split("/")[0]; // image / video
-  const stream = await downloadContentFromMessage(msg, type);
-  let buffer = Buffer.from([]);
 
+// 📥 Función para descargar imágenes/videos
+async function downloadViewOnce(msg) {
+  const type = msg.mimetype.split("/")[0];
+  const stream = await downloadContentFromMessage(msg, type);
+
+  let buffer = Buffer.from([]);
   for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
 
   return buffer;
