@@ -1,95 +1,72 @@
 
-const { default: makeWASocket, useSingleFileAuthState, fetchLatestBaileysVersion, downloadContentFromMessage, proto } = require("@whiskeysockets/baileys");
-const { state, saveState } = require("./auth_info.json"); // Ajusta según tu archivo
-const P = require("pino");
-const fs = require("fs");
-const path = require("path");
+module.exports = {
+    command: ["enviaragrupos"],
+    description: "Envía un mensaje o media a todos los grupos donde estás",
+    run: async (client, m) => {
+        try {
+            const mensaje = m.text.replace(/\/enviaragrupos\s*/i, "") || "";
 
-async function startWhatsApp() {
-    const { version } = await fetchLatestBaileysVersion();
-    const sock = makeWASocket({
-        version,
-        auth: state,
-        printQRInTerminal: true,
-        logger: P({ level: "silent" })
-    });
+            // Detectar si es reply a un mensaje con media
+            let quotedMsg = m.quoted ? m.quoted : null;
+            let buffer = null;
+            let mediaType = null;
+            let mimetype = "";
+            let filename = "";
 
-    sock.ev.on("creds.update", saveState);
+            if (quotedMsg && quotedMsg.message) {
+                mediaType = Object.keys(quotedMsg.message)[0]; // imageMessage, videoMessage, audioMessage, documentMessage
+                const media = quotedMsg.message[mediaType];
+                mimetype = media.mimetype || "";
 
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.message || !msg.key.fromMe) return;
-
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
-        if (!text || !text.startsWith("/enviaragrupos")) return;
-
-        const mensaje = text.replace("/enviaragrupos ", "") || "";
-
-        // Obtener todos los chats y filtrar solo grupos
-        const allChats = await sock.store.chats.all();
-        const grupos = allChats.filter(c => c.id.endsWith("@g.us"));
-
-        // Detectar tipo de mensaje
-        const messageType = Object.keys(msg.message)[0]; // textMessage, imageMessage, videoMessage, documentMessage, audioMessage
-
-        // Descargar media si existe
-        let buffer = null;
-        let mimetype = "";
-        let filename = "";
-
-        if (messageType !== "conversation" && messageType !== "extendedTextMessage") {
-            const media = msg.message[messageType];
-            mimetype = media.mimetype || "";
-            const stream = await downloadContentFromMessage(msg.message[messageType], messageType.replace("Message", ""));
-            const chunks = [];
-            for await (const chunk of stream) {
-                chunks.push(chunk);
+                // Descargar media
+                buffer = await client.downloadMediaMessage(quotedMsg); // tu función de descargar media según tu bot
+                const ext = mimetype.split("/")[1] || "bin";
+                filename = `temp.${ext}`;
+                require("fs").writeFileSync(filename, buffer);
             }
-            buffer = Buffer.concat(chunks);
 
-            // Nombre de archivo
-            const ext = mimetype.split("/")[1] || "bin";
-            filename = `temp.${ext}`;
-            fs.writeFileSync(filename, buffer);
-        }
+            // Obtener todos los grupos donde estás
+            const chats = await client.chats.all();
+            const grupos = chats.filter(c => c.id.endsWith("@g.us"));
 
-        for (let i = 0; i < grupos.length; i++) {
-            const grupoId = grupos[i].id;
-            try {
-                switch (messageType) {
-                    case "conversation":
-                    case "extendedTextMessage":
-                        await sock.sendMessage(grupoId, { text: mensaje });
-                        break;
-                    case "imageMessage":
-                        await sock.sendMessage(grupoId, { image: buffer, caption: mensaje });
-                        break;
-                    case "videoMessage":
-                        await sock.sendMessage(grupoId, { video: buffer, caption: mensaje });
-                        break;
-                    case "audioMessage":
-                        await sock.sendMessage(grupoId, { audio: buffer, mimetype: mimetype });
-                        break;
-                    case "documentMessage":
-                        await sock.sendMessage(grupoId, { document: buffer, fileName: media.fileName || filename, mimetype: mimetype, caption: mensaje });
-                        break;
-                    default:
-                        await sock.sendMessage(grupoId, { text: mensaje });
+            for (let i = 0; i < grupos.length; i++) {
+                const grupoId = grupos[i].id;
+                try {
+                    if (buffer && mediaType) {
+                        switch (mediaType) {
+                            case "imageMessage":
+                                await client.sendMessage(grupoId, { image: buffer, caption: mensaje });
+                                break;
+                            case "videoMessage":
+                                await client.sendMessage(grupoId, { video: buffer, caption: mensaje });
+                                break;
+                            case "audioMessage":
+                                await client.sendMessage(grupoId, { audio: buffer, mimetype });
+                                break;
+                            case "documentMessage":
+                                await client.sendMessage(grupoId, { document: buffer, mimetype, fileName: media.fileName || filename, caption: mensaje });
+                                break;
+                            default:
+                                await client.sendMessage(grupoId, { text: mensaje });
+                        }
+                    } else {
+                        await client.sendMessage(grupoId, { text: mensaje });
+                    }
+                    console.log(`Mensaje enviado a: ${grupoId}`);
+                } catch (err) {
+                    console.log(`Error enviando a ${grupoId}: ${err.message}`);
                 }
-                console.log(`Mensaje enviado a: ${grupoId}`);
-            } catch (err) {
-                console.log(`Error enviando a ${grupoId}: ${err.message}`);
+
+                // Esperar 5 segundos antes del siguiente grupo
+                await new Promise(resolve => setTimeout(resolve, 5000));
             }
 
-            // Espera 5 segundos antes del siguiente grupo
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            if (buffer) require("fs").unlinkSync(filename);
+
+            m.reply("✅ Mensajes enviados a todos los grupos.");
+        } catch (err) {
+            console.log(err);
+            m.reply("❌ Ocurrió un error al enviar los mensajes.");
         }
-
-        // Eliminar archivo temporal si existe
-        if (buffer) fs.unlinkSync(filename);
-
-        console.log("Mensajes enviados a todos los grupos.");
-    });
-}
-
-startWhatsApp();
+    }
+};
