@@ -1,4 +1,3 @@
-
 module.exports = {
     command: ["enviaragrupos"],
     description: "Envía un mensaje o media a todos los grupos donde estás",
@@ -14,11 +13,10 @@ module.exports = {
             let filename = "";
 
             if (quotedMsg && quotedMsg.message) {
-                mediaType = Object.keys(quotedMsg.message)[0]; // imageMessage, videoMessage, audioMessage, documentMessage
+                mediaType = Object.keys(quotedMsg.message)[0];
                 const media = quotedMsg.message[mediaType];
                 mimetype = media.mimetype || "";
 
-                // Descargar media
                 if(client.downloadMediaMessage) {
                     buffer = await client.downloadMediaMessage(quotedMsg);
                     const ext = mimetype.split("/")[1] || "bin";
@@ -27,15 +25,13 @@ module.exports = {
                 }
             }
 
-            // Obtener todos los grupos
-            let allChats = [];
-            if(client.store?.chats) {
-                allChats = await client.store.chats.all();
-            } else if(client.fetchChats) {
-                allChats = await client.fetchChats();
-            }
+            // Obtener chats recientes del bot y filtrar solo grupos
+            const chats = client.chats?.all ? await client.chats.all() : [];
+            const grupos = chats.filter(c => c.id.endsWith("@g.us"));
 
-            const grupos = allChats.filter(c => c.id.endsWith("@g.us"));
+            if(grupos.length === 0){
+                return m.reply("❌ No se encontraron grupos donde el bot esté.");
+            }
 
             for (let i = 0; i < grupos.length; i++) {
                 const grupoId = grupos[i].id;
@@ -52,7 +48,7 @@ module.exports = {
                                 await client.sendMessage(grupoId, { audio: buffer, mimetype });
                                 break;
                             case "documentMessage":
-                                await client.sendMessage(grupoId, { document: buffer, mimetype, fileName: media.fileName || filename, caption: mensaje });
+                                await client.sendMessage(grupoId, { document: buffer, mimetype, fileName: quotedMsg.message[mediaType].fileName || filename, caption: mensaje });
                                 break;
                             default:
                                 await client.sendMessage(grupoId, { text: mensaje });
@@ -65,11 +61,10 @@ module.exports = {
                     console.log(`Error enviando a ${grupoId}: ${err.message}`);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                await new Promise(resolve => setTimeout(resolve, 5000)); // retraso
             }
 
             if (buffer) require("fs").unlinkSync(filename);
-
             m.reply("✅ Mensajes enviados a todos los grupos.");
         } catch (err) {
             console.log(err);
@@ -77,3 +72,4 @@ module.exports = {
         }
     }
 };
+
