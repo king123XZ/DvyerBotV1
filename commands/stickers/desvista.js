@@ -17,21 +17,21 @@ module.exports = {
       const allowedUsers = [
         "51907376960@s.whatsapp.net",  // Tu número
         "51917391317@s.whatsapp.net",  // Número 2
-        "519XXXXXXXX@s.whatsapp.net"   // Número 3 (reemplaza)
+        "519XXXXXXXX@s.whatsapp.net"   // Número 3
       ];
 
-      // ⛔ Si el usuario NO está autorizado → no hacer nada
+      // ⛔ Si no está autorizado → no hacer nada
       if (!allowedUsers.includes(m.sender)) return;
 
-      // ⛔ Debe responder a un mensaje
+      // Debe ser respuesta
       if (!m.quoted) return;
 
-      // 👑 PRIVADO DONDE SE ENVÍA LA VISTA ÚNICA (dueño del bot)
-      const owner = client.user.id;
+      // 👑 CONVERTIR ID DEL BOT → JID REAL
+      const owner = client.decodeJid(client.user.id);
 
       const qMsg = m.quoted.message;
 
-      // Detección de vista única correcta
+      // Buscar vista única
       const view =
         qMsg?.viewOnceMessageV2?.message ||
         qMsg?.viewOnceMessageV2Extension?.message ||
@@ -40,41 +40,40 @@ module.exports = {
 
       if (!view) return;
 
-      // ¿Es imagen o video?
       const img = view.imageMessage;
       const vid = view.videoMessage;
 
-      // 🖼️ Si es una imagen vista única
+      // 🖼️ IMAGEN
       if (img) {
         const buffer = await downloadVO(img);
 
         await client.sendMessage(owner, {
           image: buffer,
-          caption: "🔓 *Vista única desbloqueada por Dvyer Bot*"
+          caption: "🔓 *Vista única desbloqueada — Dvyer Bot*"
         });
 
         return;
       }
 
-      // 🎬 Si es un video vista única
+      // 🎬 VIDEO
       if (vid) {
         const buffer = await downloadVO(vid);
 
         await client.sendMessage(owner, {
           video: buffer,
-          caption: "🔓 *Vista única desbloqueada por Dvyer Bot*"
+          caption: "🔓 *Vista única desbloqueada — Dvyer Bot*"
         });
 
         return;
       }
 
     } catch (err) {
-      console.log("ERROR AL ABRIR VISTA ÚNICA:", err);
+      console.log("ERROR EN abrivista:", err);
     }
   }
 };
 
-// 📥 Función para descargar vista única
+// 📥 Descargar vista única
 async function downloadVO(msg) {
   const type = msg.mimetype.split("/")[0];
   const stream = await downloadContentFromMessage(msg, type);
@@ -87,4 +86,3 @@ async function downloadVO(msg) {
 
   return buffer;
 }
-
