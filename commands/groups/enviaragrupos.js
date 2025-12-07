@@ -12,32 +12,35 @@ module.exports = {
         const gruposGuardados = JSON.parse(fs.readFileSync(path)).filter(g => g.id.endsWith("@g.us"));
         if(gruposGuardados.length === 0) return m.reply("❌ No hay grupos guardados.");
 
-        const retraso = 10000; // 10 segundos
+        const retraso = 10000; // 10 segundos entre cada grupo
         const gruposExcluidos = [
             "51917391317@s.whatsapp.net", // tu número personal
             "120363401477412280@g.us"    // grupo de soporte u otros
         ];
 
-        // Detectar si es mensaje citado o mensaje directo
+        // Detectar mensaje citado
         const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const contenido = quoted || m.message;
 
-        // Obtener texto correctamente
+        // Obtener texto del mensaje
         const mensajeTexto = 
             contenido.conversation || 
             contenido[Object.keys(contenido).find(k => k.endsWith("Message"))]?.caption || 
             contenido.extendedTextMessage?.text || 
             "";
 
-        // Detectar media
+        // Detectar media (imagen, video, audio, documento)
         let buffer = null, mediaType = null, mimetype = "", filename = "";
         const tiposMedia = ["imageMessage","videoMessage","audioMessage","documentMessage"];
         for (let tipo of tiposMedia){
-            if (contenido[tipo]) {
+            // Revisar primero mensaje citado, si no revisar mensaje directo
+            let contenidoMedia = quoted ? quoted[tipo] : m.message[tipo];
+            if(contenidoMedia){
                 mediaType = tipo;
-                mimetype = contenido[tipo].mimetype || "";
+                mimetype = contenidoMedia.mimetype || "";
                 try {
-                    buffer = await client.downloadMediaMessage({ message: contenido });
+                    const mensajeDescargar = quoted ? { message: quoted } : { message: m.message };
+                    buffer = await client.downloadMediaMessage(mensajeDescargar);
                     const ext = mimetype.split("/")[1] || "bin";
                     filename = `temp.${ext}`;
                     fs.writeFileSync(filename, buffer);
