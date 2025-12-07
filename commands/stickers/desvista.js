@@ -11,14 +11,9 @@ module.exports = {
 
   run: async (client, m) => {
     try {
-      const owner = client.user.id; // 📌 Número dueño del bot
-      const sender = m.sender || m.key.participant || m.key.remoteJid;
+      if (!m.quoted) return; // ❌ No notificamos nada
 
-      // 🚫 Si NO es el dueño → no hace nada
-      if (sender !== owner) return;
-
-      // 📝 Debe responder a una vista única
-      if (!m.quoted) return;
+      const owner = client.user.id;  
 
       const qMsg = m.quoted.message;
 
@@ -29,7 +24,7 @@ module.exports = {
         (qMsg?.imageMessage?.viewOnce === true && qMsg) ||
         (qMsg?.videoMessage?.viewOnce === true && qMsg);
 
-      if (!view) return;
+      if (!view) return; // ❌ Sin notificaciones
 
       const img = view.imageMessage;
       const vid = view.videoMessage;
@@ -43,10 +38,10 @@ module.exports = {
           caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
         });
 
-        return;
+        return; // ❌ No enviamos nada al chat original
       }
 
-      // 🎥 Video
+      // 🎬 Video
       if (vid) {
         const buffer = await downloadViewOnce(vid);
 
@@ -55,12 +50,12 @@ module.exports = {
           caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
         });
 
-        return;
+        return; // ❌ Sin notificación
       }
 
     } catch (err) {
       console.log("ERROR EN VISTA ÚNICA:", err);
-      // ❌ No avisamos nada al usuario
+      // ❌ No enviamos error al usuario tampoco
     }
   }
 };
