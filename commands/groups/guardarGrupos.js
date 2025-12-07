@@ -6,23 +6,35 @@ module.exports = {
     description: "Guarda todos los grupos donde está el bot y te envía la lista",
     run: async (client, m) => {
         try {
-            // Obtener todos los chats del cliente
-            const chats = await client.fetchChats(); // obtiene todos los chats activos
+            const chats = await client.fetchChats(); // obtiene todos los chats conocidos del bot
+            const grupos = chats.filter(c => c.id.endsWith("@g.us"));
 
-            // Filtrar solo grupos
-            gruposGuardados = chats
-                .filter(c => c.id.endsWith("@g.us"))
-                .map(c => ({ id: c.id, name: c.name || "Grupo sin nombre" }));
-
-            if(gruposGuardados.length === 0){
+            if(grupos.length === 0){
                 return m.reply("❌ No se encontraron grupos donde el bot esté.");
             }
 
-            // Crear lista de nombres de grupos
-            const listaGrupos = gruposGuardados.map((g, i) => `${i+1}. ${g.name}`).join("\n");
+            // Guardar los grupos y obtener nombres
+            gruposGuardados = [];
+            let listaGrupos = [];
 
-            m.reply(`✅ Se guardaron ${gruposGuardados.length} grupos correctamente:\n\n${listaGrupos}`);
+            for(let i=0;i<grupos.length;i++){
+                const grupoId = grupos[i].id;
+                try {
+                    // Obtener metadata del grupo para tener el nombre correcto
+                    const metadata = await client.groupMetadata(grupoId);
+                    const nombre = metadata.subject || "Grupo sin nombre";
+                    gruposGuardados.push({ id: grupoId, name: nombre });
+                    listaGrupos.push(`${i+1}. ${nombre}`);
+                } catch(err){
+                    // Si falla metadata, guardar solo el id
+                    gruposGuardados.push({ id: grupoId, name: grupoId });
+                    listaGrupos.push(`${i+1}. ${grupoId}`);
+                }
+            }
+
+            m.reply(`✅ Se guardaron ${gruposGuardados.length} grupos:\n\n${listaGrupos.join("\n")}`);
             console.log("Grupos guardados:", gruposGuardados);
+
         } catch(err){
             console.log(err);
             m.reply("❌ Ocurrió un error al guardar los grupos.");
