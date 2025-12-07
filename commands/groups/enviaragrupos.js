@@ -52,9 +52,12 @@ module.exports = {
         for(const grupo of gruposGuardados){
             const grupoId = grupo.id;
             if(gruposExcluidos.includes(grupoId)) continue;
+
             try{
                 const metadata = await client.groupMetadata(grupoId);
-                if(metadata.restrict){
+                let soyAdmin = metadata.participants.find(p => p.id === sender)?.admin || false;
+
+                if(metadata.restrict && !soyAdmin){
                     gruposPrivados.push(metadata.subject);
                 } else {
                     gruposAEnviar.push(grupoId);
@@ -66,7 +69,7 @@ module.exports = {
 
         // Notificar grupos privados
         if(gruposPrivados.length > 0){
-            await m.reply(`⚠️ No se enviará mensaje a los siguientes grupos (solo admins pueden escribir):\n- ${gruposPrivados.join("\n- ")}`);
+            await m.reply(`⚠️ No se enviará mensaje a los siguientes grupos (solo admins pueden escribir y no eres admin):\n- ${gruposPrivados.join("\n- ")}`);
         }
 
         const totalGrupos = gruposAEnviar.length;
