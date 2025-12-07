@@ -3,7 +3,7 @@ const path = "./groups.json";
 
 module.exports = {
     command: ["enviaragrupos"],
-    description: "Reenvía mensaje o media a todos los grupos guardados de forma segura",
+    description: "Enviar texto y media a todos los grupos guardados",
     run: async (client, m) => {
         const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
         if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
@@ -13,54 +13,35 @@ module.exports = {
         if(gruposGuardados.length === 0) return m.reply("❌ No hay grupos guardados.");
 
         const retraso = 10000; // 10 segundos entre cada grupo
-        const gruposExcluidos = [
-            "51917391317@s.whatsapp.net", // tu número personal
-            "120363401477412280@g.us"    // grupo de soporte u otros
-        ];
 
-        // Detectar mensaje citado
-        const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-        const contenido = quoted || m.message;
+        // Detectar mensaje citado o directo
+        const quoted = m.quoted ? m.quoted : null;
+        const contenido = quoted || m;
 
-        // Obtener texto del mensaje
-        const mensajeTexto = 
-            contenido.conversation || 
-            contenido[Object.keys(contenido).find(k => k.endsWith("Message"))]?.caption || 
-            contenido.extendedTextMessage?.text || 
-            "";
+        // Detectar media y texto
+        let tipoMedia = null;
+        let buffer = null;
+        let caption = contenido.text || contenido.message?.conversation || "";
 
-        // Detectar media (imagen, video, audio, documento)
-        let buffer = null, mediaType = null, mimetype = "", filename = "";
-        const tiposMedia = ["imageMessage","videoMessage","audioMessage","documentMessage"];
-        for (let tipo of tiposMedia){
-            // Revisar primero mensaje citado, si no revisar mensaje directo
-            let contenidoMedia = quoted ? quoted[tipo] : m.message[tipo];
-            if(contenidoMedia){
-                mediaType = tipo;
-                mimetype = contenidoMedia.mimetype || "";
-                try {
-                    const mensajeDescargar = quoted ? { message: quoted } : { message: m.message };
-                    buffer = await client.downloadMediaMessage(mensajeDescargar);
-                    const ext = mimetype.split("/")[1] || "bin";
-                    filename = `temp.${ext}`;
-                    fs.writeFileSync(filename, buffer);
-                } catch(err){
-                    console.log("⚠️ No se pudo descargar la media, se enviará solo texto.", err.message);
-                    buffer = null;
-                    mediaType = null;
-                }
-                break;
-            }
+        if(contenido.message?.imageMessage){
+            tipoMedia = "image";
+            buffer = await client.downloadMediaMessage({ message: contenido.message });
+            caption = contenido.message.imageMessage.caption || caption;
+        } else if(contenido.message?.videoMessage){
+            tipoMedia = "video";
+            buffer = await client.downloadMediaMessage({ message: contenido.message });
+            caption = contenido.message.videoMessage.caption || caption;
+        } else if(contenido.message?.documentMessage){
+            tipoMedia = "document";
+            buffer = await client.downloadMediaMessage({ message: contenido.message });
+            caption = contenido.message.documentMessage.caption || caption;
         }
 
-        // Revisar grupos antes de enviar
-        let gruposPrivados = [];
-        let gruposAEnviar = [];
-
+        // Filtrar grupos excluidos o privados
+        const gruposAEnviar = [];
+        const gruposPrivados = [];
         for(const grupo of gruposGuardados){
             const grupoId = grupo.id;
-            if(gruposExcluidos.includes(grupoId)) continue;
-
             try{
                 const metadata = await client.groupMetadata(grupoId);
                 const soyAdmin = metadata.participants.find(p => p.id === sender)?.admin || false;
@@ -77,54 +58,37 @@ module.exports = {
 
         // Notificar grupos privados
         if(gruposPrivados.length > 0){
-            await m.reply(`⚠️ No se enviará mensaje a los siguientes grupos (solo admins pueden escribir y no eres admin):\n- ${gruposPrivados.join("\n- ")}`);
+            await m.reply(`⚠️ No se enviará mensaje a los siguientes grupos (solo admins pueden escribir):\n- ${gruposPrivados.join("\n- ")}`);
         }
 
-        const totalGrupos = gruposAEnviar.length;
-        const tiempoEstimado = Math.ceil((totalGrupos * retraso) / 1000);
-        await m.reply(`⌛ Se enviará el mensaje a ${totalGrupos} grupos.\n⏱ Tiempo estimado: ${tiempoEstimado} segundos.`);
+        await m.reply(`⌛ Se enviará el mensaje a ${gruposAEnviar.length} grupos.`);
 
         // Enviar mensaje/media
-        for(let i=0;i<gruposAEnviar.length;i++){
-            const grupoId = gruposAEnviar[i];
-            try {
-                const enviar = async () => {
-                    if(buffer && mediaType){
-                        switch(mediaType){
-                            case "imageMessage": await client.sendMessage(grupoId,{image:buffer,caption:mensajeTexto}); break;
-                            case "videoMessage": await client.sendMessage(grupoId,{video:buffer,caption:mensajeTexto}); break;
-                            case "audioMessage": await client.sendMessage(grupoId,{audio:buffer,mimetype}); break;
-                            case "documentMessage": await client.sendMessage(grupoId,{document:buffer,mimetype,fileName:contenido[mediaType]?.fileName||filename,caption:mensajeTexto}); break;
-                            default: await client.sendMessage(grupoId,{text:mensajeTexto});
-                        }
-                    } else if(mensajeTexto){
-                        await client.sendMessage(grupoId,{text:mensajeTexto});
-                    } else {
-                        console.log(`⚠️ No hay contenido válido para enviar en ${grupoId}`);
+        for(const grupoId of gruposAEnviar){
+            try{
+                if(buffer && tipoMedia){
+                    switch(tipoMedia){
+                        case "image":
+                            await client.sendMessage(grupoId,{image:buffer,caption});
+                            break;
+                        case "video":
+                            await client.sendMessage(grupoId,{video:buffer,caption});
+                            break;
+                        case "document":
+                            await client.sendMessage(grupoId,{document:buffer,caption});
+                            break;
+                        default:
+                            await client.sendMessage(grupoId,{text:caption});
                     }
-                };
-
-                try {
-                    await enviar();
-                } catch(err){
-                    if(err.status === 429){
-                        console.log(`⚠️ Rate limit alcanzado, esperando 60s antes de continuar...`);
-                        await new Promise(r => setTimeout(r, 60000));
-                        i--; // reintentar mismo grupo
-                        continue;
-                    } else {
-                        console.log(`Error enviando a ${grupoId}: ${err.message}`);
-                    }
+                } else {
+                    await client.sendMessage(grupoId,{text:caption});
                 }
-
-                await new Promise(r=>setTimeout(r,retraso));
-
+                await new Promise(r => setTimeout(r,retraso));
             } catch(err){
-                console.log(`Error procesando grupo ${grupoId}: ${err.message}`);
+                console.log(`Error enviando a ${grupoId}: ${err.message}`);
             }
         }
 
-        if(buffer) fs.unlinkSync(filename);
-        m.reply("✅ Mensaje reenviado de forma segura a todos los grupos disponibles.");
+        m.reply("✅ Mensaje reenviado correctamente a todos los grupos.");
     }
 };
