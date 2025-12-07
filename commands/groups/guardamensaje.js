@@ -1,5 +1,5 @@
 const fs = require("fs");
-const pathMensajes = "./mensajes.json";
+const pathMensajes = "./data/mensajes.json";
 
 // Crear JSON si no existe
 if(!fs.existsSync(pathMensajes)) fs.writeFileSync(pathMensajes,"[]");
@@ -8,13 +8,14 @@ if(!fs.existsSync(pathMensajes)) fs.writeFileSync(pathMensajes,"[]");
 let estadoEnvio = {};
 
 module.exports = {
-    command: ["guardarmensaje","guardarMedia","guardarTexto","cancelar"],
+    command: ["mediafire","mf","guardarmedia","guardartexto","cancelar"],
     description: "Flujo completo para guardar media + texto en JSON",
     run: async (client, m) => {
         const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
         if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
 
-        const comando = m.text.split(" ")[0].toLowerCase();
+        // Quitar "/" si existe y pasar a minúscula
+        const comando = m.text.split(" ")[0].replace("/","").toLowerCase();
 
         if(!estadoEnvio[sender]) estadoEnvio[sender] = { paso: 0, media: null, mediaType: null, fileName: "", caption: "" };
         const estado = estadoEnvio[sender];
@@ -22,7 +23,7 @@ module.exports = {
         // ---------------------
         // Comando iniciar flujo
         // ---------------------
-        if(comando === "/guardarmensaje"){
+        if(comando === "mediafire" || comando === "mf"){
             estadoEnvio[sender] = { paso: 0, media: null, mediaType: null, fileName: "", caption: "" };
             return m.reply("✅ Flujo iniciado. Envía la media (imagen, video, audio, documento o sticker) y luego escribe `/guardarMedia` para guardarla.");
         }
@@ -30,7 +31,7 @@ module.exports = {
         // ---------------------
         // Comando guardar media
         // ---------------------
-        if(comando === "/guardarmedia"){
+        if(comando === "guardarmedia"){
             if(!m.message) return m.reply("❌ Envía primero una media antes de usar este comando.");
 
             const tiposMedia = ["imageMessage","videoMessage","documentMessage","audioMessage","stickerMessage","animatedStickerMessage"];
@@ -49,6 +50,7 @@ module.exports = {
                         estado.paso = 1;
                         return m.reply(`✅ Media guardada temporalmente (${estado.mediaType}). Ahora envía el texto que acompañará la media y luego escribe /guardarTexto.`);
                     } catch(err){
+                        console.log(err);
                         return m.reply("❌ No se pudo descargar la media. Intenta de nuevo.");
                     }
                 }
@@ -60,7 +62,7 @@ module.exports = {
         // ---------------------
         // Comando guardar texto
         // ---------------------
-        if(comando === "/guardartexto"){
+        if(comando === "guardartexto"){
             if(estado.paso !== 1) return m.reply("❌ Primero debes guardar la media usando /guardarMedia.");
             if(!m.text) return m.reply("❌ Envía el texto antes de usar /guardarTexto.");
 
@@ -77,13 +79,13 @@ module.exports = {
             fs.writeFileSync(pathMensajes, JSON.stringify(mensajes, null, 2));
 
             estadoEnvio[sender] = null;
-            return m.reply("✅ Mensaje completo guardado en mensajes.json.");
+            return m.reply("✅ Mensaje completo guardado en data/mensajes.json.");
         }
 
         // ---------------------
         // Comando cancelar
         // ---------------------
-        if(comando === "/cancelar"){
+        if(comando === "cancelar"){
             estadoEnvio[sender] = null;
             return m.reply("❌ Flujo cancelado. Todo lo temporal fue eliminado.");
         }
