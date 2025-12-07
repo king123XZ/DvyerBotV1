@@ -18,17 +18,22 @@ module.exports = {
             "120363401477412280@g.us"    // grupo de soporte u otros
         ];
 
-        // Mensaje o media respondida
-        const quoted = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
-        if(!quoted && !m.message.conversation) return m.reply("❌ Debes responder a un mensaje o enviar un texto.");
+        // Mensaje citado o mensaje directo
+        const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const contenido = quoted || m.message;
-        const mensajeTexto = contenido.conversation || contenido.extendedTextMessage?.text || "";
+
+        // Obtener texto correctamente
+        const mensajeTexto = 
+            contenido.conversation || 
+            contenido[Object.keys(contenido).find(k => k.endsWith("Message"))]?.caption || 
+            contenido.extendedTextMessage?.text || 
+            "";
 
         // Detectar media
         let buffer = null, mediaType = null, mimetype = "", filename = "";
         const tiposMedia = ["imageMessage","videoMessage","audioMessage","documentMessage"];
-        for(let tipo of tiposMedia){
-            if(contenido[tipo]){
+        for (let tipo of tiposMedia){
+            if (contenido[tipo]) {
                 mediaType = tipo;
                 mimetype = contenido[tipo].mimetype || "";
                 try {
@@ -55,7 +60,7 @@ module.exports = {
 
             try{
                 const metadata = await client.groupMetadata(grupoId);
-                let soyAdmin = metadata.participants.find(p => p.id === sender)?.admin || false;
+                const soyAdmin = metadata.participants.find(p => p.id === sender)?.admin || false;
 
                 if(metadata.restrict && !soyAdmin){
                     gruposPrivados.push(metadata.subject);
