@@ -69,22 +69,22 @@ console.log(chalk.yellow.bold("╚" + "═".repeat(30)));
 // =================================
 // Números de sub-bots autorizados
 // =================================
-const authorizedNumbers = [
-  "51907376960", // Bot principal
-  "51917391317", // Sub-bot 1
-];
+const authorizedSubBots = {
+  "51907376960": "lurus_session_960", // Sub-bot 1
+  "51917391317": "lurus_session_317", // Sub-bot 2
+};
 
 // =================================
 // Función para iniciar un bot
 // =================================
-async function startBot(sessionName) {
+async function startBot(sessionName, isSubBot = false) {
   const { state, saveCreds } = await useMultiFileAuthState(sessionName);
   const { version } = await fetchLatestBaileysVersion();
 
   const client = makeWASocket({
     version,
     logger: pino({ level: "silent" }),
-    printQRInTerminal: false,
+    printQRInTerminal: true,
     browser: ["MiniLurus", "Chrome", "1.0"],
     auth: state,
   });
@@ -122,7 +122,7 @@ async function startBot(sessionName) {
 
       if ([DisconnectReason.connectionLost, DisconnectReason.connectionClosed, DisconnectReason.restartRequired, DisconnectReason.timedOut, DisconnectReason.badSession].includes(reason)) {
         log.warning(`[${sessionName}] Reconectando...`);
-        startBot(sessionName);
+        startBot(sessionName, isSubBot);
         return;
       }
 
@@ -151,10 +151,13 @@ async function startBot(sessionName) {
 
       m = smsg(client, m);
 
-      // Ejecutar handler solo si el número está autorizado
-      if (authorizedNumbers.includes(m.sender.split("@")[0])) {
+      // Ejecutar handler: 
+      // - sub-bots solo para números autorizados
+      // - bot principal para todos
+      if (!isSubBot || authorizedSubBots[m.sender.split("@")[0]]) {
         await mainHandler(client, m);
       }
+
     } catch (err) {
       console.log(`Error en handler de ${sessionName}:`, err);
     }
@@ -175,10 +178,13 @@ async function startBot(sessionName) {
 }
 
 // =================================
-// Iniciar los bots
+// Iniciar el bot principal y sub-bots
 // =================================
-startBot("lurus_session_960"); // Bot principal
-startBot("lurus_session_317"); // Sub-bot
+startBot("lurus_session_main", false); // Bot principal abierto a todos
+
+for (const number in authorizedSubBots) {
+  startBot(authorizedSubBots[number], true); // Sub-bots solo autorizados
+}
 
 // =================================
 // Auto-reload
