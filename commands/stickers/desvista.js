@@ -1,6 +1,7 @@
 /**
  *  🔓 Código creado por Dvyer
- *  Vista única → enviada directo al privado del dueño del bot
+ *  Vista única → enviada al privado del dueño del bot
+ *  Solo los números autorizados pueden usarlo
  */
 
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
@@ -11,9 +12,22 @@ module.exports = {
 
   run: async (client, m) => {
     try {
-      if (!m.quoted) return; // ❌ No notificamos nada
 
-      const owner = client.user.id;  
+      // 🔐 LISTA DE NÚMEROS AUTORIZADOS
+      const allowedUsers = [
+        "51907376960@s.whatsapp.net",  // Tu número
+        "xxxxxxxxxxx@s.whatsapp.net",  // Número 2
+        "xxxxxxxxxxx@s.whatsapp.net"   // Número 3
+      ];
+
+      // ❌ Si NO está autorizado → ignorar
+      if (!allowedUsers.includes(m.sender)) return;
+
+      // ❌ Si no responden a una vista única → ignorar
+      if (!m.quoted) return;
+
+      // 📩 Enviar siempre al privado del dueño del bot
+      const owner = client.user.id;
 
       const qMsg = m.quoted.message;
 
@@ -24,7 +38,7 @@ module.exports = {
         (qMsg?.imageMessage?.viewOnce === true && qMsg) ||
         (qMsg?.videoMessage?.viewOnce === true && qMsg);
 
-      if (!view) return; // ❌ Sin notificaciones
+      if (!view) return;
 
       const img = view.imageMessage;
       const vid = view.videoMessage;
@@ -38,7 +52,7 @@ module.exports = {
           caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
         });
 
-        return; // ❌ No enviamos nada al chat original
+        return;
       }
 
       // 🎬 Video
@@ -50,12 +64,11 @@ module.exports = {
           caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
         });
 
-        return; // ❌ Sin notificación
+        return;
       }
 
     } catch (err) {
       console.log("ERROR EN VISTA ÚNICA:", err);
-      // ❌ No enviamos error al usuario tampoco
     }
   }
 };
