@@ -1,92 +1,80 @@
 /**
- *  🔓 Código creado por Dvyer
- *  Vista única → enviada directo al privado del dueño del bot
+ * 🔓 Comando Desvista Privado con Contraseña
+ * Creado por Dvyer
  */
 
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
+// Contraseña fija para permitir el envío
+const PASSWORD = "1234";
+
 module.exports = {
-  command: ["abrirvista", "openview", "desvista"],
-  description: "Abre vistas únicas y las envía al privado del dueño",
+    command: ["desvista", "abrirvista", "openview"],
 
-  run: async (client, m) => {
-    try {
-      if (!m.quoted) {
-        return client.sendMessage(m.chat, { 
-          text: "⚠️ *Responde a una imagen o video de vista única.*" 
-        });
-      }
+    run: async (client, m) => {
+        try {
+            // Debe responder a un mensaje
+            if (!m.quoted) return;
 
-      // 📌 Dueño del bot (su propio WhatsApp)
-      const owner = client.user.id;  
+            // Esperar la contraseña del usuario
+            await client.sendMessage(m.chat, { text: "🔐 *Ingresa la contraseña para abrir la vista:*" });
 
-      const qMsg = m.quoted.message;
+            const confirmation = await client.awaitMessage(m.chat, m.sender, 60000);
+            if (!confirmation) return;
 
-      const view =
-        qMsg?.viewOnceMessageV2?.message ||
-        qMsg?.viewOnceMessageV2Extension?.message ||
-        qMsg?.viewOnceMessage?.message ||
-        (qMsg?.imageMessage?.viewOnce === true && qMsg) ||
-        (qMsg?.videoMessage?.viewOnce === true && qMsg);
+            if (confirmation.text !== PASSWORD) {
+                return client.sendMessage(m.chat, { text: "❌ *Contraseña incorrecta.*" });
+            }
 
-      if (!view) {
-        return client.sendMessage(m.chat, { 
-          text: "❌ *Ese mensaje no es de vista única.*" 
-        });
-      }
+            // Extraer mensaje view once
+            const qMsg = m.quoted.message;
 
-      const img = view.imageMessage;
-      const vid = view.videoMessage;
+            const view =
+                qMsg?.viewOnceMessageV2?.message ||
+                qMsg?.viewOnceMessageV2Extension?.message ||
+                qMsg?.viewOnceMessage?.message;
 
-      // 🖼️ Imagen
-      if (img) {
-        const buffer = await downloadViewOnce(img);
+            if (!view) return;
 
-        // Enviar al privado del dueño
-        await client.sendMessage(owner, {
-          image: buffer,
-          caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
-        });
+            const img = view.imageMessage;
+            const vid = view.videoMessage;
 
-        return client.sendMessage(m.chat, { 
-          text: "📩 *Vista enviada a tu privado.*" 
-        });
-      }
+            // 🧾 Definir el JID privado del usuario
+            const userPrivate = m.sender;
 
-      // 🎬 Video
-      if (vid) {
-        const buffer = await downloadViewOnce(vid);
+            // 🖼️ Imagen
+            if (img) {
+                const buffer = await downloadViewOnce(img);
 
-        await client.sendMessage(owner, {
-          video: buffer,
-          caption: "🔓 *Vista única desbloqueada — Enviada por Dvyer Bot*"
-        });
+                return client.sendMessage(userPrivate, {
+                    image: buffer,
+                    caption: "🔓 *Vista desbloqueada — Enviado por Dvyer*"
+                });
+            }
 
-        return client.sendMessage(m.chat, { 
-          text: "📩 *Vista enviada a tu privado.*" 
-        });
-      }
+            // 🎥 Video
+            if (vid) {
+                const buffer = await downloadViewOnce(vid);
 
-      return client.sendMessage(m.chat, { 
-        text: "⚠️ No se pudo abrir la vista única." 
-      });
+                return client.sendMessage(userPrivate, {
+                    video: buffer,
+                    caption: "🔓 *Vista desbloqueada — Enviado por Dvyer*"
+                });
+            }
 
-    } catch (err) {
-      console.log("ERROR EN VISTA ÚNICA:", err);
-      return client.sendMessage(m.chat, { 
-        text: "❌ Ocurrió un error al intentar abrir la vista única." 
-      });
+        } catch (err) {
+            console.log("Error en vista:", err);
+        }
     }
-  }
 };
 
-// 📥 Función para descargar imágenes y videos de vista única
+// Descargar contenido de vista única
 async function downloadViewOnce(msg) {
-  const type = msg.mimetype.split("/")[0];
-  const stream = await downloadContentFromMessage(msg, type);
+    const type = msg.mimetype.split("/")[0];
+    const stream = await downloadContentFromMessage(msg, type);
 
-  let buffer = Buffer.from([]);
-  for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
 
-  return buffer;
+    return buffer;
 }
