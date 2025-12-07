@@ -5,6 +5,7 @@
  * Creado por: Carlos Alexis (Zam)
  * Año: 2025
  * Librería: Baileys
+ * Adaptado para 2 sub-bots
  * ================================
  **/
 
@@ -26,14 +27,15 @@ const path = require("path");
 const readline = require("readline");
 const os = require("os");
 const qrcode = require("qrcode-terminal");
-const parsePhoneNumber = require("awesome-phonenumber");
 const { smsg } = require("./lib/message");
 const { Boom } = require("@hapi/boom");
 const { exec } = require("child_process");
 
 const mainHandler = require("./main"); // << CORRECTO
 
+// =================================
 // Logs
+// =================================
 const print = (label, value) =>
   console.log(
     `${chalk.green.bold("║")} ${chalk.cyan.bold(label.padEnd(16))}${chalk.magenta.bold(":")} ${value}`
@@ -46,8 +48,6 @@ const question = (text) => {
   });
   return new Promise((resolve) => rl.question(text, resolve));
 };
-
-const usePairingCode = true;
 
 const log = {
   info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
@@ -83,15 +83,26 @@ print("Baileys", `WhiskeySockets/baileys`);
 print("Fecha & Tiempo", new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City", hour12: false }));
 console.log(chalk.yellow.bold("╚" + "═".repeat(30)));
 
-async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState(global.sessionName);
+// =================================
+// Números autorizados para sub-bots
+// =================================
+const authorizedNumbers = [
+  "51907376960", // Número principal
+  "51917391317", // Sub-bot 1
+];
+
+// =================================
+// Función principal para iniciar bot
+// =================================
+async function startBot(sessionName) {
+  const { state, saveCreds } = await useMultiFileAuthState(sessionName);
   const { version } = await fetchLatestBaileysVersion();
 
   const client = makeWASocket({
     version,
     logger: pino({ level: "silent" }),
     printQRInTerminal: false,
-    browser: ["Linux", "Opera"],
+    browser: ["MiniLurus", "Chrome", "1.0"],
     auth: state,
   });
 
@@ -117,7 +128,9 @@ async function startBot() {
   await global.loadDatabase();
   console.log(chalk.yellow("Base de datos cargada correctamente."));
 
-  // Evento de conexión
+  // =================================
+  // Conexión
+  // =================================
   client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
 
@@ -132,7 +145,7 @@ async function startBot() {
         DisconnectReason.badSession,
       ].includes(reason)) {
         log.warning("Reconectando...");
-        startBot();
+        startBot(sessionName);
         return;
       }
 
@@ -142,31 +155,32 @@ async function startBot() {
         DisconnectReason.multideviceMismatch,
       ].includes(reason)) {
         log.error("Eliminar sesión y volver a escanear");
-        exec("rm -rf ./lurus_session/*");
+        exec(`rm -rf ./lurus_session/*`);
         process.exit(1);
       }
 
       client.end(`Motivo desconocido: ${reason}`);
     }
 
-    if (connection === "open") log.success("Su conexión fue exitosa");
+    if (connection === "open") log.success(`Bot (${sessionName}) conectado correctamente`);
   });
 
-  // RECIBIR MENSAJES (arreglado)
+  // =================================
+  // Mensajes entrantes
+  // =================================
   client.ev.on("messages.upsert", async ({ messages }) => {
     try {
       let m = messages[0];
       if (!m.message) return;
 
-      m.message =
-        m.message.ephemeralMessage?.message || m.message;
+      m.message = m.message.ephemeralMessage?.message || m.message;
 
       if (m.key.remoteJid === "status@broadcast") return;
 
       m = smsg(client, m);
 
-      // ✅ CORRECTO: solo 2 parámetros
-      await mainHandler(client, m);
+      // ✅ Ejecutar handler principal
+      await mainHandler(client, m, authorizedNumbers);
 
     } catch (err) {
       console.log("Error en handler:", err);
@@ -183,11 +197,19 @@ async function startBot() {
   };
 
   client.ev.on("creds.update", saveCreds);
+
+  return client;
 }
 
-startBot();
+// =================================
+// Iniciar los 2 bots
+// =================================
+startBot("lurus_session_960"); // Bot principal
+startBot("lurus_session_317"); // Sub-bot 2
 
+// =================================
 // Auto-reload
+// =================================
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
   fs.unwatchFile(file);
