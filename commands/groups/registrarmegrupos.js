@@ -1,33 +1,18 @@
-// commands/groups/guardarGrupos.js
-const fs = require("fs");
-const path = "./groups.json";
-
-// Inicializar JSON
-if(!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify([]));
-
 module.exports = {
-    command: ["!registrarme"],
+    command: ["registrargrupos"],
+    description: "Envía un comando a todos los grupos para que se registren automáticamente",
     run: async (client, m) => {
-        if(!m.isGroup) return;
+        const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
+        if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
 
-        let gruposGuardados = JSON.parse(fs.readFileSync(path));
-        const grupoId = m.key.remoteJid;
+        // En Baileys v5, client.store.chats es un Map
+        const chats = Array.from(client.store.chats.values()).filter(c => c.id.endsWith("@g.us"));
 
-        if(!gruposGuardados.find(g => g.id === grupoId)){
-            let nombre = grupoId;
-            try{
-                const metadata = await client.groupMetadata(grupoId);
-                nombre = metadata.subject || grupoId;
-            }catch{}
-
-            gruposGuardados.push({ id: grupoId, name: nombre });
-            fs.writeFileSync(path, JSON.stringify(gruposGuardados, null, 2));
-
-            // Notificación solo a los propietarios
-            for(const owner of global.owner){
-                await client.sendMessage(`${owner}@c.us`, { text: `✅ Nuevo grupo registrado: ${nombre}` });
-            }
+        for(const chat of chats){
+            await client.sendMessage(chat.id, { text: "!registrarme" });
+            await new Promise(r => setTimeout(r, 1000)); // retraso 1s para no saturar
         }
+
+        m.reply(`✅ Se envió el comando a ${chats.length} grupos para registrarlos.`);
     }
 };
-
