@@ -1,12 +1,13 @@
 const fs = require("fs");
 const path = "./groups.json";
-const { OWNER_JID } = require("../../config"); // ajusta la ruta según tu estructura
 
 module.exports = {
     command: ["listagrupos"],
     description: "Muestra todos los grupos guardados donde está el bot",
     run: async (client, m) => {
-        if(m.key.participant !== OWNER_JID && m.key.remoteJid !== OWNER_JID){
+        // Verificar si el remitente es el propietario
+        if(!global.owner.includes(m.key.participant?.replace("@s.whatsapp.net","")) && 
+           !global.owner.includes(m.key.remoteJid?.replace("@s.whatsapp.net",""))){
             return m.reply("❌ Solo el propietario puede usar este comando.");
         }
 
@@ -19,4 +20,3 @@ module.exports = {
         m.reply(`📋 Lista de grupos guardados (${gruposGuardados.length}):\n\n${listaGrupos}`);
     }
 };
-
