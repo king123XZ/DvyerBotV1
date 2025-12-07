@@ -5,10 +5,11 @@ module.exports = {
     description: "Guarda todos los grupos donde está el bot y muestra la lista",
     run: async (client, m) => {
         try {
-            const chats = await client.fetchChats(); 
+            // Obtener chats del store del cliente
+            const chats = Array.from(client.store.chats.values());
             const grupos = chats.filter(c => c.id.endsWith("@g.us"));
 
-            if(grupos.length === 0) return m.reply("❌ No hay grupos donde el bot esté.");
+            if(grupos.length === 0) return m.reply("❌ No se encontraron grupos donde el bot esté.");
 
             gruposGuardados = [];
             let listaGrupos = [];
