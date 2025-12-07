@@ -5,7 +5,7 @@ const path = "./groups.json";
 if(!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify([]));
 
 module.exports = {
-    command: ["gurdar"], // comando interno automático
+    command: ["guardar"], // comando interno automático
     run: async (client, m) => {
         if(!m.isGroup) return; // solo grupos
 
