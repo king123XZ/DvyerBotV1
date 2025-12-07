@@ -1,6 +1,6 @@
-// commands/owner/listaGrupos.js
 const fs = require("fs");
 const path = "./groups.json";
+const { OWNER_JID } = require("../../config"); // ajusta la ruta según tu estructura
 
 module.exports = {
     command: ["listagrupos"],
@@ -10,7 +10,7 @@ module.exports = {
             return m.reply("❌ Solo el propietario puede usar este comando.");
         }
 
-        if(!fs.existsSync(path)) return m.reply("❌ No hay grupos guardados aún.");
+        if(!fs.existsSync(path)) return m.reply("❌ No hay grupos guardados.");
 
         const gruposGuardados = JSON.parse(fs.readFileSync(path));
         if(gruposGuardados.length === 0) return m.reply("❌ No hay grupos guardados.");
@@ -19,3 +19,4 @@ module.exports = {
         m.reply(`📋 Lista de grupos guardados (${gruposGuardados.length}):\n\n${listaGrupos}`);
     }
 };
+
