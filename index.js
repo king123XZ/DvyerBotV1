@@ -1,101 +1,197 @@
-// ===============================
-//  YERBOT - INDEX.JS COMPLETO
-//  CON EL COMANDO antiViewOnce 100% FUNCIONAL
-// ===============================
+/**
+ * ================================
+ *        Mini Lurus - WaBot
+ * ================================
+ * Creado por: Carlos Alexis (Zam)
+ * Año: 2025
+ * Librería: Baileys
+ * ================================
+ **/
 
-import makeWASocket, { 
-    DisconnectReason, 
-    useMultiFileAuthState, 
-    downloadContentFromMessage 
-} from "@whiskeysockets/baileys";
-import fs from "fs";
-import path from "path";
-import P from "pino";
-import { fileURLToPath } from "url";
+require("./settings");
+require("./lib/database");
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  jidDecode,
+  DisconnectReason,
+} = require("@whiskeysockets/baileys");
 
-let antiViewOnce = true; // 🔥 ACTIVADO POR DEFECTO
+const pino = require("pino");
+const chalk = require("chalk");
+const fs = require("fs");
+const path = require("path");
+const readline = require("readline");
+const os = require("os");
+const qrcode = require("qrcode-terminal");
+const parsePhoneNumber = require("awesome-phonenumber");
+const { smsg } = require("./lib/message");
+const { Boom } = require("@hapi/boom");
+const { exec } = require("child_process");
 
-// ===============================
-// FUNCIÓN PRINCIPAL
-// ===============================
+const mainHandler = require("./main"); // << CORRECTO
+
+// Logs
+const print = (label, value) =>
+  console.log(
+    `${chalk.green.bold("║")} ${chalk.cyan.bold(label.padEnd(16))}${chalk.magenta.bold(":")} ${value}`
+  );
+
+const question = (text) => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise((resolve) => rl.question(text, resolve));
+};
+
+const usePairingCode = true;
+
+const log = {
+  info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
+  success: (msg) => console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
+  warn: (msg) => console.log(chalk.bgYellowBright.blueBright.bold(`WARNING`), chalk.yellow(msg)),
+  warning: (msg) => console.log(chalk.bgYellowBright.red.bold(`WARNING`), chalk.yellow(msg)),
+  error: (msg) => console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg)),
+};
+
+// Info del sistema
+const userInfoSyt = () => {
+  try {
+    return os.userInfo().username;
+  } catch {
+    return process.env.USER || process.env.USERNAME || "desconocido";
+  }
+};
+
+// Banner
+console.log(
+  chalk.yellow.bold(
+    `╔═════[${`${chalk.yellowBright(userInfoSyt())}${chalk.white.bold("@")}${chalk.yellowBright(os.hostname())}`}]═════`
+  )
+);
+print("OS", `${os.platform()} ${os.release()} ${os.arch()}`);
+print("Actividad", `${Math.floor(os.uptime() / 3600)} h ${Math.floor((os.uptime() % 3600) / 60)} m`);
+print("Shell", process.env.SHELL || process.env.COMSPEC || "desconocido");
+print("CPU", os.cpus()[0]?.model.trim() || "unknown");
+print("Memoria", `${(os.freemem() / 1024 / 1024).toFixed(0)} MiB / ${(os.totalmem() / 1024 / 1024).toFixed(0)} MiB`);
+print("Script version", `v${require("./package.json").version}`);
+print("Node.js", process.version);
+print("Baileys", `WhiskeySockets/baileys`);
+print("Fecha & Tiempo", new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City", hour12: false }));
+console.log(chalk.yellow.bold("╚" + "═".repeat(30)));
+
 async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState("./session");
+  const { state, saveCreds } = await useMultiFileAuthState(global.sessionName);
+  const { version } = await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
-        logger: P({ level: "silent" }),
-        printQRInTerminal: true,
-        auth: state,
-        browser: ["YertxBot", "Chrome", "1.0"],
-    });
+  const client = makeWASocket({
+    version,
+    logger: pino({ level: "silent" }),
+    printQRInTerminal: false,
+    browser: ["Linux", "Opera"],
+    auth: state,
+  });
 
-    sock.ev.on("creds.update", saveCreds);
+  // Registro inicial
+  if (!client.authState.creds.registered) {
+    const phoneNumber = await question(
+      log.warn("Ingrese su número de WhatsApp\n") +
+      log.info("Ejemplo: 5212345678900\n")
+    );
 
-    // ===============================
-    // ANTI-VIEW-ONCE  (🔥 100% REAL)
-    // ===============================
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-        const m = messages[0];
-        if (!m.message) return;
-        const from = m.key.remoteJid;
+    try {
+      log.info("Solicitando código de emparejamiento...");
+      const pairing = await client.requestPairingCode(phoneNumber, "1234MINI");
+      log.success(`Código de emparejamiento: ${chalk.cyanBright(pairing)} (expira en 15s)`);
+    } catch (err) {
+      log.error("Error al solicitar el código de emparejamiento:", err);
+      exec("rm -rf ./lurus_session/*");
+      process.exit(1);
+    }
+  }
 
-        // Detecta que sea view once
-        if (antiViewOnce && m.message.viewOnceMessageV2) {
-            let msg = m.message.viewOnceMessageV2.message;
+  // Base de datos
+  await global.loadDatabase();
+  console.log(chalk.yellow("Base de datos cargada correctamente."));
 
-            // Foto
-            if (msg.imageMessage) {
-                const buffer = await downloadViewOnce(msg.imageMessage);
-                await sock.sendMessage(from, { image: buffer, caption: "🔓 Vista desactivada (Anti-ViewOnce)" });
-            }
+  // Evento de conexión
+  client.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
 
-            // Video
-            if (msg.videoMessage) {
-                const buffer = await downloadViewOnce(msg.videoMessage);
-                await sock.sendMessage(from, { video: buffer, caption: "🔓 Vista desactivada (Anti-ViewOnce)" });
-            }
-        }
+    if (connection === "close") {
+      const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
 
-        // ===============================
-        // COMANDOS
-        // ===============================
-        const body = (m.message.conversation
-            || m.message.extendedTextMessage?.text
-            || "").toLowerCase();
+      if ([
+        DisconnectReason.connectionLost,
+        DisconnectReason.connectionClosed,
+        DisconnectReason.restartRequired,
+        DisconnectReason.timedOut,
+        DisconnectReason.badSession,
+      ].includes(reason)) {
+        log.warning("Reconectando...");
+        startBot();
+        return;
+      }
 
-        if (body === ".desvista on") {
-            antiViewOnce = true;
-            await sock.sendMessage(from, { text: "🟢 Anti-ViewOnce ACTIVADO" });
-        }
+      if ([
+        DisconnectReason.loggedOut,
+        DisconnectReason.forbidden,
+        DisconnectReason.multideviceMismatch,
+      ].includes(reason)) {
+        log.error("Eliminar sesión y volver a escanear");
+        exec("rm -rf ./lurus_session/*");
+        process.exit(1);
+      }
 
-        if (body === ".desvista off") {
-            antiViewOnce = false;
-            await sock.sendMessage(from, { text: "🔴 Anti-ViewOnce DESACTIVADO" });
-        }
-    });
+      client.end(`Motivo desconocido: ${reason}`);
+    }
 
-    sock.ev.on("connection.update", (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === "close") {
-            if (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-                startBot();
-            }
-        }
-        if (connection === "open") console.log("🔥 Bot conectado correctamente");
-    });
-}
+    if (connection === "open") log.success("Su conexión fue exitosa");
+  });
 
-// ===============================
-// DESCARGA EL VIEW ONCE
-// ===============================
-async function downloadViewOnce(msg) {
-    const type = msg.mimetype.startsWith("image") ? "image" : "video";
-    const stream = await downloadContentFromMessage(msg, type);
-    let buffer = Buffer.from([]);
-    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-    return buffer;
+  // RECIBIR MENSAJES (arreglado)
+  client.ev.on("messages.upsert", async ({ messages }) => {
+    try {
+      let m = messages[0];
+      if (!m.message) return;
+
+      m.message =
+        m.message.ephemeralMessage?.message || m.message;
+
+      if (m.key.remoteJid === "status@broadcast") return;
+
+      m = smsg(client, m);
+
+      // ✅ CORRECTO: solo 2 parámetros
+      await mainHandler(client, m);
+
+    } catch (err) {
+      console.log("Error en handler:", err);
+    }
+  });
+
+  client.decodeJid = (jid) => {
+    if (!jid) return jid;
+    if (/:\d+@/gi.test(jid)) {
+      const decode = jidDecode(jid) || {};
+      return decode.user && decode.server ? decode.user + "@" + decode.server : jid;
+    }
+    return jid;
+  };
+
+  client.ev.on("creds.update", saveCreds);
 }
 
 startBot();
+
+// Auto-reload
+let file = require.resolve(__filename);
+fs.watchFile(file, () => {
+  fs.unwatchFile(file);
+  console.log(chalk.yellowBright(`Se actualizó ${__filename}`));
+  delete require.cache[file];
+  require(file);
+});
