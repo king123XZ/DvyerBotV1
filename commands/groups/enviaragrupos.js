@@ -3,7 +3,7 @@ const path = "./groups.json";
 
 module.exports = {
     command: ["enviaragrupos"],
-    description: "Reenvía mensaje o media a todos los grupos guardados de forma segura",
+    description: "Reenvía mensaje o media a todos los grupos guardados, notificando grupos cerrados",
     run: async (client, m) => {
         const sender = (m.key.participant || m.key.remoteJid).replace("@s.whatsapp.net","");
         if(!global.owner.includes(sender)) return m.reply("❌ Solo el propietario puede usar este comando.");
@@ -13,15 +13,14 @@ module.exports = {
         if(gruposGuardados.length === 0) return m.reply("❌ No hay grupos guardados.");
 
         const retraso = 10000; // 10 segundos para evitar rate limit
-        const totalGrupos = gruposGuardados.length;
-        const tiempoEstimado = Math.ceil((totalGrupos * retraso) / 1000);
+        const gruposExcluidos = [
+            "51917391317@s.whatsapp.net", // tu número personal
+            "120363401477412280@g.us"    // grupo de soporte u otros
+        ];
 
-        await m.reply(`⌛ Se enviará el mensaje a ${totalGrupos} grupos.\n⏱ Tiempo estimado: ${tiempoEstimado} segundos.`);
-
-        // Mensaje o media respondida
+        // Detectar mensaje o media respondida
         const quoted = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
         if(!quoted && !m.message.conversation) return m.reply("❌ Debes responder a un mensaje o enviar un texto.");
-
         const contenido = quoted || m.message;
         const mensajeTexto = contenido.conversation || contenido.extendedTextMessage?.text || "";
 
@@ -40,23 +39,39 @@ module.exports = {
             }
         }
 
-        const gruposExcluidos = [
-            "51917391317@s.whatsapp.net", // tu número personal
-            "120363401477412280@g.us"    // grupo de soporte u otros
-        ];
+        // Revisar grupos cerrados antes de enviar
+        let gruposPrivados = [];
+        let gruposAEnviar = [];
 
-        for(let i=0;i<gruposGuardados.length;i++){
-            const grupoId = gruposGuardados[i].id;
+        for(const grupo of gruposGuardados){
+            const grupoId = grupo.id;
             if(gruposExcluidos.includes(grupoId)) continue;
 
-            try {
+            try{
                 const metadata = await client.groupMetadata(grupoId);
                 if(metadata.restrict){
-                    console.log(`⚠️ Grupo cerrado: ${metadata.subject}`);
-                    continue;
+                    gruposPrivados.push(metadata.subject);
+                } else {
+                    gruposAEnviar.push(grupoId);
                 }
+            } catch(err){
+                console.log(`Error obteniendo metadata de ${grupoId}: ${err.message}`);
+            }
+        }
 
-                // Enviar mensaje o media
+        // Notificar al propietario sobre grupos privados
+        if(gruposPrivados.length > 0){
+            await m.reply(`⚠️ No se enviará mensaje a los siguientes grupos (solo admins pueden escribir):\n- ${gruposPrivados.join("\n- ")}`);
+        }
+
+        const totalGrupos = gruposAEnviar.length;
+        const tiempoEstimado = Math.ceil((totalGrupos * retraso) / 1000);
+        await m.reply(`⌛ Se enviará el mensaje a ${totalGrupos} grupos.\n⏱ Tiempo estimado: ${tiempoEstimado} segundos.`);
+
+        // Enviar mensaje/media
+        for(let i=0;i<gruposAEnviar.length;i++){
+            const grupoId = gruposAEnviar[i];
+            try {
                 const enviar = async () => {
                     if(buffer && mediaType){
                         switch(mediaType){
@@ -92,6 +107,6 @@ module.exports = {
         }
 
         if(buffer) fs.unlinkSync(filename);
-        m.reply("✅ Mensaje reenviado de forma segura a todos los grupos.");
+        m.reply("✅ Mensaje reenviado de forma segura a todos los grupos disponibles.");
     }
 };
