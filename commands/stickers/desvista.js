@@ -5,70 +5,82 @@
 
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
-// Contraseña fija para permitir el envío
-const PASSWORD = "1234";
+const PASSWORD = "1234"; // Contraseña fija
 
 module.exports = {
     command: ["desvista", "abrirvista", "openview"],
 
     run: async (client, m) => {
         try {
-            // Debe responder a un mensaje
-            if (!m.quoted) return;
+            if (!m.quoted) return; // Debe responder a un mensaje
 
-            // Esperar la contraseña del usuario
-            await client.sendMessage(m.chat, { text: "🔐 *Ingresa la contraseña para abrir la vista:*" });
-
-            const confirmation = await client.awaitMessage(m.chat, m.sender, 60000);
-            if (!confirmation) return;
-
-            if (confirmation.text !== PASSWORD) {
-                return client.sendMessage(m.chat, { text: "❌ *Contraseña incorrecta.*" });
-            }
-
-            // Extraer mensaje view once
-            const qMsg = m.quoted.message;
+            // Obtener el mensaje original (posible vista única)
+            const q = m.quoted.message;
 
             const view =
-                qMsg?.viewOnceMessageV2?.message ||
-                qMsg?.viewOnceMessageV2Extension?.message ||
-                qMsg?.viewOnceMessage?.message;
+                q?.viewOnceMessageV2?.message ||
+                q?.viewOnceMessageV2Extension?.message ||
+                q?.viewOnceMessage?.message;
 
-            if (!view) return;
+            if (!view) return; // No es vista única → no hacer nada
 
-            const img = view.imageMessage;
-            const vid = view.videoMessage;
+            // Guardar imagen/video para enviar luego
+            const IMG = view.imageMessage;
+            const VID = view.videoMessage;
 
-            // 🧾 Definir el JID privado del usuario
+            // 👉 El bot NO habla en el chat donde se mandó la vista
+
             const userPrivate = m.sender;
 
-            // 🖼️ Imagen
-            if (img) {
-                const buffer = await downloadViewOnce(img);
+            // 📩 El bot envía mensaje al privado pidiendo contraseña
+            const ask = await client.sendMessage(userPrivate, { 
+                text: "🔐 *Responde a este mensaje con la contraseña para abrir la vista:*"
+            });
 
+            // Esperar respuesta SOLO si el usuario responde AL MENSAJE EN PRIVADO
+            const confirmation = await client.waitForMessage({
+                chatJid: userPrivate,
+                sender: userPrivate,
+                quoted: ask.key,     // 🔥 Debe responder exactamente a este mensaje
+                timeout: 60000       // 1 minuto
+            });
+
+            if (!confirmation) {
+                return client.sendMessage(userPrivate, { text: "⏳ *Tiempo expirado.*" });
+            }
+
+            if (confirmation.text !== PASSWORD) {
+                return client.sendMessage(userPrivate, { text: "❌ *Contraseña incorrecta.*" });
+            }
+
+            // ------------------------------
+            // 🔓 CONTRASEÑA CORRECTA → ENVIAR IMAGEN/VIDEO
+            // ------------------------------
+
+            if (IMG) {
+                const buf = await downloadViewOnce(IMG);
                 return client.sendMessage(userPrivate, {
-                    image: buffer,
+                    image: buf,
                     caption: "🔓 *Vista desbloqueada — Enviado por Dvyer*"
                 });
             }
 
-            // 🎥 Video
-            if (vid) {
-                const buffer = await downloadViewOnce(vid);
-
+            if (VID) {
+                const buf = await downloadViewOnce(VID);
                 return client.sendMessage(userPrivate, {
-                    video: buffer,
+                    video: buf,
                     caption: "🔓 *Vista desbloqueada — Enviado por Dvyer*"
                 });
             }
 
-        } catch (err) {
-            console.log("Error en vista:", err);
+        } catch (e) {
+            console.log("Error desvista:", e);
         }
     }
 };
 
-// Descargar contenido de vista única
+
+// 📥 Función para descargar imágenes/videos de vista única
 async function downloadViewOnce(msg) {
     const type = msg.mimetype.split("/")[0];
     const stream = await downloadContentFromMessage(msg, type);
