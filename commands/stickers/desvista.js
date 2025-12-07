@@ -1,100 +1,65 @@
 /**
- * DESVISTA PRIVADA CON CONTRASEÑA
+ * DESVISTA PRIVADA AUTOMÁTICA
  * Creado por Dvyer
  */
 
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
-
-// Guardamos contraseñas que se están esperando
-global.waitingPassword = global.waitingPassword || {};
 
 module.exports = {
   command: ["desvista", "abrirvista", "openview"],
 
   run: async (client, m) => {
     try {
-      if (!m.quoted) return;
+      if (!m.quoted)
+        return client.sendMessage(m.chat, {
+          text: "⚠️ *Responde a una imagen o video de vista única.*"
+        });
 
       const q = m.quoted.message;
 
+      // Detectamos cualquier tipo de vista única
       const view =
         q?.viewOnceMessageV2?.message ||
         q?.viewOnceMessageV2Extension?.message ||
         q?.viewOnceMessage?.message;
 
-      if (!view) return;
+      if (!view)
+        return client.sendMessage(m.chat, {
+          text: "❌ *Ese mensaje no es de vista única.*"
+        });
 
       const img = view.imageMessage;
       const vid = view.videoMessage;
-      if (!img && !vid) return;
 
-      const user = m.sender;
+      if (!img && !vid)
+        return client.sendMessage(m.chat, {
+          text: "⚠️ No se pudo abrir la vista única."
+        });
 
-      // Creamos la entrada del usuario que debe enviar contraseña
-      waitingPassword[user] = {
-        type: img ? "image" : "video",
-        msg: img || vid,
-        time: Date.now()
-      };
+      const user = m.sender; // tu privado
 
-      // Pedimos contraseña en privado
+      // Descargamos imagen o video
+      const buffer = await downloadVO(img || vid);
+
+      // Enviamos al PRIVADO del usuario
       await client.sendMessage(user, {
-        text: "🔐 *Ingresa la contraseña para desbloquear la vista única:*\n\nEscribe: 1234"
+        [img ? "image" : "video"]: buffer,
+        caption: "🔓 *Vista única desbloqueada — Creado por Dvyer*"
       });
 
-    } catch (e) {
-      console.error("ERROR DESVISTA:", e);
-    }
-  }
-};
-
-
-// ==========================
-// ESCUCHAMOS TODAS LAS PARTES
-// ==========================
-module.exports.before = async (client, m) => {
-  try {
-    const user = m.sender;
-
-    // Si no estamos esperando su contraseña → ignorar
-    if (!waitingPassword[user]) return;
-
-    const text = m.text?.trim();
-    if (!text) return;
-
-    // Contraseña correcta
-    if (text === "1234") {
-      const data = waitingPassword[user];
-      delete waitingPassword[user];
-
-      const buffer = await downloadVO(data.msg);
-
-      if (data.type === "image") {
-        await client.sendMessage(user, {
-          image: buffer,
-          caption: "🔓 *Vista única desbloqueada — Creado por Dvyer*"
-        });
-      } else {
-        await client.sendMessage(user, {
-          video: buffer,
-          caption: "🔓 *Vista única desbloqueada — Creado por Dvyer*"
-        });
-      }
+      // NO enviamos nada al chat público
       return;
+
+    } catch (err) {
+      console.error("ERROR DESVISTA:", err);
+      return client.sendMessage(m.chat, {
+        text: "❌ Ocurrió un error al intentar abrir la vista única."
+      });
     }
-
-    // Contraseña incorrecta
-    await client.sendMessage(user, {
-      text: "❌ *Contraseña incorrecta.*\nVuelve a escribir: 1234"
-    });
-
-  } catch (err) {
-    console.error("ERROR VALIDACIÓN:", err);
   }
 };
 
-
-// Función para descargar vista única
+// Función para descargar view once
 async function downloadVO(msg) {
   const type = msg.mimetype.split("/")[0];
   const stream = await downloadContentFromMessage(msg, type);
