@@ -19,15 +19,23 @@ module.exports = {
                 mimetype = media.mimetype || "";
 
                 // Descargar media
-                buffer = await client.downloadMediaMessage(quotedMsg); // tu función de descargar media según tu bot
-                const ext = mimetype.split("/")[1] || "bin";
-                filename = `temp.${ext}`;
-                require("fs").writeFileSync(filename, buffer);
+                if(client.downloadMediaMessage) {
+                    buffer = await client.downloadMediaMessage(quotedMsg);
+                    const ext = mimetype.split("/")[1] || "bin";
+                    filename = `temp.${ext}`;
+                    require("fs").writeFileSync(filename, buffer);
+                }
             }
 
-            // Obtener todos los grupos donde estás
-            const chats = await client.chats.all();
-            const grupos = chats.filter(c => c.id.endsWith("@g.us"));
+            // Obtener todos los grupos
+            let allChats = [];
+            if(client.store?.chats) {
+                allChats = await client.store.chats.all();
+            } else if(client.fetchChats) {
+                allChats = await client.fetchChats();
+            }
+
+            const grupos = allChats.filter(c => c.id.endsWith("@g.us"));
 
             for (let i = 0; i < grupos.length; i++) {
                 const grupoId = grupos[i].id;
@@ -57,7 +65,6 @@ module.exports = {
                     console.log(`Error enviando a ${grupoId}: ${err.message}`);
                 }
 
-                // Esperar 5 segundos antes del siguiente grupo
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
 
