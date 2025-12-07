@@ -1,58 +1,46 @@
-const { useMultiFileAuthState, fetchLatestBaileysVersion, default: makeWASocket } = require("@whiskeysockets/baileys");
-const pino = require("pino");
+/**
+ *  🔥 Comando Sub-Bot
+ *  Crea un código oficial de emparejamiento de WhatsApp para sub-bots
+ *  Solo los números autorizados pueden generar el código
+ */
+
+const { default: makeWASocket } = require("@whiskeysockets/baileys");
+const { exec } = require("child_process");
 
 module.exports = {
   command: ["subbot"],
-  description: "Convierte tu número en sub-bot (solo números autorizados)",
-
+  description: "Genera código oficial de WhatsApp para vincular sub-bot",
   run: async (client, m) => {
     try {
-      const authorizedNumbers = [
-        "51907376960",
-        "51917391317",
-        "519XXXXXXXXX" // reemplazar
+      // Lista de números autorizados para pedir sub-bot
+      const allowedUsers = [
+        "51907376960@s.whatsapp.net", // Tu número principal
+        "51917391317@s.whatsapp.net", // Número autorizado 2
       ];
 
-      const senderNumber = m.sender.split("@")[0];
-      if (!authorizedNumbers.includes(senderNumber)) return;
+      if (!allowedUsers.includes(m.sender)) {
+        return client.sendMessage(m.chat, { text: "❌ No estás autorizado para usar este comando." });
+      }
 
-      await client.sendMessage(m.chat, { text: "🔑 Envia tu código de emparejamiento para iniciar el sub-bot." });
+      // Pedir el código de emparejamiento
+      const phoneNumber = m.sender.split("@")[0]; // número que quiere ser sub-bot
+      let pairingCode;
 
-      // Escuchar solo el siguiente mensaje de ese usuario
-      const handler = async ({ messages }) => {
-        let msg = messages[0];
-        if (!msg.message || !msg.key) return;
+      try {
+        pairingCode = await client.requestPairingCode(phoneNumber, "1234MINI"); // clave temporal, WhatsApp oficial
+      } catch (err) {
+        console.log("Error generando código:", err);
+        return client.sendMessage(m.chat, { text: "❌ Error al generar el código de emparejamiento." });
+      }
 
-        if (msg.key.remoteJid === m.chat && !msg.key.fromMe) {
-          const pairingCode = msg.message.conversation || msg.message.extendedTextMessage?.text;
-          if (!pairingCode) return;
-
-          const { state, saveCreds } = await useMultiFileAuthState(`subbot_${senderNumber}`);
-          const { version } = await fetchLatestBaileysVersion();
-
-          const subBot = makeWASocket({
-            version,
-            logger: pino({ level: "silent" }),
-            printQRInTerminal: false,
-            browser: ["SubBot", "Chrome", "1.0"],
-            auth: state,
-          });
-
-          subBot.ev.on("creds.update", saveCreds);
-          await client.sendMessage(m.chat, { text: "✅ Sub-bot iniciado correctamente." });
-
-          console.log(`Sub-bot iniciado para ${senderNumber} con código: ${pairingCode}`);
-
-          // Quitar el listener después de usarlo
-          client.ev.off("messages.upsert", handler);
-        }
-      };
-
-      client.ev.on("messages.upsert", handler);
+      // Enviar el código al chat
+      await client.sendMessage(m.chat, { 
+        text: `✅ Tu código de emparejamiento para sub-bot es:\n\n*${pairingCode}*\n\nIngresa este código en WhatsApp para vincular el sub-bot.` 
+      });
 
     } catch (err) {
-      console.error("Error al iniciar sub-bot:", err);
-      client.sendMessage(m.chat, { text: "❌ Error al iniciar el sub-bot." });
+      console.log("Error en sub-bot:", err);
+      client.sendMessage(m.chat, { text: "❌ Ocurrió un error inesperado." });
     }
-  },
+  }
 };
