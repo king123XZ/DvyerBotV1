@@ -15,15 +15,15 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const os = require("os");
+const qrcode = require("qrcode-terminal");
+const parsePhoneNumber = require("awesome-phonenumber");
 const { smsg } = require("./lib/message");
 const { Boom } = require("@hapi/boom");
 const { exec } = require("child_process");
 
-const mainHandler = require("./main"); // Tu handler principal
+const mainHandler = require("./main"); // << CORRECTO
 
-// =================================
-// Logs y banner
-// =================================
+// Logs
 const print = (label, value) =>
   console.log(
     `${chalk.green.bold("║")} ${chalk.cyan.bold(label.padEnd(16))}${chalk.magenta.bold(":")} ${value}`
@@ -37,6 +37,8 @@ const question = (text) => {
   return new Promise((resolve) => rl.question(text, resolve));
 };
 
+const usePairingCode = true;
+
 const log = {
   info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
   success: (msg) => console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
@@ -45,11 +47,16 @@ const log = {
   error: (msg) => console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg)),
 };
 
+// Info del sistema
 const userInfoSyt = () => {
-  try { return os.userInfo().username; } 
-  catch { return process.env.USER || process.env.USERNAME || "desconocido"; }
+  try {
+    return os.userInfo().username;
+  } catch {
+    return process.env.USER || process.env.USERNAME || "desconocido";
+  }
 };
 
+// Banner
 console.log(
   chalk.yellow.bold(
     `╔═════[${`${chalk.yellowBright(userInfoSyt())}${chalk.white.bold("@")}${chalk.yellowBright(os.hostname())}`}]═════`
@@ -66,26 +73,15 @@ print("Baileys", `WhiskeySockets/baileys`);
 print("Fecha & Tiempo", new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City", hour12: false }));
 console.log(chalk.yellow.bold("╚" + "═".repeat(30)));
 
-// =================================
-// Números de sub-bots autorizados
-// =================================
-const authorizedSubBots = {
-  "51907376960": "lurus_session_960", // Sub-bot 1
-  "51917391317": "lurus_session_317", // Sub-bot 2
-};
-
-// =================================
-// Función para iniciar un bot
-// =================================
-async function startBot(sessionName, isSubBot = false) {
-  const { state, saveCreds } = await useMultiFileAuthState(sessionName);
+async function startBot() {
+  const { state, saveCreds } = await useMultiFileAuthState(global.sessionName);
   const { version } = await fetchLatestBaileysVersion();
 
   const client = makeWASocket({
     version,
     logger: pino({ level: "silent" }),
-    printQRInTerminal: true,
-    browser: ["MiniLurus", "Chrome", "1.0"],
+    printQRInTerminal: false,
+    browser: ["Linux", "Opera"],
     auth: state,
   });
 
@@ -109,57 +105,61 @@ async function startBot(sessionName, isSubBot = false) {
 
   // Base de datos
   await global.loadDatabase();
-  console.log(chalk.yellow(`Base de datos cargada correctamente para ${sessionName}.`));
+  console.log(chalk.yellow("Base de datos cargada correctamente."));
 
-  // =================================
-  // Conexión
-  // =================================
+  // Evento de conexión
   client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
 
     if (connection === "close") {
       const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
 
-      if ([DisconnectReason.connectionLost, DisconnectReason.connectionClosed, DisconnectReason.restartRequired, DisconnectReason.timedOut, DisconnectReason.badSession].includes(reason)) {
-        log.warning(`[${sessionName}] Reconectando...`);
-        startBot(sessionName, isSubBot);
+      if ([
+        DisconnectReason.connectionLost,
+        DisconnectReason.connectionClosed,
+        DisconnectReason.restartRequired,
+        DisconnectReason.timedOut,
+        DisconnectReason.badSession,
+      ].includes(reason)) {
+        log.warning("Reconectando...");
+        startBot();
         return;
       }
 
-      if ([DisconnectReason.loggedOut, DisconnectReason.forbidden, DisconnectReason.multideviceMismatch].includes(reason)) {
-        log.error(`[${sessionName}] Sesión eliminada, escanear QR de nuevo`);
-        exec(`rm -rf ./lurus_session/*`);
+      if ([
+        DisconnectReason.loggedOut,
+        DisconnectReason.forbidden,
+        DisconnectReason.multideviceMismatch,
+      ].includes(reason)) {
+        log.error("Eliminar sesión y volver a escanear");
+        exec("rm -rf ./lurus_session/*");
         process.exit(1);
       }
 
       client.end(`Motivo desconocido: ${reason}`);
     }
 
-    if (connection === "open") log.success(`[${sessionName}] Conectado correctamente`);
+    if (connection === "open") log.success("Su conexión fue exitosa");
   });
 
-  // =================================
-  // Recibir mensajes
-  // =================================
+  // RECIBIR MENSAJES (arreglado)
   client.ev.on("messages.upsert", async ({ messages }) => {
     try {
       let m = messages[0];
       if (!m.message) return;
 
-      m.message = m.message.ephemeralMessage?.message || m.message;
+      m.message =
+        m.message.ephemeralMessage?.message || m.message;
+
       if (m.key.remoteJid === "status@broadcast") return;
 
       m = smsg(client, m);
 
-      // Ejecutar handler: 
-      // - sub-bots solo para números autorizados
-      // - bot principal para todos
-      if (!isSubBot || authorizedSubBots[m.sender.split("@")[0]]) {
-        await mainHandler(client, m);
-      }
+      // ✅ CORRECTO: solo 2 parámetros
+      await mainHandler(client, m);
 
     } catch (err) {
-      console.log(`Error en handler de ${sessionName}:`, err);
+      console.log("Error en handler:", err);
     }
   });
 
@@ -173,22 +173,11 @@ async function startBot(sessionName, isSubBot = false) {
   };
 
   client.ev.on("creds.update", saveCreds);
-
-  return client;
 }
 
-// =================================
-// Iniciar el bot principal y sub-bots
-// =================================
-startBot("lurus_session_main", false); // Bot principal abierto a todos
+startBot();
 
-for (const number in authorizedSubBots) {
-  startBot(authorizedSubBots[number], true); // Sub-bots solo autorizados
-}
-
-// =================================
 // Auto-reload
-// =================================
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
   fs.unwatchFile(file);
