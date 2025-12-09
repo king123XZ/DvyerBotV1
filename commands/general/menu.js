@@ -3,7 +3,25 @@ module.exports = {
 
   run: async (client, m, { prefix }) => {
 
-    // Enviar la imagen del menú principal
+    // ============================
+    // 🔒 PERMISOS: SOLO OWNER O ADMIN
+    // ============================
+
+    const owner = "51xxxxxxxxx"; // <<< PON TU NÚMERO AQUÍ
+    const isOwner = m.sender === owner + "@s.whatsapp.net";
+
+    const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
+    const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
+    const isAdmin = admins.some(p => p.id === m.sender);
+
+    if (!isOwner && !isAdmin) {
+      return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
+    }
+
+    // ============================
+    // 📌 MENÚ ORIGINAL
+    // ============================
+
     await client.sendMessage(m.chat, {
       image: { url: "https://i.ibb.co/XxdTkYNq/menu.png" },
       caption: `⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝐌𝐄𝐍𝐔 𝐇𝐀𝐂𝐊𝐄𝐑 ⧽
@@ -13,7 +31,6 @@ module.exports = {
 🕶️ Versión: 2.0`
     });
 
-    // Botones de categorías
     const buttons = [
       {
         buttonId: ".menu_descargas",
@@ -32,7 +49,6 @@ module.exports = {
       }
     ];
 
-    // Enviar los botones
     await client.sendMessage(m.chat, {
       text: "Selecciona una categoría:",
       footer: "YerTX Bot",
