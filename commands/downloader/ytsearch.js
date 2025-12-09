@@ -7,7 +7,32 @@ module.exports = {
   command: ["play"],
   description: "Buscar videos de YouTube y enviar enlace con botones",
   category: "downloader",
+
   run: async (client, m, args) => {
+
+    // ==================================
+    // 🔒 PERMISOS (OWNERS + ADMINS)
+    // ==================================
+
+    const owners = [
+      "51917391317@s.whatsapp.net",
+      "51907376960@s.whatsapp.net"
+    ];
+
+    const isOwner = owners.includes(m.sender);
+
+    const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
+    const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
+    const isAdmin = admins.some(p => p.id === m.sender);
+
+    if (!isOwner && !isAdmin) {
+      return client.sendMessage(m.chat, { text: "🚫 *Comando solo para OWNERS o ADMINS del grupo.*" }, { quoted: m });
+    }
+
+    // ==================================
+    // 📌 CÓDIGO ORIGINAL DEL PLAY
+    // ==================================
+
     if (!m) return console.log("⚠️ No se recibió el mensaje");
 
     const chatId = m.chat || m.key?.remoteJid;
@@ -21,7 +46,7 @@ module.exports = {
     await client.sendMessage(chatId, { text: `⏳ Buscando: *${query}* ...` }, { quoted: m });
 
     try {
-      // Llamada a la API de búsqueda
+      // Buscar con la API
       const res = await axios.get(`${API_BASE}/api/utilidades/ytsearch.js`, {
         params: { q: query },
         headers: { Authorization: `Bearer ${API_KEY}` }
@@ -32,8 +57,8 @@ module.exports = {
         return client.sendMessage(chatId, { text: "❌ No se encontraron resultados." }, { quoted: m });
       }
 
-      // Tomamos el primer resultado
       const video = results[0];
+
       const caption = 
 `🎬 *Título:* ${video.titulo}
 📌 *Canal:* ${video.canal}
@@ -41,7 +66,6 @@ module.exports = {
 👁 *Vistas:* ${video.vistas.toLocaleString()}
 🔗 *Enlace:* ${video.url}`;
 
-      // Botones
       const buttons = [
         { buttonId: `.ytaudio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
         { buttonId: `.ytvideo ${video.url}`, buttonText: { displayText: '🎬 Video' }, type: 1 },
@@ -51,7 +75,7 @@ module.exports = {
       const buttonMessage = {
         image: { url: video.miniatura },
         caption,
-        footer: 'DevYER ',
+        footer: 'DevYER',
         buttons,
         headerType: 4
       };
