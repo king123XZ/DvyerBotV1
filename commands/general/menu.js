@@ -4,11 +4,15 @@ module.exports = {
   run: async (client, m, { prefix }) => {
 
     // ============================
-    // 🔒 PERMISOS: SOLO OWNER O ADMIN
+    // 🔒 PERMISOS (OWNERS + ADMINS)
     // ============================
 
-    const owner = "51xxxxxxxxx"; // <<< PON TU NÚMERO AQUÍ
-    const isOwner = m.sender === owner + "@s.whatsapp.net";
+    const owners = [
+      "51917391317@s.whatsapp.net",
+      "51907376960@s.whatsapp.net"
+    ];
+
+    const isOwner = owners.includes(m.sender);
 
     const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
     const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
@@ -19,7 +23,7 @@ module.exports = {
     }
 
     // ============================
-    // 📌 MENÚ ORIGINAL
+    // 📌 MENÚ PRINCIPAL
     // ============================
 
     await client.sendMessage(m.chat, {
