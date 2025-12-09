@@ -6,22 +6,32 @@ module.exports = {
   description: "Descarga solo el audio de YouTube usando tu API, mejorando búsqueda",
   category: "downloader",
   use: "https://www.youtube.com/",
+
   run: async (client, m, args) => {
 
-    // SOLO OWNER
-    const owner = "51xxxxxxxxx"; // tu número
-    const isOwner = m.sender === owner + "@s.whatsapp.net";
+    // ==================================
+    // 🔒 PERMISOS (OWNERS + ADMINS)
+    // ==================================
 
-    // SOLO ADMINS DEL GRUPO
+    const owners = [
+      "51917391317@s.whatsapp.net",
+      "51907376960@s.whatsapp.net"
+    ];
+
+    const isOwner = owners.includes(m.sender);
+
     const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
     const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
     const isAdmin = admins.some(p => p.id === m.sender);
 
     if (!isOwner && !isAdmin) {
-      return m.reply("🚫 *Solo el dueño o los ADMINS del grupo pueden usar este comando.*");
+      return m.reply("🚫 *Solo el OWNER o los ADMINS del grupo pueden usar este comando.*");
     }
 
-    // --- SIGUE TU CÓDIGO ORIGINAL ---
+    // ==================================
+    // 📌 CÓDIGO ORIGINAL
+    // ==================================
+
     if (!args[0]) return m.reply("Ingresa el enlace o nombre de un video de YouTube.");
 
     await m.reply("⏳ Procesando audio...");
@@ -30,12 +40,14 @@ module.exports = {
       let videoUrl = args[0];
       const apiKey = "M8EQKBf7LhgH";
 
+      // Si no es link, buscar por nombre
       if (!videoUrl.startsWith("http")) {
         const { videos } = await yts(videoUrl);
         if (!videos.length) return m.reply("❌ No se encontraron resultados.");
         videoUrl = videos[0].url;
       }
 
+      // Petición a la API
       const res = await axios.get("https://api-sky.ultraplus.click/api/download/yt.js", {
         params: { url: videoUrl, format: "audio" },
         headers: {
