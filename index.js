@@ -94,7 +94,7 @@ async function startBot() {
 
     try {
       log.info("Solicitando código de emparejamiento...");
-      const pairing = await client.requestPairingCode(phoneNumber, "1234MINI");
+      const pairing = await client.requestPairingCode(phoneNumber, "DVYER102");
       log.success(`Código de emparejamiento: ${chalk.cyanBright(pairing)} (expira en 15s)`);
     } catch (err) {
       log.error("Error al solicitar el código de emparejamiento:", err);
