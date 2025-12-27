@@ -2,10 +2,13 @@ const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
+function sleep(ms) {
+  return new Promise(res => setTimeout(res, ms));
+}
+
 module.exports = {
   command: ["tiktoksearch", "ttsearch"],
   category: "downloader",
-  description: "Buscar TikToks (5 resultados)",
 
   run: async (client, m, args) => {
     try {
@@ -23,21 +26,24 @@ module.exports = {
       );
 
       const items = r.data?.result?.items;
-      if (!items || !items.length) {
+
+      if (!Array.isArray(items) || items.length === 0) {
         return m.reply("❌ No se encontraron resultados.");
       }
 
-      // 🔥 Tomamos solo 5
       const videos = items.slice(0, 5);
 
       for (let i = 0; i < videos.length; i++) {
         const v = videos[i];
 
-        const caption = `🎬 *TikTok ${i + 1}/5*
+        // 🔒 VALIDACIONES CRÍTICAS
+        if (!v || !v.url) continue;
+
+        const caption = `🎬 *Resultado ${i + 1}/5*
 ━━━━━━━━━━━━━━
-👤 Autor: ${v.author?.name || "?"}
-❤️ Likes: ${v.stats?.likes || "?"}
+👤 Autor: ${v.author?.name || "Desconocido"}
 👁 Vistas: ${v.stats?.views || "?"}
+❤️ Likes: ${v.stats?.likes || "?"}
 
 🔗 ${v.url}
 ━━━━━━━━━━━━━━`;
@@ -50,23 +56,35 @@ module.exports = {
           }
         ];
 
-        await client.sendMessage(
-          m.chat,
-          {
-            image: { url: v.cover || v.thumbnail },
-            caption,
-            footer: "YerTX Bot",
-            buttons,
-            headerType: 4
-          },
-          { quoted: i === 0 ? m : null }
-        );
+        // 👉 SI NO HAY IMAGEN → TEXTO
+        if (!v.cover && !v.thumbnail) {
+          await client.sendMessage(
+            m.chat,
+            { text: caption },
+            { quoted: m }
+          );
+        } else {
+          await client.sendMessage(
+            m.chat,
+            {
+              image: { url: v.cover || v.thumbnail },
+              caption,
+              buttons,
+              footer: "YerTX Bot",
+              headerType: 4
+            },
+            { quoted: m }
+          );
+        }
+
+        await sleep(800); // 🔥 evita flood / bloqueo
       }
 
     } catch (err) {
-      console.error("TT SEARCH ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al buscar en TikTok.");
+      console.error("❌ TIKTOK SEARCH ERROR:", err.response?.data || err);
+      m.reply("❌ Error al mostrar los resultados.");
     }
   }
 };
+
 
