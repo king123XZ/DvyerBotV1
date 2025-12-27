@@ -7,14 +7,17 @@ module.exports = {
   command: ["ytq"],
 
   run: async (client, m, args) => {
-    const [url, quality] = args;
-    if (!url || !quality) return;
+    const url = args[0];
+    const quality = args[1];
+
+    if (!url || !quality) {
+      return m.reply("❌ Error al seleccionar calidad.");
+    }
 
     try {
-      await m.reply(`⬇️ Generando video en *${quality}p*...`);
+      await m.reply(`⬇️ Descargando video en *${quality}p*...`);
 
-      // 🔹 PASO 3: GENERAR LINK REAL (COBRA)
-      const res = await axios.post(
+      const resolve = await axios.post(
         `${BASE}/youtube-mp4/resolve`,
         {
           url,
@@ -29,9 +32,9 @@ module.exports = {
         }
       );
 
-      const videoUrl = res.data?.result?.media?.video;
+      const videoUrl = resolve.data?.result?.url;
       if (!videoUrl) {
-        return m.reply("❌ No se pudo generar el video.");
+        return m.reply("❌ No se pudo generar el enlace del video.");
       }
 
       await client.sendMessage(
@@ -44,8 +47,8 @@ module.exports = {
         { quoted: m }
       );
 
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       m.reply("❌ Error descargando el video.");
     }
   }
