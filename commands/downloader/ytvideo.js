@@ -14,7 +14,7 @@ module.exports = {
       }
 
       const url = args[0];
-      await m.reply("⏳ Preparando descarga en 360p...");
+      await m.reply("⏳ Obteniendo información del video...");
 
       // ===============================
       // 1️⃣ OBTENER OPCIONES (NO COBRA)
@@ -30,12 +30,19 @@ module.exports = {
         }
       );
 
-      const options = opt.data?.result;
+      // 🔎 DEBUG REAL (por si cambia otra vez)
+      console.log("MP4 OPTIONS RESPONSE:", opt.data);
+
+      if (!opt.data?.status) {
+        return m.reply("❌ La API no devolvió estado válido.");
+      }
+
+      const options = opt.data?.result?.options;
       if (!options || !options.length) {
         return m.reply("❌ No se pudieron obtener opciones de video.");
       }
 
-      // 🔒 FORZADO A 360p
+      // 🔒 SIEMPRE 360p
       const quality = "360";
 
       await m.reply("⬇️ Descargando video en *360p*...");
@@ -58,6 +65,8 @@ module.exports = {
         }
       );
 
+      console.log("MP4 RESOLVE RESPONSE:", res.data);
+
       if (!res.data?.status) {
         return m.reply("❌ No se pudo generar el enlace del video.");
       }
@@ -79,9 +88,11 @@ module.exports = {
       );
 
     } catch (err) {
-      console.error("YTVIDEO 360P ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar el video.");
+      console.error("YTVIDEO ERROR:", err.response?.data || err.message);
+      m.reply("❌ Error al procesar el video.");
     }
   }
+};
+
 };
 
