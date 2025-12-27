@@ -10,7 +10,7 @@ module.exports = {
   run: async (client, m, args) => {
     if (!args[0] || !args[0].includes("mediafire.com")) {
       return m.reply(
-        "❌ Enlace inválido\n\nEjemplo:\n.mf https://www.mediafire.com/file/xxxxx"
+        "❌ Enlace inválido\n\nEjemplo:\n.mf https://www.mediafire.com/file/xxxx"
       );
     }
 
@@ -28,12 +28,12 @@ module.exports = {
 
       const files = res.data?.result?.files;
       if (!files || !files.length) {
-        return m.reply("❌ No se encontró ningún archivo.");
+        return m.reply("❌ No se pudo obtener el archivo.");
       }
 
       const file = files[0];
 
-      // 📏 Extraer tamaño en MB (ej: "File  694.79MB")
+      // 📏 Obtener tamaño en MB
       const sizeMatch = file.size.match(/([\d.]+)\s*MB/i);
       const sizeMB = sizeMatch ? parseFloat(sizeMatch[1]) : 0;
 
@@ -43,41 +43,34 @@ module.exports = {
         );
       }
 
-      const text = `
-📦 *MediaFire Downloader*
-━━━━━━━━━━━━━━━
-📄 *Archivo:* ${file.name}
-📏 *Tamaño:* ${file.size}
+      await m.reply(
+        `📥 Descargando archivo...\n\n📄 ${file.name}\n📏 ${file.size}\n\n👑 DevYer`
+      );
 
-👑 *Creador:* DevYer
-      `.trim();
+      // 📡 Descargar como stream
+      const stream = await axios.get(file.download, {
+        responseType: "arraybuffer",
+        timeout: 0
+      });
 
-      const buttons = [
-        {
-          buttonId: `.mfget ${file.download}`,
-          buttonText: { displayText: "⬇️ Descargar" },
-          type: 1
-        }
-      ];
-
+      // 📤 Enviar como DOCUMENTO
       await client.sendMessage(
         m.chat,
         {
-          text,
-          footer: "MediaFire | DevYer",
-          buttons,
-          headerType: 1
+          document: Buffer.from(stream.data),
+          mimetype: "application/octet-stream",
+          fileName: file.name,
+          caption: `📦 MediaFire\n👑 DevYer`
         },
         { quoted: m }
       );
 
     } catch (err) {
       console.error("MEDIAFIRE ERROR:", err.response?.data || err.message);
-      m.reply("❌ No se pudo analizar el archivo de MediaFire.");
+      m.reply("❌ Error al descargar el archivo de MediaFire.");
     }
   }
 };
-
 
 
 
