@@ -10,9 +10,7 @@ module.exports = {
 🛠 Comandos disponibles:
 
 • sticker → Crear sticker
-• toimg → Convertir sticker a imagen
-• hd → Descargar imagen HD
-• qr → Generar código QR
+• speed → mide velocidad de internet del bot 
 
 ──────────────────────────────
 🔹 Usa los botones para navegar:
