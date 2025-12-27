@@ -5,7 +5,6 @@ const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 module.exports = {
   command: ["mediafire", "mf"],
   category: "downloader",
-  description: "Descargar archivos de MediaFire",
 
   run: async (client, m, args) => {
     if (!args[0] || !args[0].includes("mediafire.com")) {
@@ -17,18 +16,21 @@ module.exports = {
     await m.reply("⏳ Analizando archivo de MediaFire...");
 
     try {
-      const { data } = await axios.post(
+      const res = await axios.post(
         "https://api-sky.ultraplus.click/download/mediafire",
         { url: args[0] },
-        { headers: { apikey: API_KEY } }
+        {
+          headers: { apikey: API_KEY },
+          timeout: 20000 // ⏱️ IMPORTANTE
+        }
       );
 
-      // ✅ AQUÍ ESTABA EL ERROR
-      const files = data?.result?.files;
+      console.log("RESPUESTA MEDIAFIRE:", res.data);
+
+      const files = res.data?.result?.files;
 
       if (!files || !files.length) {
-        console.log("RESPUESTA API:", data);
-        return m.reply("❌ No se pudo obtener el archivo.");
+        return m.reply("❌ No se encontró ningún archivo en MediaFire.");
       }
 
       const file = files[0];
@@ -36,7 +38,7 @@ module.exports = {
       const text = `
 📦 *MediaFire Downloader*
 ━━━━━━━━━━━━━━━
-📄 *Nombre:* ${file.name}
+📄 *Archivo:* ${file.name}
 📏 *Tamaño:* ${file.size}
 
 👑 *Creador:* DevYer
@@ -61,11 +63,15 @@ module.exports = {
         { quoted: m }
       );
 
-    } catch (e) {
-      console.error("MEDIAFIRE ERROR:", e.response?.data || e.message);
-      m.reply("❌ Error al procesar el enlace de MediaFire.");
+    } catch (err) {
+      console.error("MEDIAFIRE ERROR REAL:", err.response?.data || err.message);
+
+      m.reply(
+        "❌ MediaFire no respondió a tiempo.\nIntenta nuevamente o usa otro enlace."
+      );
     }
   }
 };
+
 
 
