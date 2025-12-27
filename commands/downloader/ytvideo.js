@@ -9,78 +9,59 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      if (!args.length) {
-        return m.reply("⚠️ Ingresa un enlace de YouTube.");
-      }
+      if (!args.length)
+        return m.reply("⚠️ Ingresa un link de YouTube.");
 
-      const videoUrl = args[0];
-      await m.reply("⏳ Obteniendo opciones de descarga...");
+      const url = args[0];
+      await m.reply("⏳ Obteniendo calidades disponibles...");
 
-      // ===============================
-      // 1️⃣ OBTENER OPCIONES (NO COBRA)
-      // ===============================
-      const optionsRes = await axios.post(
+      // 1️⃣ OPCIONES (NO COBRA)
+      const opt = await axios.post(
         "https://api-sky.ultraplus.click/youtube-mp4",
-        { url: videoUrl },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            apikey: API_KEY
-          }
-        }
+        { url },
+        { headers: { apikey: API_KEY } }
       );
 
-      const options = optionsRes.data?.result;
-      if (!options || !options.length) {
-        return m.reply("❌ No se pudieron obtener opciones.");
-      }
+      const options = opt.data?.result;
+      if (!options || !options.length)
+        return m.reply("❌ No se encontraron opciones.");
 
-      // 👉 Elegimos 360p por defecto (estable y liviano)
+      // 🔒 Usamos 360p (estable y liviano)
       const selected = options.find(o => o.quality === "360") || options[0];
 
-      await m.reply(`⬇️ Descargando video (${selected.quality}p)...`);
+      await m.reply(`⬇️ Descargando en ${selected.quality}p...`);
 
-      // ===============================
-      // 2️⃣ RESOLVER LINK REAL (COBRA)
-      // ===============================
-      const resolveRes = await axios.post(
+      // 2️⃣ RESOLVE (COBRA SOLO SI FUNCIONA)
+      const res = await axios.post(
         "https://api-sky.ultraplus.click/youtube-mp4/resolve",
         {
-          url: videoUrl,
+          url,
           type: "video",
           quality: selected.quality
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            apikey: API_KEY
-          }
-        }
+        { headers: { apikey: API_KEY } }
       );
 
-      if (!resolveRes.data?.status) {
-        return m.reply("❌ No se pudo generar el link real.");
-      }
+      if (!res.data?.status)
+        return m.reply("❌ No se pudo generar el video.");
 
-      const result = resolveRes.data.result;
+      const video = res.data.result;
 
-      // ===============================
-      // 3️⃣ ENVIAR VIDEO
-      // ===============================
       await client.sendMessage(
         m.chat,
         {
-          video: { url: result.media.video },
+          video: { url: video.media.video },
           mimetype: "video/mp4",
-          fileName: `${result.title || "video"}.mp4`,
-          caption: `🎬 *${result.title || "YouTube Video"}*\n📺 Calidad: ${selected.quality}p`
+          fileName: `${video.title || "video"}.mp4`,
+          caption: `🎬 *${video.title || "YouTube"}*\n📺 Calidad: ${selected.quality}p`
         },
         { quoted: m }
       );
 
-    } catch (err) {
-      console.error("YTVIDEO ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar el video.");
+    } catch (e) {
+      console.error("YTVIDEO:", e.response?.data || e.message);
+      m.reply("❌ Error al procesar el video.");
     }
   }
 };
+
