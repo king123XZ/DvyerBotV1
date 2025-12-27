@@ -2,11 +2,6 @@ module.exports = {
   command: ["menu", "help", "ayuda"],
 
   run: async (client, m, { prefix }) => {
-
-    // ============================
-    // 🔒 PERMISOS (OWNERS + ADMINS)
-    // ============================
-
     const owners = [
       "51917391317@s.whatsapp.net",
       "51907376960@s.whatsapp.net"
@@ -22,17 +17,14 @@ module.exports = {
       return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
     }
 
-    // ============================
-    // 📌 MENÚ PRINCIPAL
-    // ============================
 
     await client.sendMessage(m.chat, {
       image: { url: "https://i.ibb.co/XxdTkYNq/menu.png" },
-      caption: `⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝐌𝐄𝐍𝐔 𝐇𝐀𝐂𝐊𝐄𝐑 ⧽
+      caption: `⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - CREADOR DVYER ⧽
 
 👤 Usuario: ${m.pushName}
-🏴 Modo: Hacker Oscuro
-🕶️ Versión: 2.0`
+🏴 Modo: activo 
+🕶️ Versión: v 2.0`
     });
 
     const buttons = [
