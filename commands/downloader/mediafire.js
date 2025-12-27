@@ -5,31 +5,33 @@ const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 module.exports = {
   command: ["mediafire", "mf"],
   category: "downloader",
+  description: "Descargar archivos de MediaFire",
 
   run: async (client, m, args) => {
-    if (!args.length) {
-      return m.reply("❌ Ingresa el nombre del archivo.\nEjemplo:\n.mediafire Prince Of Persia psp");
+    if (!args[0] || !args[0].includes("mediafire.com")) {
+      return m.reply(
+        "❌ Enlace inválido\n\nEjemplo:\n.mediafire https://www.mediafire.com/file/xxxxx"
+      );
     }
 
-    const query = args.join(" ");
-    await m.reply("🔍 Buscando en MediaFire...");
+    await m.reply("⏳ Procesando enlace de MediaFire...");
 
     try {
-      const res = await axios.post(
-        "https://api-sky.ultraplus.click/search/mediafire",
-        { q: query },
+      const { data } = await axios.post(
+        "https://api-sky.ultraplus.click/download/mediafire",
+        { url: args[0] },
         { headers: { apikey: API_KEY } }
       );
 
-      const files = res.data?.result?.files;
+      const files = data?.files;
       if (!files || !files.length) {
-        return m.reply("❌ No se encontraron archivos.");
+        return m.reply("❌ No se pudo obtener el archivo.");
       }
 
       const file = files[0];
 
-      const caption = `
-📦 *Archivo encontrado*
+      const text = `
+📦 *MediaFire Downloader*
 ━━━━━━━━━━━━━━━
 📄 *Nombre:* ${file.name}
 📏 *Tamaño:* ${file.size}
@@ -39,7 +41,7 @@ module.exports = {
 
       const buttons = [
         {
-          buttonId: `.mfget ${file.proxy}`,
+          buttonId: `.mfget ${file.download}`,
           buttonText: { displayText: "⬇️ Descargar" },
           type: 1
         }
@@ -48,8 +50,8 @@ module.exports = {
       await client.sendMessage(
         m.chat,
         {
-          text: caption,
-          footer: "MediaFire Downloader",
+          text,
+          footer: "MediaFire | DevYer",
           buttons,
           headerType: 1
         },
@@ -57,8 +59,9 @@ module.exports = {
       );
 
     } catch (e) {
-      console.error("MEDIAFIRE SEARCH ERROR:", e.response?.data || e);
-      m.reply("❌ Error al buscar en MediaFire.");
+      console.error("MEDIAFIRE ERROR:", e.response?.data || e.message);
+      m.reply("❌ Error al obtener el archivo de MediaFire.");
     }
   }
 };
+
