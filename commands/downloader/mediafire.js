@@ -1,53 +1,64 @@
-const { mediafire } = require("lurcloud");
+const axios = require("axios");
+
+const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 module.exports = {
   command: ["mediafire", "mf"],
-  description: "Descarga archivos de mediafire",
   category: "downloader",
-  use: "https://www.mediafire.com/file",
+
   run: async (client, m, args) => {
-    if (!args[0]) {
-      return m.reply(
-        "Ingresa el *enlace* de *Mediafire*\n\n`Ejemplo`\n!mediafire https://www.mediafire.com/file/idwn6mwqp5xbpsf/com.whatsapp%282%29.apk",
-      );
+    if (!args.length) {
+      return m.reply("❌ Ingresa el nombre del archivo.\nEjemplo:\n.mediafire Prince Of Persia psp");
     }
 
-    if (
-      !/^https?:\/\/(www\.)?mediafire\.com\/file\/[a-zA-Z0-9]+/.test(args[0])
-    ) {
-      return m.reply(
-        "Solo se aceptan enlaces válidos de Mediafire. Asegúrate de que el enlace comience con:\nhttps://www.mediafire.com/file/",
-      );
-    }
-
-    await m.reply(mess.wait);
+    const query = args.join(" ");
+    await m.reply("🔍 Buscando en MediaFire...");
 
     try {
-      let res = await mediafire(args[0]);
+      const res = await axios.post(
+        "https://api-sky.ultraplus.click/search/mediafire",
+        { q: query },
+        { headers: { apikey: API_KEY } }
+      );
 
-      let info = `MF DOWNLOADER\n
-*Nombre* › ${res.name}
-*Peso* › ${res.size}
-*Fecha* › ${res.date}
-*Tipo* › ${res.mime}
-
-> Su archivo se está descargando, esto puede demorar un poco`;
-
-      m.reply(info);
-
-      if (!/GB|gb/.test(res.size)) {
-        await client.sendMessage(
-          m.chat,
-          {
-            document: { url: res.link },
-            mimetype: res.mime,
-            fileName: res.name,
-          },
-          { quoted: m },
-        );
+      const files = res.data?.result?.files;
+      if (!files || !files.length) {
+        return m.reply("❌ No se encontraron archivos.");
       }
-    } catch {
-      m.reply("No se puede realizar la descarga");
+
+      const file = files[0];
+
+      const caption = `
+📦 *Archivo encontrado*
+━━━━━━━━━━━━━━━
+📄 *Nombre:* ${file.name}
+📏 *Tamaño:* ${file.size}
+
+👑 *Creador:* DevYer
+      `.trim();
+
+      const buttons = [
+        {
+          buttonId: `.mfget ${file.proxy}`,
+          buttonText: { displayText: "⬇️ Descargar" },
+          type: 1
+        }
+      ];
+
+      await client.sendMessage(
+        m.chat,
+        {
+          text: caption,
+          footer: "MediaFire Downloader",
+          buttons,
+          headerType: 1
+        },
+        { quoted: m }
+      );
+
+    } catch (e) {
+      console.error("MEDIAFIRE SEARCH ERROR:", e.response?.data || e);
+      m.reply("❌ Error al buscar en MediaFire.");
     }
-  },
+  }
 };
