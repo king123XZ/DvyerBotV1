@@ -11,9 +11,6 @@ module.exports = {
 
 • ping → Latencia del bot
 • owner → Info del creador
-• runtime → Tiempo de actividad
-• estado → Estado actual del bot
-
 ──────────────────────────────
 🔹 Usa los botones para moverte entre secciones.
 `;
