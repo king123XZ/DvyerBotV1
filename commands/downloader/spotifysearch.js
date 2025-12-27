@@ -11,7 +11,6 @@ const msToTime = (ms) => {
 module.exports = {
   command: ["spotify", "spot"],
   category: "downloader",
-  description: "Buscar canciones en Spotify",
 
   run: async (client, m, args) => {
     try {
@@ -29,38 +28,63 @@ module.exports = {
       );
 
       const results = res.data?.data?.results;
-
       if (!results || !results.length) {
         return m.reply("❌ No se encontraron resultados.");
       }
 
-      const top = results.slice(0, 5);
+      const cards = results.slice(0, 5).map((song, i) => ({
+        header: {
+          title: song.title,
+          subtitle: song.artists,
+          imageMessage: {
+            image: { url: song.cover }
+          }
+        },
+        body: {
+          text:
+`💿 Álbum: ${song.album}
+⏱ Duración: ${msToTime(song.duration_ms)}`
+        },
+        footer: {
+          text: "Spotify Search"
+        },
+        nativeFlowMessage: {
+          buttons: [
+            {
+              name: "cta_url",
+              buttonParamsJson: JSON.stringify({
+                display_text: "🔗 Abrir en Spotify",
+                url: song.spotify_url
+              })
+            }
+          ]
+        }
+      }));
 
-      for (let i = 0; i < top.length; i++) {
-        const song = top[i];
-
-        const caption = `🎵 *${song.title}*
-━━━━━━━━━━━━━━
-👤 Artista: ${song.artists}
-💿 Álbum: ${song.album}
-⏱ Duración: ${msToTime(song.duration_ms)}
-
-🔗 ${song.spotify_url}
-━━━━━━━━━━━━━━`;
-
-        await client.sendMessage(
-          m.chat,
-          {
-            image: { url: song.cover },
-            caption
+      const msg = {
+        interactiveMessage: {
+          header: {
+            title: "🎵 Resultados de Spotify",
+            subtitle: query,
+            hasMediaAttachment: false
           },
-          { quoted: m }
-        );
-      }
+          body: {
+            text: "Desliza para ver las canciones disponibles 👇"
+          },
+          footer: {
+            text: "YerTX2 BOT"
+          },
+          carouselMessage: {
+            cards
+          }
+        }
+      };
+
+      await client.relayMessage(m.chat, msg, {});
 
     } catch (err) {
-      console.error("SPOTIFY ERROR:", err.response?.data || err);
-      m.reply("❌ Error al buscar en Spotify.");
+      console.error("SPOTIFY CARRUSEL ERROR:", err.response?.data || err);
+      m.reply("❌ Error al mostrar el carrusel de Spotify.");
     }
   }
 };
