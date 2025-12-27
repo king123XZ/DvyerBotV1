@@ -13,7 +13,7 @@ module.exports = {
 ━━━━━━━━━━━━━━━
 🔗 ${args[0]}
 
-⚠️ *Archivo pesado*
+⚠️ Archivo pesado
 Descárgalo desde tu navegador
 
 👑 DevYer
