@@ -7,10 +7,12 @@ module.exports = {
   category: "downloader",
 
   run: async (client, m, args) => {
-    if (!args[0]) return;
+    if (!args[0]) {
+      return m.reply("❌ Falta el enlace de Spotify.");
+    }
 
     const url = args[0];
-    await m.reply("⬇️ Descargando desde Spotify...");
+    await m.reply("⬇️ Descargando audio desde Spotify...");
 
     try {
       const res = await axios.post(
@@ -19,26 +21,29 @@ module.exports = {
         { headers: { apikey: API_KEY } }
       );
 
-      const data = res.data?.result?.response;
-      if (!data || !data.download) {
+      // ✅ LINK REAL
+      const audioUrl = res.data?.result?.response?.url;
+
+      if (!audioUrl) {
         console.log("RESPUESTA API:", res.data);
-        return m.reply("❌ No se pudo obtener el audio.");
+        return m.reply("❌ No se pudo obtener el enlace del audio.");
       }
 
       await client.sendMessage(
         m.chat,
         {
-          audio: { url: data.download },
+          audio: { url: audioUrl },
           mimetype: "audio/mpeg",
-          fileName: `${data.title || "spotify"}.mp3`,
-          caption: `🎧 *${data.title || "Spotify"}*\n👑 Creador: DevYer`
+          fileName: "spotify.mp3",
+          caption: "🎧 *Spotify Downloader*\n👑 Creador: DevYer"
         },
         { quoted: m }
       );
 
-    } catch (e) {
-      console.error("SPOTIFY DOWNLOAD ERROR:", e.response?.data || e);
+    } catch (err) {
+      console.error("SPOTIFY DL ERROR:", err.response?.data || err);
       m.reply("❌ Error al descargar el audio.");
     }
   }
 };
+
