@@ -13,31 +13,27 @@ module.exports = {
     try {
       await m.reply(`⬇️ Descargando en *${quality}p*...`);
 
-      // Resolver (COBRA SOLO AQUÍ)
       const res = await axios.post(
         `${BASE}/youtube-mp4/resolve`,
         { url, type: "video", quality },
         { headers: { apikey: API_KEY } }
       );
 
-      const videoUrl = res.data?.result?.media?.video;
-      if (!videoUrl) {
-        return m.reply("❌ No se pudo generar el video.");
-      }
+      const video = res.data?.result?.media?.video;
+      if (!video) return m.reply("❌ No se pudo generar el video.");
 
-      // Enviar video
       await client.sendMessage(
         m.chat,
         {
-          video: { url: videoUrl },
+          video: { url: video },
           mimetype: "video/mp4",
-          caption: `🎬 Video descargado en ${quality}p`
+          caption: `🎬 Video ${quality}p`
         },
         { quoted: m }
       );
 
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
       m.reply("❌ Error al descargar el video.");
     }
   }
