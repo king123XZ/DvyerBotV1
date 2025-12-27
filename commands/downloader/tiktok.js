@@ -1,4 +1,5 @@
 const axios = require("axios");
+const fetch = require("node-fetch");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/tiktok";
@@ -11,12 +12,19 @@ module.exports = {
     try {
       if (!args[0]) {
         return m.reply(
-          "📌 Ingresa el enlace de TikTok\n\nEjemplo:\n!tiktok https://www.tiktok.com/@user/video/123"
+          "📌 Ingresa un enlace de TikTok\n\nEjemplo:\n!tiktok https://www.tiktok.com/@user/video/123"
         );
       }
 
-      const url = args[0];
-      await m.reply("⏳ Analizando video...");
+      let url = args[0];
+
+      // 🔁 Resolver enlaces cortos (vm / vt)
+      if (url.includes("vm.tiktok.com") || url.includes("vt.tiktok.com")) {
+        const res = await fetch(url, { redirect: "follow" });
+        url = res.url;
+      }
+
+      await m.reply("⏳ Descargando video...");
 
       const { data } = await axios.post(
         API_URL,
@@ -29,48 +37,29 @@ module.exports = {
         }
       );
 
-      if (!data.status) {
+      if (!data.status || !data.result?.video) {
+        console.log("RESPUESTA API:", data);
         return m.reply("❌ No se pudo obtener el video.");
       }
 
-      const result = data.result;
-
-      // 🧠 Guardamos en cache
-      global.ttCache = global.ttCache || {};
-      global.ttCache[m.sender] = result;
-
-      const caption = `🎵 *TikTok Detectado*
-
-👤 Autor: ${result.author?.name || "Desconocido"}
-📝 Título: ${result.title || "Sin título"}`;
-
-      const buttons = [
-        {
-          buttonId: ".ttvideo",
-          buttonText: { displayText: "🎬 Descargar Video" },
-          type: 1
-        },
-        {
-          buttonId: ".ttaudio",
-          buttonText: { displayText: "🎵 Descargar Audio" },
-          type: 1
-        }
-      ];
+      const video = data.result.video;
+      const caption = `🎬 *TikTok Video*
+👤 Autor: ${data.result.author?.name || "Desconocido"}
+📝 Título: ${data.result.title || "Sin título"}`;
 
       await client.sendMessage(
         m.chat,
         {
-          text: caption,
-          footer: "YerTX Bot",
-          buttons,
-          headerType: 1
+          video: { url: video },
+          mimetype: "video/mp4",
+          caption
         },
         { quoted: m }
       );
 
     } catch (err) {
       console.error("TIKTOK ERROR:", err.response?.data || err);
-      m.reply("❌ Error al procesar TikTok.");
+      m.reply("❌ Error al descargar el video.");
     }
   }
 };
