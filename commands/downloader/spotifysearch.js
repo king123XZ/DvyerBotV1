@@ -32,60 +32,32 @@ module.exports = {
         return m.reply("❌ No se encontraron resultados.");
       }
 
-      const cards = results.slice(0, 5).map((song, i) => ({
-        header: {
-          title: song.title,
-          subtitle: song.artists,
-          imageMessage: {
-            image: { url: song.cover }
-          }
-        },
-        body: {
-          text:
-`💿 Álbum: ${song.album}
-⏱ Duración: ${msToTime(song.duration_ms)}`
-        },
-        footer: {
-          text: "Spotify Search"
-        },
-        nativeFlowMessage: {
-          buttons: [
-            {
-              name: "cta_url",
-              buttonParamsJson: JSON.stringify({
-                display_text: "🔗 Abrir en Spotify",
-                url: song.spotify_url
-              })
-            }
-          ]
-        }
+      const rows = results.slice(0, 10).map((song, i) => ({
+        title: `${i + 1}. ${song.title}`,
+        description: `${song.artists} • ${msToTime(song.duration_ms)}`,
+        rowId: `.spotlink ${song.spotify_url}`
       }));
 
-      const msg = {
-        interactiveMessage: {
-          header: {
-            title: "🎵 Resultados de Spotify",
-            subtitle: query,
-            hasMediaAttachment: false
-          },
-          body: {
-            text: "Desliza para ver las canciones disponibles 👇"
-          },
-          footer: {
-            text: "YerTX2 BOT"
-          },
-          carouselMessage: {
-            cards
+      const listMsg = {
+        text: "🎵 *Resultados de Spotify*",
+        footer: "Selecciona una canción",
+        title: "Spotify Search",
+        buttonText: "📂 Ver canciones",
+        sections: [
+          {
+            title: "Resultados",
+            rows
           }
-        }
+        ]
       };
 
-      await client.relayMessage(m.chat, msg, {});
+      await client.sendMessage(m.chat, listMsg, { quoted: m });
 
     } catch (err) {
-      console.error("SPOTIFY CARRUSEL ERROR:", err.response?.data || err);
-      m.reply("❌ Error al mostrar el carrusel de Spotify.");
+      console.error("SPOTIFY LIST ERROR:", err.response?.data || err);
+      m.reply("❌ Error al mostrar la lista de Spotify.");
     }
   }
 };
+
 
