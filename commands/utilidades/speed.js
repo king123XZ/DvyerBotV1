@@ -3,6 +3,7 @@ const axios = require("axios");
 module.exports = {
   command: ["speed", "internet", "velocidad"],
   description: "Mide la velocidad de internet del servidor",
+  category: "stickers",
 
   run: async (client, m) => {
     try {
