@@ -3,11 +3,7 @@ module.exports = {
   category: "downloader",
 
   run: async (client, m, args) => {
-    if (!args[0]) {
-      return m.reply("❌ Enlace no válido.");
-    }
-
-    const link = args[0];
+    if (!args[0]) return m.reply("❌ Enlace no válido.");
 
     await client.sendMessage(
       m.chat,
@@ -15,13 +11,12 @@ module.exports = {
         text: `
 ⬇️ *Descarga lista*
 ━━━━━━━━━━━━━━━
-🔗 Enlace:
-${link}
+🔗 ${args[0]}
 
 ⚠️ *Archivo pesado*
-Descárgalo desde tu navegador.
+Descárgalo desde tu navegador
 
-👑 Creador: DevYer
+👑 DevYer
         `.trim()
       },
       { quoted: m }
