@@ -13,34 +13,41 @@ module.exports = {
 
     const url = args[0];
 
-    if (!url.startsWith("http")) {
-      return m.reply("❌ Debes enviar un link válido de YouTube.");
-    }
-
     try {
-      // 🔹 PASO 1: OBTENER OPCIONES (NO COBRA)
       const res = await axios.post(
         `${BASE}/youtube-mp4`,
         { url },
         { headers: { apikey: API_KEY } }
       );
 
-      const qualities = res.data?.result;
-      if (!Array.isArray(qualities) || !qualities.length) {
-        return m.reply("❌ No hay calidades disponibles.");
+      if (!res.data?.status) {
+        return m.reply("❌ La API no respondió correctamente.");
       }
 
-      // 🔹 CREAR BOTONES
+      // 🔥 DETECCIÓN INTELIGENTE
+      let qualities =
+        res.data.result?.formats ||
+        res.data.result?.video ||
+        res.data.result;
+
+      if (!Array.isArray(qualities) || qualities.length === 0) {
+        console.log("DEBUG API:", JSON.stringify(res.data, null, 2));
+        return m.reply("❌ No se pudieron obtener calidades del video.");
+      }
+
+      // eliminar duplicados
+      qualities = [...new Set(qualities.map(q => q.quality))];
+
       const buttons = qualities.map(q => ({
-        buttonId: `.ytq ${url} ${q.quality}`,
-        buttonText: { displayText: `${q.quality}p` },
+        buttonId: `.ytq ${url} ${q}`,
+        buttonText: { displayText: `${q}p` },
         type: 1
       }));
 
       await client.sendMessage(
         m.chat,
         {
-          text: "🎬 *Selecciona la calidad del video:*",
+          text: "🎬 *Elige la calidad del video:*",
           footer: "YerTX Bot",
           buttons,
           headerType: 1
@@ -48,11 +55,10 @@ module.exports = {
         { quoted: m }
       );
 
-    } catch (e) {
-      console.error(e);
-      m.reply("❌ Error obteniendo calidades.");
+    } catch (err) {
+      console.error(err);
+      m.reply("❌ Error conectando con la API.");
     }
   }
 };
-
 
