@@ -5,39 +5,51 @@ const BASE = "https://api-sky.ultraplus.click";
 
 module.exports = {
   command: ["ytvideo"],
+  category: "downloader",
+  description: "Descargar video de YouTube con selección de calidad",
 
   run: async (client, m, args) => {
-    const [url, quality] = args;
-    if (!url || !quality) return;
+    if (!args[0]) {
+      return m.reply("⚠️ Usa: .ytvideo <link de YouTube>");
+    }
+
+    const url = args[0];
 
     try {
-      await m.reply(`⬇️ Descargando en *${quality}p*...`);
-
-      // Resolver (COBRA SOLO AQUÍ)
-      const res = await axios.post(
-        `${BASE}/youtube-mp4/resolve`,
-        { url, type: "video", quality },
+      // 1️⃣ Obtener opciones (NO cobra)
+      const opt = await axios.post(
+        `${BASE}/youtube-mp4`,
+        { url },
         { headers: { apikey: API_KEY } }
       );
 
-      const videoUrl = res.data?.result?.media?.video;
-      if (!videoUrl)
-        return m.reply("❌ No se pudo generar el video.");
+      const list = opt.data?.result;
+      if (!Array.isArray(list) || list.length === 0) {
+        return m.reply("❌ No se pudieron obtener calidades del video.");
+      }
 
-      // Enviar video
+      // 2️⃣ Crear botones de calidad
+      const buttons = list.map(q => ({
+        buttonId: `.ytq ${url} ${q.quality}`,
+        buttonText: { displayText: `${q.quality}p` },
+        type: 1
+      }));
+
+      // 3️⃣ Enviar mensaje con botones
       await client.sendMessage(
         m.chat,
         {
-          video: { url: videoUrl },
-          mimetype: "video/mp4",
-          caption: `🎬 Video descargado en ${quality}p`
+          text: "🎬 *Elige la calidad del video:*",
+          footer: "YerTX Bot",
+          buttons,
+          headerType: 1
         },
         { quoted: m }
       );
 
     } catch (err) {
       console.error(err);
-      m.reply("❌ Error al descargar el video.");
+      m.reply("❌ Error al obtener las opciones del video.");
     }
   }
 };
