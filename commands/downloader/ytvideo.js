@@ -1,8 +1,3 @@
-const axios = require("axios");
-
-const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const BASE = "https://api-sky.ultraplus.click";
-
 module.exports = {
   command: ["ytvideo"],
 
@@ -13,52 +8,22 @@ module.exports = {
 
     const url = args[0];
 
-    try {
-      const res = await axios.post(
-        `${BASE}/youtube-mp4`,
-        { url },
-        { headers: { apikey: API_KEY } }
-      );
+    const buttons = [
+      { buttonId: `.ytq ${url} 360`, buttonText: { displayText: "360p" }, type: 1 },
+      { buttonId: `.ytq ${url} 480`, buttonText: { displayText: "480p" }, type: 1 },
+      { buttonId: `.ytq ${url} 720`, buttonText: { displayText: "720p" }, type: 1 }
+    ];
 
-      if (!res.data?.status) {
-        return m.reply("❌ La API no respondió correctamente.");
-      }
-
-      // 🔥 DETECCIÓN INTELIGENTE
-      let qualities =
-        res.data.result?.formats ||
-        res.data.result?.video ||
-        res.data.result;
-
-      if (!Array.isArray(qualities) || qualities.length === 0) {
-        console.log("DEBUG API:", JSON.stringify(res.data, null, 2));
-        return m.reply("❌ No se pudieron obtener calidades del video.");
-      }
-
-      // eliminar duplicados
-      qualities = [...new Set(qualities.map(q => q.quality))];
-
-      const buttons = qualities.map(q => ({
-        buttonId: `.ytq ${url} ${q}`,
-        buttonText: { displayText: `${q}p` },
-        type: 1
-      }));
-
-      await client.sendMessage(
-        m.chat,
-        {
-          text: "🎬 *Elige la calidad del video:*",
-          footer: "YerTX Bot",
-          buttons,
-          headerType: 1
-        },
-        { quoted: m }
-      );
-
-    } catch (err) {
-      console.error(err);
-      m.reply("❌ Error conectando con la API.");
-    }
+    await client.sendMessage(
+      m.chat,
+      {
+        text: "🎬 *Elige la calidad del video:*",
+        footer: "YerTX Bot",
+        buttons,
+        headerType: 1
+      },
+      { quoted: m }
+    );
   }
 };
 
