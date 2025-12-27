@@ -18,10 +18,10 @@ module.exports = {
 
       let url = args[0];
 
-      // 🔁 Resolver enlaces cortos (vm / vt)
+      // 🔁 Resolver links cortos
       if (url.includes("vm.tiktok.com") || url.includes("vt.tiktok.com")) {
-        const res = await fetch(url, { redirect: "follow" });
-        url = res.url;
+        const r = await fetch(url, { redirect: "follow" });
+        url = r.url;
       }
 
       await m.reply("⏳ Descargando video...");
@@ -37,20 +37,23 @@ module.exports = {
         }
       );
 
-      if (!data.status || !data.result?.video) {
+      // 🔴 VALIDACIÓN REAL
+      if (!data.status || !data.result?.media?.video) {
         console.log("RESPUESTA API:", data);
         return m.reply("❌ No se pudo obtener el video.");
       }
 
-      const video = data.result.video;
+      const videoUrl = data.result.media.video;
+
       const caption = `🎬 *TikTok Video*
 👤 Autor: ${data.result.author?.name || "Desconocido"}
-📝 Título: ${data.result.title || "Sin título"}`;
+📝 Título: ${data.result.title || "Sin título"}
+❤️ Likes: ${data.result.stats?.likes || 0}`;
 
       await client.sendMessage(
         m.chat,
         {
-          video: { url: video },
+          video: { url: videoUrl },
           mimetype: "video/mp4",
           caption
         },
@@ -63,6 +66,3 @@ module.exports = {
     }
   }
 };
-
-
-
