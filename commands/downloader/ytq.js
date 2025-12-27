@@ -11,11 +11,11 @@ module.exports = {
     const url = global.ytCache?.[m.sender];
 
     if (!url) {
-      return m.reply("❌ El enlace expiró. Usa play otra vez.");
+      return m.reply("❌ El enlace expiró. Usa *play* otra vez.");
     }
 
     try {
-      await m.reply(`⬇️ Generando video en *${quality}p*...`);
+      await m.reply(`⬇️ Descargando video en *${quality}p*...`);
 
       const res = await axios.post(
         API,
@@ -32,18 +32,22 @@ module.exports = {
         }
       );
 
-      const link = res.data?.result?.media?.video;
+      const link = res.data?.result?.media?.direct;
 
       if (!link) {
         console.log("RESPUESTA API:", res.data);
-        return m.reply("❌ La API no devolvió el enlace del video.");
+        return m.reply("❌ No se pudo obtener el enlace del video.");
       }
 
-      await client.sendMessage(m.chat, {
-        video: { url: link },
-        mimetype: "video/mp4",
-        caption: `🎬 Video ${quality}p`
-      }, { quoted: m });
+      await client.sendMessage(
+        m.chat,
+        {
+          video: { url: link },
+          mimetype: "video/mp4",
+          caption: `🎬 ${res.data.result.title}\n📺 Calidad: ${quality}p`
+        },
+        { quoted: m }
+      );
 
       delete global.ytCache[m.sender];
 
@@ -52,5 +56,7 @@ module.exports = {
       m.reply("❌ Error al generar el video.");
     }
   }
+};
+
 };
 
