@@ -32,18 +32,11 @@ module.exports = {
         }
       );
 
-      if (!res.data?.status) {
-        console.log(res.data);
-        return m.reply("❌ No se pudo generar el enlace del video.");
-      }
-
-      const link =
-        res.data.result?.download ||
-        res.data.result?.url ||
-        res.data.result?.link;
+      const link = res.data?.result?.media?.video;
 
       if (!link) {
-        return m.reply("❌ La API no devolvió el video.");
+        console.log("RESPUESTA API:", res.data);
+        return m.reply("❌ La API no devolvió el enlace del video.");
       }
 
       await client.sendMessage(m.chat, {
@@ -60,3 +53,4 @@ module.exports = {
     }
   }
 };
+
