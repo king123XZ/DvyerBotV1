@@ -19,7 +19,7 @@ module.exports = {
       }
 
       const query = args.join(" ");
-      await m.reply(`🎧 Buscando en Spotify:\n*${query}*`);
+      await m.reply("🎧 Buscando en Spotify...");
 
       const res = await axios.post(
         "https://api-sky.ultraplus.click/search/spotify",
@@ -27,37 +27,39 @@ module.exports = {
         { headers: { apikey: API_KEY } }
       );
 
-      const results = res.data?.data?.results;
-      if (!results || !results.length) {
-        return m.reply("❌ No se encontraron resultados.");
-      }
+      const song = res.data?.data?.results?.[0];
+      if (!song) return m.reply("❌ No se encontró ningún resultado.");
 
-      const rows = results.slice(0, 10).map((song, i) => ({
-        title: `${i + 1}. ${song.title}`,
-        description: `${song.artists} • ${msToTime(song.duration_ms)}`,
-        rowId: `.spotlink ${song.spotify_url}`
-      }));
+      const caption = `
+🎵 *${song.title}*
+👤 ${song.artists}
+💿 ${song.album}
+⏱ ${msToTime(song.duration_ms)}
 
-      const listMsg = {
-        text: "🎵 *Resultados de Spotify*",
-        footer: "Selecciona una canción",
-        title: "Spotify Search",
-        buttonText: "📂 Ver canciones",
-        sections: [
-          {
-            title: "Resultados",
-            rows
-          }
-        ]
-      };
+👑 *Creador: DevYer*
+      `.trim();
 
-      await client.sendMessage(m.chat, listMsg, { quoted: m });
+      await client.sendMessage(
+        m.chat,
+        {
+          image: { url: song.cover },
+          caption,
+          buttons: [
+            {
+              buttonId: `.spdl ${song.spotify_url}`,
+              buttonText: { displayText: "⬇️ Descargar" },
+              type: 1
+            }
+          ],
+          footer: "Spotify Downloader • DevYer",
+          headerType: 4
+        },
+        { quoted: m }
+      );
 
-    } catch (err) {
-      console.error("SPOTIFY LIST ERROR:", err.response?.data || err);
-      m.reply("❌ Error al mostrar la lista de Spotify.");
+    } catch (e) {
+      console.error("SPOTIFY ERROR:", e.response?.data || e);
+      m.reply("❌ Error al buscar en Spotify.");
     }
   }
 };
-
-
