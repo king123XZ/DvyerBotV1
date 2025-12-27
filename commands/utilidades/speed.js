@@ -8,38 +8,41 @@ module.exports = {
     try {
       await m.reply("⏳ *Midiendo velocidad del servidor...*");
 
-      const url = "https://speed.hetzner.de/100MB.bin";
-      const inicio = Date.now();
+      // Archivo de prueba seguro (Cloudflare)
+      const url = "https://speed.cloudflare.com/__down?bytes=25000000"; // 25MB
 
-      const response = await axios({
+      const start = Date.now();
+      let bytes = 0;
+
+      const res = await axios({
         url,
         method: "GET",
         responseType: "stream",
         timeout: 30000
       });
 
-      let bytes = 0;
-      response.data.on("data", chunk => {
+      res.data.on("data", chunk => {
         bytes += chunk.length;
       });
 
-      response.data.on("end", () => {
-        const tiempo = (Date.now() - inicio) / 1000;
-        const mbps = ((bytes * 8) / tiempo / 1024 / 1024).toFixed(2);
+      res.data.on("end", () => {
+        const seconds = (Date.now() - start) / 1000;
+        const mbps = ((bytes * 8) / seconds / 1024 / 1024).toFixed(2);
 
         m.reply(
 `⚡ *SPEEDTEST DEL SERVIDOR*
 ────────────────────
 📥 Descarga: *${mbps} Mbps*
-🕒 Tiempo: ${tiempo.toFixed(2)}s
+📦 Datos: ${(bytes / 1024 / 1024).toFixed(2)} MB
+🕒 Tiempo: ${seconds.toFixed(2)} s
 
 👨‍💻 Creador: *devyer*`
         );
       });
 
-    } catch (err) {
-      console.error(err);
-      m.reply("❌ Error al medir la velocidad del servidor.");
+    } catch (e) {
+      console.error("SPEED ERROR:", e);
+      m.reply("❌ No se pudo medir la velocidad del servidor.");
     }
   }
 };
