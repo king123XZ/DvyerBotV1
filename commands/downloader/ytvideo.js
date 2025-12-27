@@ -5,54 +5,42 @@ const BASE = "https://api-sky.ultraplus.click";
 
 module.exports = {
   command: ["ytvideo"],
-  category: "downloader",
 
   run: async (client, m, args) => {
-    if (!args[0]) return m.reply("⚠️ Usa: .ytvideo <link o nombre>");
+    if (!args[0]) {
+      return m.reply("⚠️ Usa: .ytvideo <link de YouTube>");
+    }
+
+    const url = args[0];
+
+    if (!url.startsWith("http")) {
+      return m.reply("❌ Debes enviar un link válido de YouTube.");
+    }
 
     try {
-      let videoUrl = args[0];
-
-      // 🔎 SI NO ES LINK → BUSCAR
-      if (!videoUrl.startsWith("http")) {
-        const search = await axios.post(
-          `${BASE}/search/youtube`,
-          { q: args.join(" ") },
-          { headers: { apikey: API_KEY } }
-        );
-
-        const item = search.data?.result?.items?.[0];
-        if (!item?.url) {
-          return m.reply("❌ No se encontró el video.");
-        }
-
-        videoUrl = item.url;
-      }
-
-      // 1️⃣ Obtener opciones (NO cobra)
-      const opt = await axios.post(
+      // 🔹 PASO 1: OBTENER OPCIONES (NO COBRA)
+      const res = await axios.post(
         `${BASE}/youtube-mp4`,
-        { url: videoUrl },
+        { url },
         { headers: { apikey: API_KEY } }
       );
 
-      const list = opt.data?.result;
-      if (!Array.isArray(list) || !list.length) {
+      const qualities = res.data?.result;
+      if (!Array.isArray(qualities) || !qualities.length) {
         return m.reply("❌ No hay calidades disponibles.");
       }
 
-      // 2️⃣ Crear botones SOLO con datos válidos
-      const buttons = list.map(q => ({
-        buttonId: `.ytq ${videoUrl} ${q.quality}`,
+      // 🔹 CREAR BOTONES
+      const buttons = qualities.map(q => ({
+        buttonId: `.ytq ${url} ${q.quality}`,
         buttonText: { displayText: `${q.quality}p` },
         type: 1
       }));
 
-      // 3️⃣ Enviar botones
       await client.sendMessage(
         m.chat,
         {
-          text: "🎬 *Elige la calidad del video:*",
+          text: "🎬 *Selecciona la calidad del video:*",
           footer: "YerTX Bot",
           buttons,
           headerType: 1
@@ -62,10 +50,9 @@ module.exports = {
 
     } catch (e) {
       console.error(e);
-      m.reply("❌ Error al procesar el video.");
+      m.reply("❌ Error obteniendo calidades.");
     }
   }
 };
-;
 
 
