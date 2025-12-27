@@ -14,7 +14,7 @@ module.exports = {
       );
     }
 
-    await m.reply("⏳ Procesando enlace de MediaFire...");
+    await m.reply("⏳ Analizando archivo de MediaFire...");
 
     try {
       const { data } = await axios.post(
@@ -23,8 +23,11 @@ module.exports = {
         { headers: { apikey: API_KEY } }
       );
 
-      const files = data?.files;
+      // ✅ AQUÍ ESTABA EL ERROR
+      const files = data?.result?.files;
+
       if (!files || !files.length) {
+        console.log("RESPUESTA API:", data);
         return m.reply("❌ No se pudo obtener el archivo.");
       }
 
@@ -60,8 +63,9 @@ module.exports = {
 
     } catch (e) {
       console.error("MEDIAFIRE ERROR:", e.response?.data || e.message);
-      m.reply("❌ Error al obtener el archivo de MediaFire.");
+      m.reply("❌ Error al procesar el enlace de MediaFire.");
     }
   }
 };
+
 
