@@ -1,28 +1,28 @@
 const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const BASE = "https://api-sky.ultraplus.click";
+const API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
 module.exports = {
   command: ["ytq"],
 
   run: async (client, m, args) => {
-    const url = args[0];
-    const quality = args[1];
+    const quality = args[0];
+    const url = global.ytCache?.[m.sender];
 
-    if (!url || !quality) {
-      return m.reply("❌ Error al seleccionar calidad.");
+    if (!url) {
+      return m.reply("❌ El enlace expiró. Usa play otra vez.");
     }
 
     try {
-      await m.reply(`⬇️ Descargando video en *${quality}p*...`);
+      await m.reply(`⬇️ Generando video en *${quality}p*...`);
 
-      const resolve = await axios.post(
-        `${BASE}/youtube-mp4/resolve`,
+      const res = await axios.post(
+        API,
         {
           url,
           type: "video",
-          quality
+          quality: String(quality)
         },
         {
           headers: {
@@ -32,24 +32,31 @@ module.exports = {
         }
       );
 
-      const videoUrl = resolve.data?.result?.url;
-      if (!videoUrl) {
+      if (!res.data?.status) {
+        console.log(res.data);
         return m.reply("❌ No se pudo generar el enlace del video.");
       }
 
-      await client.sendMessage(
-        m.chat,
-        {
-          video: { url: videoUrl },
-          mimetype: "video/mp4",
-          caption: `🎬 Video ${quality}p`
-        },
-        { quoted: m }
-      );
+      const link =
+        res.data.result?.download ||
+        res.data.result?.url ||
+        res.data.result?.link;
 
-    } catch (err) {
-      console.error(err);
-      m.reply("❌ Error descargando el video.");
+      if (!link) {
+        return m.reply("❌ La API no devolvió el video.");
+      }
+
+      await client.sendMessage(m.chat, {
+        video: { url: link },
+        mimetype: "video/mp4",
+        caption: `🎬 Video ${quality}p`
+      }, { quoted: m });
+
+      delete global.ytCache[m.sender];
+
+    } catch (e) {
+      console.error("YTQ ERROR:", e.response?.data || e);
+      m.reply("❌ Error al generar el video.");
     }
   }
 };
