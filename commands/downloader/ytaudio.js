@@ -1,96 +1,85 @@
-const axios = require('axios');
-const yts = require('yt-search');
+const axios = require("axios");
+const yts = require("yt-search");
 
 module.exports = {
   command: ["ytaudio"],
-  description: "Descarga solo el audio de YouTube usando tu API, mejorando búsqueda",
+  description: "Descarga audio MP3 de YouTube",
   category: "downloader",
-  use: "https://www.youtube.com/",
+  use: "ytaudio <link o nombre>",
 
   run: async (client, m, args) => {
-
-    // ==================================
-    // 🔒 PERMISOS (OWNERS + ADMINS)
-    // ==================================
-
-    const owners = [
-      "51917391317@s.whatsapp.net",
-      "51907376960@s.whatsapp.net"
-    ];
-
-    const isOwner = owners.includes(m.sender);
-
-    const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
-    const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
-    const isAdmin = admins.some(p => p.id === m.sender);
-
-    if (!isOwner && !isAdmin) {
-      return m.reply("🚫 *Solo el OWNER o los ADMINS del grupo pueden usar este comando.*");
-    }
-
-    // ==================================
-    // 📌 CÓDIGO ORIGINAL
-    // ==================================
-
-    if (!args[0]) return m.reply("Ingresa el enlace o nombre de un video de YouTube.");
-
-    await m.reply("⏳ Procesando audio...");
-
     try {
-      let videoUrl = args[0];
-      const apiKey = "M8EQKBf7LhgH";
-
-      // Si no es link, buscar por nombre
-      if (!videoUrl.startsWith("http")) {
-        const { videos } = await yts(videoUrl);
-        if (!videos.length) return m.reply("❌ No se encontraron resultados.");
-        videoUrl = videos[0].url;
+      if (!args.length) {
+        return m.reply("❌ Ingresa un link o nombre de YouTube.");
       }
 
-      // Petición a la API
-      const res = await axios.get("https://api-sky.ultraplus.click/api/download/yt.js", {
-        params: { url: videoUrl, format: "audio" },
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "X-API-Key": apiKey
+      await m.reply("⏳ Procesando audio...");
+
+      let videoUrl = args.join(" ");
+
+      // 🔍 Buscar si no es link
+      if (!videoUrl.startsWith("http")) {
+        const search = await yts(videoUrl);
+        if (!search.videos.length) {
+          return m.reply("❌ No se encontraron resultados.");
         }
-      });
+        videoUrl = search.videos[0].url;
+      }
 
-      const data = res.data.data;
-      if (!data || !data.audio) return m.reply("❌ No se pudo obtener el audio.");
+      // 🔑 TU API KEY
+      const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
-      const caption = `🎵 YouTube Audio\nTítulo: ${data.title}\nDuración: ${data.duration || "Desconocida"}s`;
+      // 📡 PETICIÓN POST CORRECTA
+      const { data } = await axios.post(
+        "https://api-sky.ultraplus.click/youtube-mp3",
+        { url: videoUrl },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            apikey: API_KEY
+          }
+        }
+      );
+
+      if (!data.status) {
+        return m.reply("❌ La API no pudo procesar el audio.");
+      }
+
+      const result = data.result;
+      const audioUrl = result?.media?.audio;
+
+      if (!audioUrl) {
+        return m.reply("❌ No se pudo obtener el audio.");
+      }
+
+      const caption = `🎵 *YouTube MP3*
+📌 Título: ${result.title}
+👤 Autor: ${result.author?.name || "YouTube"}
+⏱ Duración: ${result.duration || "?"}s`;
 
       await client.sendMessage(
         m.chat,
         {
-          audio: { url: data.audio },
+          audio: { url: audioUrl },
           mimetype: "audio/mpeg",
-          fileName: `${data.title || "youtube"}.mp3`,
-          caption,
-          contextInfo: {
-            externalAdReply: {
-              mediaUrl: videoUrl,
-              mediaType: 2,
-              description: data.title,
-              title: data.title,
-              thumbnailUrl: data.thumbnail
-            }
-          }
+          fileName: `${result.title}.mp3`,
+          caption
         },
         { quoted: m }
       );
 
-    } catch (e) {
-      if (e.response) {
-        const code = e.response.status;
-        if (code === 401) return m.reply("❌ Key inválida o no enviada.");
-        if (code === 402) return m.reply("❌ No tienes solicitudes restantes.");
-        if (code === 429) return m.reply("❌ Límite de solicitudes alcanzado. Intenta más tarde.");
-        if (code === 500) return m.reply("❌ Error interno de la API.");
-      }
-      console.error("Error al descargar audio de YouTube:", e);
-      m.reply("❌ Ocurrió un error al procesar el audio de YouTube.");
+    } catch (err) {
+      console.error("YTAUDIO ERROR:", err.response?.data || err.message);
+
+      if (err.response?.status === 401)
+        return m.reply("❌ API Key inválida.");
+      if (err.response?.status === 429)
+        return m.reply("❌ Límite de la API alcanzado.");
+      if (err.response?.status === 500)
+        return m.reply("❌ Error interno de la API.");
+
+      m.reply("❌ Error al descargar el audio.");
     }
-  },
+  }
 };
+;
