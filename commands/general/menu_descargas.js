@@ -16,6 +16,7 @@ creador dev yer
 • play → Descargar música y videos (recomendado)
 • tiktok → Descargar video de TikTok
 • facebook → Descargar video de Facebook
+• mediafire - mf  URL → Descargar archivo de mediafire
 
 ──────────────────────────────
 🔹 Navega usando los botones:
