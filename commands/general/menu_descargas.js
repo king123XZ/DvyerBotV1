@@ -5,12 +5,14 @@ module.exports = {
 
     const text = `
 ⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ⧽
+creador dev yer
 ──────────────────────────────
 
 📥 Comandos disponibles:
 
-• ytmp3 → Descargar música de YouTube url
-• ytmp4 → Descargar video de YouTube url
+• ytaudio → Descargar música de YouTube url
+• ytvideo → Descargar video de YouTube url
+• ytdoc → Descargar video documento de YouTube url
 • play → Descargar música y videos (recomendado)
 • tiktok → Descargar video de TikTok
 • facebook → Descargar video de Facebook
