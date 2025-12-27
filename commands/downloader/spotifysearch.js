@@ -2,84 +2,66 @@ const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+const msToTime = (ms) => {
+  const min = Math.floor(ms / 60000);
+  const sec = Math.floor((ms % 60000) / 1000);
+  return `${min}:${sec < 10 ? "0" : ""}${sec}`;
+};
 
 module.exports = {
-  command: ["spotify", "spotifysearch"],
+  command: ["spotify", "spot"],
   category: "downloader",
   description: "Buscar canciones en Spotify",
 
   run: async (client, m, args) => {
     try {
       if (!args.length) {
-        return m.reply("❌ Ejemplo:\n.spotify bad bunny");
+        return m.reply("❌ Usa:\n.spotify ozuna una flor");
       }
 
       const query = args.join(" ");
-      await m.reply(`🎧 Buscando en Spotify: *${query}*`);
+      await m.reply(`🎧 Buscando en Spotify:\n*${query}*`);
 
-      const r = await axios.post(
+      const res = await axios.post(
         "https://api-sky.ultraplus.click/search/spotify",
         { query },
-        {
-          headers: {
-            apikey: API_KEY
-          }
-        }
+        { headers: { apikey: API_KEY } }
       );
 
-      const items = r.data?.result?.items;
+      const results = res.data?.data?.results;
 
-      if (!Array.isArray(items) || items.length === 0) {
-        return m.reply("❌ No se encontraron resultados en Spotify.");
+      if (!results || !results.length) {
+        return m.reply("❌ No se encontraron resultados.");
       }
 
-      const results = items.slice(0, 5);
+      const top = results.slice(0, 5);
 
-      for (let i = 0; i < results.length; i++) {
-        const s = results[i];
+      for (let i = 0; i < top.length; i++) {
+        const song = top[i];
 
-        if (!s || !s.url) continue;
-
-        const caption = `🎵 *Resultado ${i + 1}/5*
+        const caption = `🎵 *${song.title}*
 ━━━━━━━━━━━━━━
-🎧 Título: ${s.title || "Desconocido"}
-👤 Artista: ${s.artist || "?"}
-💿 Álbum: ${s.album || "?"}
-⏱ Duración: ${s.duration || "?"}
+👤 Artista: ${song.artists}
+💿 Álbum: ${song.album}
+⏱ Duración: ${msToTime(song.duration_ms)}
 
-🔗 ${s.url}
+🔗 ${song.spotify_url}
 ━━━━━━━━━━━━━━`;
 
-        // Si hay imagen, la enviamos
-        if (s.thumbnail) {
-          await client.sendMessage(
-            m.chat,
-            {
-              image: { url: s.thumbnail },
-              caption,
-              footer: "YerTX Bot",
-              headerType: 4
-            },
-            { quoted: m }
-          );
-        } else {
-          // Si no hay imagen, texto simple
-          await client.sendMessage(
-            m.chat,
-            { text: caption },
-            { quoted: m }
-          );
-        }
-
-        await sleep(700); // evita flood
+        await client.sendMessage(
+          m.chat,
+          {
+            image: { url: song.cover },
+            caption
+          },
+          { quoted: m }
+        );
       }
 
     } catch (err) {
-      console.error("❌ SPOTIFY SEARCH ERROR:", err.response?.data || err);
+      console.error("SPOTIFY ERROR:", err.response?.data || err);
       m.reply("❌ Error al buscar en Spotify.");
     }
   }
 };
+
