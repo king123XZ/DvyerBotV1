@@ -1,26 +1,26 @@
 const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+const BASE_URL = "https://api-sky.ultraplus.click";
 
 module.exports = {
   command: ["ytvideo"],
-  description: "Descargar video de YouTube en 360p",
   category: "downloader",
+  description: "Descargar video YouTube 360p",
 
   run: async (client, m, args) => {
+    if (!args[0]) {
+      return m.reply("⚠️ Usa: ytvideo <link de YouTube>");
+    }
+
+    const url = args[0];
+
     try {
-      if (!args.length) {
-        return m.reply("⚠️ Ingresa un enlace de YouTube.");
-      }
+      m.reply("🔍 Obteniendo opciones de video...");
 
-      const url = args[0];
-      await m.reply("⏳ Obteniendo información del video...");
-
-      // ===============================
       // 1️⃣ OBTENER OPCIONES (NO COBRA)
-      // ===============================
-      const opt = await axios.post(
-        "https://api-sky.ultraplus.click/youtube-mp4",
+      const optionsRes = await axios.post(
+        `${BASE_URL}/youtube-mp4`,
         { url },
         {
           headers: {
@@ -30,32 +30,29 @@ module.exports = {
         }
       );
 
-      // 🔎 DEBUG REAL (por si cambia otra vez)
-      console.log("MP4 OPTIONS RESPONSE:", opt.data);
+      const options = optionsRes.data?.result;
 
-      if (!opt.data?.status) {
-        return m.reply("❌ La API no devolvió estado válido.");
-      }
-
-      const options = opt.data?.result?.options;
-      if (!options || !options.length) {
+      if (!options || !Array.isArray(options)) {
+        console.log("Respuesta opciones:", optionsRes.data);
         return m.reply("❌ No se pudieron obtener opciones de video.");
       }
 
-      // 🔒 SIEMPRE 360p
-      const quality = "360";
+      // 🔒 FORZAR 360p
+      const quality360 = options.find(q => q.quality === "360");
 
-      await m.reply("⬇️ Descargando video en *360p*...");
+      if (!quality360) {
+        return m.reply("❌ El video no tiene calidad 360p disponible.");
+      }
 
-      // ===============================
-      // 2️⃣ RESOLVER LINK REAL (COBRA)
-      // ===============================
-      const res = await axios.post(
-        "https://api-sky.ultraplus.click/youtube-mp4/resolve",
+      m.reply("⬇️ Generando link en *360p*...");
+
+      // 2️⃣ RESOLVER LINK (COBRA)
+      const resolveRes = await axios.post(
+        `${BASE_URL}/youtube-mp4/resolve`,
         {
           url,
           type: "video",
-          quality
+          quality: "360"
         },
         {
           headers: {
@@ -65,34 +62,28 @@ module.exports = {
         }
       );
 
-      console.log("MP4 RESOLVE RESPONSE:", res.data);
+      const videoUrl = resolveRes.data?.result?.media?.video;
 
-      if (!res.data?.status) {
-        return m.reply("❌ No se pudo generar el enlace del video.");
+      if (!videoUrl) {
+        console.log("Respuesta resolve:", resolveRes.data);
+        return m.reply("❌ No se pudo generar el link del video.");
       }
 
-      const video = res.data.result;
-
-      // ===============================
       // 3️⃣ ENVIAR VIDEO
-      // ===============================
       await client.sendMessage(
         m.chat,
         {
-          video: { url: video.media.video },
+          video: { url: videoUrl },
           mimetype: "video/mp4",
-          fileName: `${video.title || "youtube"}.mp4`,
-          caption: `🎬 *${video.title || "YouTube Video"}*\n📺 Calidad: 360p`
+          caption: "🎬 Video descargado en *360p*"
         },
         { quoted: m }
       );
 
     } catch (err) {
-      console.error("YTVIDEO ERROR:", err.response?.data || err.message);
+      console.error("❌ Error ytvideo:", err?.response?.data || err);
       m.reply("❌ Error al procesar el video.");
     }
   }
-};
-
 };
 
