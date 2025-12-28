@@ -89,7 +89,7 @@ async function startBot() {
   if (!client.authState.creds.registered) {
     const phoneNumber = await question(
       log.warn("Ingrese su número de WhatsApp\n") +
-      log.info("Ejemplo: 5212345678900\n")
+      log.info("Ejemplo: 519999999\n")
     );
 
     try {
@@ -98,7 +98,7 @@ async function startBot() {
       log.success(`Código de emparejamiento: ${chalk.cyanBright(pairing)} (expira en 15s)`);
     } catch (err) {
       log.error("Error al solicitar el código de emparejamiento:", err);
-      exec("rm -rf ./lurus_session/*");
+      exec("rm -rf ./DevYer_session/*");
       process.exit(1);
     }
   }
@@ -132,7 +132,7 @@ async function startBot() {
         DisconnectReason.multideviceMismatch,
       ].includes(reason)) {
         log.error("Eliminar sesión y volver a escanear");
-        exec("rm -rf ./lurus_session/*");
+        exec("rm -rf ./DevYer_session/*");
         process.exit(1);
       }
 
