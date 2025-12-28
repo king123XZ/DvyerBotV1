@@ -1,6 +1,6 @@
 {
-  "name": "ai-lurus-nym",
-  "version": "1.0.0",
+  "name": "DevYer",
+  "version": "2.0.0",
   "description": "Simple WhatsApp Bot",
   "main": "start.js",
   "type": "commonjs",
