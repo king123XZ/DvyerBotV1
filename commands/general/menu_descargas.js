@@ -13,6 +13,7 @@ creador dev yer
 • ytaudio → Descargar música de YouTube url
 • ytvideo → Descargar video de YouTube url
 • ytdoc → Descargar video documento de YouTube url
+• spotify → Escribe nombre de la canción 
 • play → Descargar música y videos (recomendado)
 • tiktok → Descargar video de TikTok
 • facebook → Descargar video de Facebook
