@@ -10,7 +10,6 @@ const initDB = require("./lib/system/initDB");
 const antilink = require("./commands/antilink");
 const { resolveLidToRealJid } = require("./lib/utils");
 
-// 🔥 Carga de comandos
 seeCommands();
 
 module.exports = async (client, m) => {
@@ -32,16 +31,13 @@ module.exports = async (client, m) => {
       body = m.message.templateButtonReplyMessage.selectedId;
   }
 
-  // Base de datos y antilink
   initDB(m);
   antilink(client, m);
 
-  // Prefijos
   const prefa = ['.', '!', '#', '/'];
   const prefix = prefa.find((p) => body.startsWith(p));
   if (!prefix) return;
 
-  // Datos básicos
   const from = m.key.remoteJid;
   const args = body.trim().split(/ +/).slice(1);
   const text = args.join(" ");
@@ -58,7 +54,6 @@ module.exports = async (client, m) => {
     ? m.key.participant || m.participant
     : m.key.remoteJid;
 
-  // Grupo
   let groupMetadata, groupAdmins, resolvedAdmins = [], groupName = "";
 
   if (m.isGroup) {
@@ -87,7 +82,6 @@ module.exports = async (client, m) => {
     ? resolvedAdmins.some((p) => p.jid === m.sender)
     : false;
 
-  // Consola
   const h = chalk.bold.blue("************************************");
   const v = chalk.bold.white("*");
 
@@ -108,11 +102,9 @@ module.exports = async (client, m) => {
 
   console.log(`\n${h}${date}${userPrint}${senderPrint}${groupPrint}${h}`);
 
-  // 📌 Ejecución de comando
   if (global.comandos.has(command)) {
     const cmd = global.comandos.get(command);
 
-    // Permisos del comando
     if (
       cmd.isOwner &&
       !global.owner.map((num) => num + "@s.whatsapp.net").includes(m.sender)
@@ -134,7 +126,6 @@ module.exports = async (client, m) => {
     if (cmd.isPrivate && m.isGroup)
       return m.reply("⚠️ Este comando solo funciona en privado.");
 
-    // Ejecutar
     try {
       await cmd.run(client, m, args, { text });
     } catch (error) {
@@ -148,7 +139,6 @@ module.exports = async (client, m) => {
   }
 };
 
-// Auto recarga
 const mainFile = require.resolve(__filename);
 fs.watchFile(mainFile, () => {
   fs.unwatchFile(mainFile);
@@ -160,5 +150,3 @@ fs.watchFile(mainFile, () => {
   delete require.cache[mainFile];
   require(mainFile);
 });
-
-// Mini Lurus © 2025 - Creado por Zam  | GataNina-Li | DevAlexJs | Elrebelde21
