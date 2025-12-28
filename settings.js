@@ -1,13 +1,12 @@
 const fs = require("fs");
 const chalk = require("chalk");
 
-global.owner = ["51917391317","51907376960"]; //Cambia este número por el tuyo
-global.sessionName = "lurus_session";
-global.version = "v1.0.0 | Mini";
+global.owner = ["51917391317","51907376960"]; 
+global.sessionName = "DevYer_session";
+global.version = "v2.0.0 | devYer";
 global.namebot = "dvyer - kali";
 global.author = "dvyer | kali";
 
-//Modifica los mensajes a tu preferencia
 global.mess = {
   admin: "→ Esta función está reservada para los administradores del grupo",
   botAdmin: "→ Para ejecutar esta función debo ser administrador",
