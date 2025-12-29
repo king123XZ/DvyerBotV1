@@ -23,7 +23,7 @@ module.exports = {
     ];
 
     await client.sendMessage(m.chat, {
-      image: { url: "https://i.ibb.co/4wMLkyFY/0d3aa4316a1fde7af118219f33cd08e3.jpg" },
+      image: { url: "https://i.ibb.co/fdFtWCkC/info-bot.png" },
       caption: text,
       footer: "YerTX Bot",
       buttons: buttons,
