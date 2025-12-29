@@ -4,7 +4,7 @@ module.exports = {
   run: async (client, m) => {
 
     const text = `
-⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦 ⧽
+⧼ KILLUA-BOT V1.00 - 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦 ⧽
 ──────────────────────────────
 
 🛠 Comandos disponibles:
@@ -19,7 +19,8 @@ module.exports = {
     const buttons = [
       { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
+      { buttonId: ".canal", buttonText: { displayText: "📢 Canal" }, type: 1 } // Nuevo botón
     ];
 
     await client.sendMessage(m.chat, {
