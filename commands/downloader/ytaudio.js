@@ -14,7 +14,6 @@ module.exports = {
       await m.reply("⏳ Procesando audio...");
 
       let videoUrl = args.join(" ");
-
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos.length) return m.reply("❌ No se encontraron resultados.");
@@ -23,7 +22,6 @@ module.exports = {
 
       const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
-      // 📡 Obtener audio de la API
       const { data } = await axios.post(
         "https://api-sky.ultraplus.click/youtube-mp3",
         { url: videoUrl },
@@ -36,15 +34,35 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
-      await client.sendMessage(
-        m.chat,
-        {
-          audio: { url: audioUrl },
-          mimetype: "audio/mpeg",
-          fileName: `${result.title}.mp3`,
-        },
-        { quoted: m }
-      );
+      // Obtener tamaño del archivo
+      const head = await axios.head(audioUrl);
+      const fileSize = parseInt(head.headers['content-length'] || 0);
+
+      // Si el archivo supera 16 MB, enviar como documento
+      const isLarge = fileSize > 16 * 1024 * 1024;
+
+      if (isLarge) {
+        await client.sendMessage(
+          m.chat,
+          {
+            document: { url: audioUrl },
+            mimetype: "audio/mpeg",
+            fileName: `${result.title}.mp3`,
+            contextInfo: { forward: false, externalAdReply: { showAdAttribution: true } }
+          },
+          { quoted: m }
+        );
+      } else {
+        await client.sendMessage(
+          m.chat,
+          {
+            audio: { url: audioUrl },
+            mimetype: "audio/mpeg",
+            fileName: `${result.title}.mp3`,
+          },
+          { quoted: m }
+        );
+      }
 
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.response?.data || err.message);
@@ -52,4 +70,3 @@ module.exports = {
     }
   }
 };
-
