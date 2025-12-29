@@ -26,7 +26,7 @@ module.exports = {
             title: "Canal Oficial del Bot",
             body: "Haz clic y únete al canal",
             thumbnailUrl: imageUrl,
-            sourceUrl: "https://bit.ly/48XmMCr" // Enlace de Bitly
+            sourceUrl: "https://github.com/DevYerZx/killua-bot-dev" // Enlace de Bitly
           }
         }
       });
