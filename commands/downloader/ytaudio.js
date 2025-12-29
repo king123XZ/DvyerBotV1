@@ -35,16 +35,7 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
-      // Texto con tu canal
-      const infoText = `🎵 *YouTube MP3*
-📌 Título: ${result.title}
-👤 Autor: ${result.author?.name || "YouTube"}
-⏱ Duración: ${result.duration || "?"}s
-
-📢 No te olvides de seguir el canal del bot:
-https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c`;
-
-      // Enviar audio con texto
+      // Enviar audio con preview de canal ("Ver canal")
       await client.sendMessage(
         m.chat,
         {
@@ -53,10 +44,10 @@ https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c`;
           fileName: `${result.title}.mp3`,
           contextInfo: {
             externalAdReply: {
-              showAdAttribution: false,
+              showAdAttribution: true,
               mediaType: 2,
-              title: "Sigue el canal del bot",
-              body: infoText,
+              title: "📢 Canal oficial del bot",
+              body: `No te olvides de seguir el canal del bot`,
               thumbnailUrl: "https://i.ibb.co/hFDcdpBg/menu.png",
               sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
             }
@@ -65,12 +56,10 @@ https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c`;
         { quoted: m }
       );
 
-      // También enviamos el texto aparte para celulares que no vean el externalAdReply
-      await client.sendMessage(m.chat, { text: infoText }, { quoted: m });
-
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.response?.data || err.message);
       m.reply("❌ Error al descargar el audio.");
     }
   }
 };
+
