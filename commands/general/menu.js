@@ -17,7 +17,19 @@ module.exports = {
       return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
     }
 
-    // 📹 Enviando Video tipo GIF
+    // 🎧 1️⃣ AUDIO (nota de voz)
+    await client.sendMessage(m.chat, {
+      audio: {
+        url: "https://files.catbox.moe/kbhi15.mp3"
+      },
+      mimetype: "audio/mpeg",
+      ptt: true
+    });
+
+    // ⏱ Delay corto para mejor efecto
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // 📹 2️⃣ VIDEO tipo GIF
     await client.sendMessage(m.chat, {
       video: {
         url: "https://files.catbox.moe/2jmexf.mp4"
@@ -51,6 +63,7 @@ module.exports = {
       }
     ];
 
+    // 📂 3️⃣ BOTONES
     await client.sendMessage(m.chat, {
       text: "📂 *Selecciona una categoría:*",
       footer: "YerTX Bot • DVYER",
@@ -59,3 +72,4 @@ module.exports = {
     });
   }
 };
+
