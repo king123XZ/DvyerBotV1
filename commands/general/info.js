@@ -55,7 +55,7 @@ module.exports = {
     await client.sendMessage(
       m.chat,
       {
-        image: { url: "https://i.ibb.co/49ksCj2/20251204-0607-Transformaci-n-Digital-Violeta-remix-01kbmgknw2frx8dt55hnz8pmwc.png" },
+        image: { url: "https://i.ibb.co/fdFtWCkC/info-bot.png" },
         caption: info,
         footer: "YerTX Bot • DVYER",
         buttons: buttons,
