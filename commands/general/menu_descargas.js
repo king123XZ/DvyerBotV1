@@ -26,12 +26,12 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // 4 botones normales
+    // 4 botones normales, el último abre el canal
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
       { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
-      { buttonId: ".menu_otros", buttonText: { displayText: "📂 Otros" }, type: 1 } // Nuevo cuarto botón
+      { buttonId: ".canal", buttonText: { displayText: "📢 Canal" }, type: 1 } // botón para ejecutar comando canal
     ];
 
     try {
@@ -50,4 +50,3 @@ module.exports = {
     }
   }
 };
-
