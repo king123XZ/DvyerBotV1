@@ -22,7 +22,6 @@ global.my = {
   ch: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
 };
 
-
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
   fs.unwatchFile(file);
