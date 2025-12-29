@@ -29,7 +29,13 @@ creador dev yer
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
+      {
+        urlButton: {
+          displayText: "📢 Mi Canal",
+          url: global.my.ch // Aquí usamos tu global con el enlace del canal
+        }
+      }
     ];
 
     // 📷 Ruta de la imagen local
@@ -49,4 +55,3 @@ creador dev yer
     });
   }
 };
-
