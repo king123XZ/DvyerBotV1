@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 module.exports = {
   command: ["menu_descargas"],
   description: "Muestra el menú de descargas",
@@ -29,8 +32,16 @@ creador dev yer
       { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
     ];
 
+    // 📷 Ruta de la imagen local
+    const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu-descarga.png");
+
+    // Verificar si existe el archivo antes de enviar
+    if (!fs.existsSync(imagePath)) {
+      return m.reply("❌ La imagen del menú de descargas no se encontró. Verifica la ruta y el nombre del archivo.");
+    }
+
     await client.sendMessage(m.chat, {
-      image: { url: "https://i.ibb.co/1Ytc8hcq/4715021777a54cfb94cd3bac0d53ead4.jpg" },
+      image: fs.readFileSync(imagePath),
       caption: text,
       footer: "YerTX Bot",
       buttons: buttons,
