@@ -34,21 +34,23 @@ creador dev yer
       {
         urlButton: {
           displayText: "📢 Canal de Bot",
-          url: global.my.ch || "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+          url: global.my.ch // aquí usamos tu global
         }
       }
     ];
 
-    // Ruta de la imagen local
+    // 📷 Ruta de la imagen local
     const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu-descarga.png");
 
+    // Verificar si existe el archivo antes de enviar
     if (!fs.existsSync(imagePath)) {
+      console.log("❌ La imagen del menú no se encontró:", imagePath);
       return m.reply("❌ La imagen del menú de descargas no se encontró. Verifica la ruta y el nombre del archivo.");
     }
 
     try {
       await client.sendMessage(m.chat, {
-        image: { url: imagePath },
+        image: { url: imagePath }, // Baileys envía la imagen desde ruta local
         caption: text,
         footer: "YerTX Bot",
         buttons: buttons,
