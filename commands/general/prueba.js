@@ -7,8 +7,8 @@ module.exports = {
   run: async (client, m) => {
     const chatId = m.chat;
 
-    // Ruta de la imagen que se mostrará
-    const imageUrl = "https://i.ibb.co/hFDcdpBg/menu.png"; // tu imagen del canal
+    // Imagen que se mostrará en el mensaje
+    const imageUrl = "https://i.ibb.co/hFDcdpBg/menu.png";
 
     // Texto que se mostrará
     const text = "📢 ¡Únete al canal oficial del bot!";
@@ -26,7 +26,7 @@ module.exports = {
             title: "Canal Oficial del Bot",
             body: "Haz clic y únete al canal",
             thumbnailUrl: imageUrl,
-            sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c" // enlace directo al canal
+            sourceUrl: "https://bit.ly/48XmMCr" // Enlace de Bitly
           }
         }
       });
