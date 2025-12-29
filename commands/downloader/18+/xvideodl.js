@@ -4,7 +4,7 @@ const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/tools/xvideos";
 
 module.exports = {
-  command: ["xvideodl", "descargarvideo"],
+  command: ["xvideosdl", "descargarvideo"],
   category: "downloader",
   description: "Descarga videos desde enlaces directos",
   use: "xvideodl <link>",
