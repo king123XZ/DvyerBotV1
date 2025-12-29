@@ -20,10 +20,10 @@ module.exports = {
     // 📹 Enviando Video tipo GIF
     await client.sendMessage(m.chat, {
       video: {
-        url: "https://cold-na-phx-8.gofile.io/download/web/699f187c-5d48-46a5-bb2a-3ba25a3a82b7/do_u_see_what_happens_when_u_break_your_promises_killua_zoldyck_hxh_h.mp4"
+        url: "https://files.catbox.moe/2jmexf.mp4"
       },
       gifPlayback: true,
-      caption: `⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 ⧽
+      caption: `⧼KILLUA DV V1.00⧽
 
 👤 Usuario: ${m.pushName}
 🏴 Modo: Activo 
