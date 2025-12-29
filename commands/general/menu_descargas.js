@@ -7,36 +7,30 @@ module.exports = {
   run: async (client, m) => {
 
     const text = `
-⧼killua bot v.100 - 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ⧽
-creador dev yer
+⧼ killua-bot V1.00 - 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ⧽
+📌 Creador: Dev Yer
 ──────────────────────────────
 
-📥 Comandos disponibles:
+📥 *Comandos disponibles:*
 
-• ytaudio → Descargar música de YouTube url
-• ytvideo → Descargar video de YouTube url
-• ytdoc → Descargar video documento de YouTube url
-• spotify → Escribe nombre de la canción 
-• play → Descargar música y videos (recomendado)
-• tiktok → Descargar video de TikTok
-• facebook → Descargar video de Facebook
-• mediafire - mf  URL → Descargar archivo de mediafire
+🎵 ytaudio → Descargar música de YouTube (url)
+🎬 ytvideo → Descargar video de YouTube (url)
+📄 ytdoc → Descargar video documento de YouTube (url)
+🎶 spotify → Buscar canción por nombre
+🎧 play → Descargar música y videos (recomendado)
+📹 tiktok → Descargar video de TikTok
+📺 facebook → Descargar video de Facebook
+💾 mediafire - mf URL → Descargar archivo de Mediafire
 
 ──────────────────────────────
-🔹 Navega usando los botones:
+🔹 *Navega usando los botones:*
 `;
 
     // Botones del menú
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
-      {
-        urlButton: {
-          displayText: "📢 Canal de Bot",
-          url: global.my.ch || "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
-        }
-      }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
     ];
 
     // Ruta de la imagen local
@@ -49,9 +43,9 @@ creador dev yer
 
     try {
       await client.sendMessage(m.chat, {
-        image: { url: imagePath }, // imagen desde ruta local
+        image: { url: imagePath }, // Imagen desde ruta local
         caption: text,
-        footer: "YerTX Bot • DVYER", // nombre del bot y creador
+        footer: "YerTX Bot • DVYER", // Nombre del bot y creador
         buttons: buttons,
         headerType: 4
       });
