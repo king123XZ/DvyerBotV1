@@ -33,24 +33,22 @@ creador dev yer
       { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
       {
         urlButton: {
-          displayText: "📢 Mi Canal",
+          displayText: "📢 Canal de Bot",
           url: global.my.ch || "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
         }
       }
     ];
 
-    // 📷 Ruta de la imagen local
+    // Ruta de la imagen local
     const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu-descarga.png");
 
-    // Verificar si existe el archivo antes de enviar
     if (!fs.existsSync(imagePath)) {
-      console.log("❌ La imagen del menú no se encontró:", imagePath);
       return m.reply("❌ La imagen del menú de descargas no se encontró. Verifica la ruta y el nombre del archivo.");
     }
 
     try {
       await client.sendMessage(m.chat, {
-        image: fs.readFileSync(imagePath),
+        image: { url: imagePath },
         caption: text,
         footer: "YerTX Bot",
         buttons: buttons,
@@ -62,4 +60,3 @@ creador dev yer
     }
   }
 };
-
