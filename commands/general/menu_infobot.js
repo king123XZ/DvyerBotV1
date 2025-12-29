@@ -8,7 +8,7 @@ module.exports = {
 ──────────────────────────────
 
 🤖 Información del bot:
-
+• info → informacion sobre el sistema del bot 
 • ping → Latencia del bot
 • owner → Info del creador
 ──────────────────────────────
