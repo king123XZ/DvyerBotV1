@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 module.exports = {
   command: ["menu", "help", "ayuda"],
 
@@ -10,53 +13,54 @@ module.exports = {
     const isOwner = owners.includes(m.sender);
 
     const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
-    const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
+    const admins = m.isGroup
+      ? groupMetadata.participants.filter(p => p.admin)
+      : [];
+
     const isAdmin = admins.some(p => p.id === m.sender);
 
     if (!isOwner && !isAdmin) {
       return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
     }
 
-    // 📹 VIDEO tipo GIF
+    // 📷 Ruta de la imagen del menú
+    const imagePath = path.join(
+      __dirname,
+      "..",
+      "imagenesDvYer",
+      "menu.jpg" // cambia si es png o webp
+    );
+
+    // 📸 Enviar imagen con botones
     await client.sendMessage(m.chat, {
-      video: {
-        url: "https://files.catbox.moe/2jmexf.mp4"
-      },
-      gifPlayback: true,
+      image: fs.readFileSync(imagePath),
       caption: `⧼KILLUA DV V1.00⧽
 
 👤 Usuario: ${m.pushName}
-🏴 Modo: Activo 
+🏴 Modo: Activo
 🕶️ Versión: v2.0
 
 ━━━━━━━━━━━━━━━━━━
-👑 *CREADOR: DVYER*`
-    });
-
-    const buttons = [
-      {
-        buttonId: ".menu_descargas",
-        buttonText: { displayText: "📥 Descargas" },
-        type: 1
-      },
-      {
-        buttonId: ".menu_utilidades",
-        buttonText: { displayText: "🛠 Utilidades" },
-        type: 1
-      },
-      {
-        buttonId: ".menu_infobot",
-        buttonText: { displayText: "🤖 InfoBot" },
-        type: 1
-      }
-    ];
-
-    // 📂 BOTONES DEL MENÚ
-    await client.sendMessage(m.chat, {
-      text: "📂 *Selecciona una categoría:*",
+👑 *CREADOR: DVYER*`,
+      buttons: [
+        {
+          buttonId: ".menu_descargas",
+          buttonText: { displayText: "📥 Descargas" },
+          type: 1
+        },
+        {
+          buttonId: ".menu_utilidades",
+          buttonText: { displayText: "🛠 Utilidades" },
+          type: 1
+        },
+        {
+          buttonId: ".menu_infobot",
+          buttonText: { displayText: "🤖 InfoBot" },
+          type: 1
+        }
+      ],
       footer: "YerTX Bot • DVYER",
-      buttons: buttons,
-      headerType: 1
+      headerType: 4
     });
   }
 };
