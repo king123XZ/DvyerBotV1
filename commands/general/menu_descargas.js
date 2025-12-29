@@ -23,15 +23,19 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // 3 botones normales del menú
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
+      {
+        urlButton: {
+          displayText: "📢 Canal de Bot",
+          url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+        }
+      }
     ];
 
     try {
-      // 1️⃣ Enviar imagen del menú con botones normales
       await client.sendMessage(m.chat, {
         image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" },
         caption: text,
@@ -39,20 +43,6 @@ module.exports = {
         buttons: buttons,
         headerType: 4
       });
-
-      // 2️⃣ Enviar imagen del canal con un botón normal que diga "Canal de Bot"
-      const channelButtons = [
-        { buttonId: ".canal", buttonText: { displayText: "📢 Canal de Bot" }, type: 1 }
-      ];
-
-      await client.sendMessage(m.chat, {
-        image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" }, // Aquí puedes poner la imagen de tu canal
-        caption: "Únete a nuestro canal de WhatsApp",
-        footer: "YerTX Bot • DVYER",
-        buttons: channelButtons,
-        headerType: 4
-      });
-
     } catch (error) {
       console.error("Error enviando menú de descargas:", error);
       m.reply("❌ Ocurrió un error al enviar el menú de descargas.");
