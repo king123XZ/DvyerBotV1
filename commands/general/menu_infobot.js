@@ -4,7 +4,7 @@ module.exports = {
   run: async (client, m) => {
 
     const text = `
-⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝗜𝗡𝗙𝗢𝗕𝗢𝗧 ⧽
+⧼ KILLUA BOT V1.00 - 𝗜𝗡𝗙𝗢𝗕𝗢𝗧 ⧽
 ──────────────────────────────
 
 🤖 Información del bot:
@@ -18,7 +18,8 @@ module.exports = {
     const buttons = [
       { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
+      { buttonId: ".canal", buttonText: { displayText: "📢 Canal" }, type: 1 } // Nuevo botón
     ];
 
     await client.sendMessage(m.chat, {
@@ -30,4 +31,5 @@ module.exports = {
     });
   }
 };
+
 
