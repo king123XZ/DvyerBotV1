@@ -26,15 +26,16 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // 3 botones normales
+    // 4 botones normales
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
+      { buttonId: ".menu_otros", buttonText: { displayText: "📂 Otros" }, type: 1 } // Nuevo cuarto botón
     ];
 
     try {
-      // 1️⃣ Enviar imagen del menú con botones normales
+      // Enviar imagen del menú con 4 botones
       await client.sendMessage(m.chat, {
         image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" },
         caption: menuText,
@@ -43,32 +44,10 @@ module.exports = {
         headerType: 4
       });
 
-      // 2️⃣ Enviar mensaje estilo "tarjeta de canal" con botón URL
-      const channelText = `
-📢 *Únete a nuestro canal de WhatsApp*  
-
-Mantente actualizado con noticias, descargas y novedades del bot.  
-
-Haz clic en el botón y únete ahora 👇
-`;
-
-      await client.sendMessage(m.chat, {
-        text: channelText,
-        footer: "YerTX Bot • DVYER",
-        buttons: [
-          {
-            urlButton: {
-              displayText: "📲 Ir al Canal",
-              url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
-            }
-          }
-        ],
-        headerType: 1
-      });
-
     } catch (error) {
       console.error("Error enviando menú de descargas:", error);
       m.reply("❌ Ocurrió un error al enviar el menú de descargas.");
     }
   }
 };
+
