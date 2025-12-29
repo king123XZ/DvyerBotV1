@@ -23,7 +23,7 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // Botones normales (máximo 3)
+    // 3 botones normales del menú
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
@@ -40,19 +40,17 @@ module.exports = {
         headerType: 4
       });
 
-      // 2️⃣ Enviar mensaje con botón URL del canal
+      // 2️⃣ Enviar imagen del canal con un botón normal que diga "Canal de Bot"
+      const channelButtons = [
+        { buttonId: ".canal", buttonText: { displayText: "📢 Canal de Bot" }, type: 1 }
+      ];
+
       await client.sendMessage(m.chat, {
-        text: "📢 Únete al canal de nuestro bot:",
+        image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" }, // Aquí puedes poner la imagen de tu canal
+        caption: "Únete a nuestro canal de WhatsApp",
         footer: "YerTX Bot • DVYER",
-        buttons: [
-          {
-            urlButton: {
-              displayText: "Ir al Canal",
-              url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
-            }
-          }
-        ],
-        headerType: 1
+        buttons: channelButtons,
+        headerType: 4
       });
 
     } catch (error) {
@@ -61,4 +59,5 @@ module.exports = {
     }
   }
 };
+
 
