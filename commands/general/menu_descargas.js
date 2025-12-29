@@ -3,7 +3,7 @@ module.exports = {
   description: "Muestra el menú de descargas",
   run: async (client, m) => {
 
-    const text = `
+    const menuText = `
 ⧼ killua-bot V1.00 - 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ⧽
 📌 Creador: Dev Yer
 ──────────────────────────────
@@ -31,31 +31,36 @@ module.exports = {
     ];
 
     try {
-      // 1️⃣ Enviar imagen del menú con los 3 botones normales
+      // 1️⃣ Enviar imagen del menú con 3 botones normales
       await client.sendMessage(m.chat, {
         image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" },
-        caption: text,
+        caption: menuText,
         footer: "YerTX Bot • DVYER",
         buttons: buttons,
         headerType: 4
       });
 
-      // 2️⃣ Enviar un segundo mensaje con botón URL del canal
-      const channelButton = [
-        {
-          urlButton: {
-            displayText: "📢 Canal de Bot",
-            url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
-          }
-        }
-      ];
+      // 2️⃣ Enviar mensaje de “tarjeta del canal” con botón URL
+      const channelText = `
+📢 *Nuestro Canal de WhatsApp*
+
+¡Mantente actualizado con noticias, descargas y novedades del bot!
+
+Haz clic en el botón y únete ahora 👇
+`;
 
       await client.sendMessage(m.chat, {
-        image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" }, // Puedes usar la misma imagen o una del canal
-        caption: "Únete a nuestro canal de WhatsApp",
+        text: channelText,
         footer: "YerTX Bot • DVYER",
-        buttons: channelButton,
-        headerType: 4
+        buttons: [
+          {
+            urlButton: {
+              displayText: "📲 Ir al Canal",
+              url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+            }
+          }
+        ],
+        headerType: 1
       });
 
     } catch (error) {
