@@ -26,11 +26,17 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // Botones del menú
+    // Botones del menú: 3 normales + 1 URL button
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
+      {
+        urlButton: {
+          displayText: "📢 Canal de Bot",
+          url: global.my.ch || "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+        }
+      }
     ];
 
     // Ruta de la imagen local
@@ -55,4 +61,3 @@ module.exports = {
     }
   }
 };
-
