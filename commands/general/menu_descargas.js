@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 module.exports = {
   command: ["menu_descargas"],
   description: "Muestra el menú de descargas",
@@ -23,7 +26,7 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // 3 botones normales del menú
+    // 3 botones normales
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
@@ -31,7 +34,7 @@ module.exports = {
     ];
 
     try {
-      // 1️⃣ Enviar imagen del menú con 3 botones normales
+      // 1️⃣ Enviar imagen del menú con botones normales
       await client.sendMessage(m.chat, {
         image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" },
         caption: menuText,
@@ -40,11 +43,11 @@ module.exports = {
         headerType: 4
       });
 
-      // 2️⃣ Enviar mensaje de “tarjeta del canal” con botón URL
+      // 2️⃣ Enviar mensaje estilo "tarjeta de canal" con botón URL
       const channelText = `
-📢 *Nuestro Canal de WhatsApp*
+📢 *Únete a nuestro canal de WhatsApp*  
 
-¡Mantente actualizado con noticias, descargas y novedades del bot!
+Mantente actualizado con noticias, descargas y novedades del bot.  
 
 Haz clic en el botón y únete ahora 👇
 `;
@@ -69,4 +72,3 @@ Haz clic en el botón y únete ahora 👇
     }
   }
 };
-
