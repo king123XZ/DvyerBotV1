@@ -57,6 +57,11 @@ module.exports = {
           buttonId: ".menu_infobot",
           buttonText: { displayText: "🤖 InfoBot" },
           type: 1
+        },
+        {
+          buttonId: ".canal",
+          buttonText: { displayText: "📢 Canal" },
+          type: 1
         }
       ],
       footer: "YerTX Bot • DVYER",
@@ -64,3 +69,4 @@ module.exports = {
     });
   }
 };
+
