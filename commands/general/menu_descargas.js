@@ -1,15 +1,12 @@
-const fs = require("fs");
-const path = require("path");
-
 module.exports = {
   command: ["menu_descargas"],
   description: "Muestra el menú de descargas",
   run: async (client, m) => {
 
     const text = `
-⧼ killua-bot V1.00 - 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ⧽
+⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ⧽
 creador dev yer
-──────────────────
+──────────────────────────────
 
 📥 Comandos disponibles:
 
@@ -26,39 +23,20 @@ creador dev yer
 🔹 Navega usando los botones:
 `;
 
-    // Botones del menú
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
-      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
-      {
-        urlButton: {
-          displayText: "📢 Canal de Bot",
-          url: global.my.ch // aquí usamos tu global
-        }
-      }
+      { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 }
     ];
 
-    // 📷 Ruta de la imagen local
-    const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu-descarga.png");
-
-    // Verificar si existe el archivo antes de enviar
-    if (!fs.existsSync(imagePath)) {
-      console.log("❌ La imagen del menú no se encontró:", imagePath);
-      return m.reply("❌ La imagen del menú de descargas no se encontró. Verifica la ruta y el nombre del archivo.");
-    }
-
-    try {
-      await client.sendMessage(m.chat, {
-        image: { url: imagePath }, // Baileys envía la imagen desde ruta local
-        caption: text,
-        footer: "YerTX Bot",
-        buttons: buttons,
-        headerType: 4
-      });
-    } catch (error) {
-      console.error("Error enviando menú de descargas:", error);
-      m.reply("❌ Ocurrió un error al enviar el menú de descargas.");
-    }
+    await client.sendMessage(m.chat, {
+      image: { url: "https://i.ibb.co/1Ytc8hcq/4715021777a54cfb94cd3bac0d53ead4.jpg" },
+      caption: text,
+      footer: "YerTX Bot",
+      buttons: buttons,
+      headerType: 4
+    });
   }
 };
+
+
