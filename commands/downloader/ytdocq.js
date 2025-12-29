@@ -3,6 +3,9 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
+// orden de fallback
+const FALLBACK = ["720", "480", "360"];
+
 module.exports = {
   command: ["ytdocq"],
   category: "downloader",
@@ -10,56 +13,43 @@ module.exports = {
   run: async (client, m, args) => {
     try {
       const quality = args[0];
-      const url = global.ytDocCache?.[m.sender];
+      const owner = args[1];
 
-      if (!url) {
-        return m.reply("❌ El enlace expiró. Usa *ytdoc* nuevamente.");
-      }
+      // 🔐 solo el que pidió puede usar
+      if (owner !== m.sender) return;
 
-      if (!quality) {
-        return m.reply("❌ Calidad no válida.");
-      }
+      const cache = global.ytDocCache?.[m.sender];
+      if (!cache) return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
 
-      await m.reply(`⬇️ Descargando *${quality}p* como documento...`);
+      if (!quality) return;
 
-      const api = await axios.post(
+      await m.reply(`⬇️ Descargando documento *${quality}p*...`);
+
+      const res = await axios.post(
         API_URL,
         {
-          url,
+          url: cache.url,
           type: "video",
-          quality: String(quality)
+          quality
         },
         {
-          headers: {
-            "Content-Type": "application/json",
-            apikey: API_KEY
-          }
+          headers: { apikey: API_KEY },
+          timeout: 45000 // ⏱️ timeout alto
         }
       );
 
-      const data = api.data?.result;
-      const direct = data?.media?.direct;
+      const data = res.data?.result;
+      const link = data?.media?.direct;
 
-      if (!direct) {
-        console.log("API ERROR:", api.data);
-        return m.reply("❌ No se pudo generar el enlace del video.");
-      }
+      if (!link) throw new Error("NO_LINK");
 
-      // Descargar archivo
-      const file = await axios.get(direct, {
-        responseType: "arraybuffer"
-      });
-
-      const title = data.title || "youtube_video";
-
-      // Enviar como DOCUMENTO
       await client.sendMessage(
         m.chat,
         {
-          document: file.data,
+          document: { url: link },
           mimetype: "video/mp4",
-          fileName: `${title} (${quality}p).mp4`,
-          caption: `📄🎬 *${title}*\n📺 Calidad: ${quality}p`
+          fileName: `${data.title} - ${quality}p.mp4`,
+          caption: `📄 ${data.title}\n📺 Calidad: ${quality}p`
         },
         { quoted: m }
       );
@@ -67,8 +57,21 @@ module.exports = {
       delete global.ytDocCache[m.sender];
 
     } catch (err) {
-      console.error("YT DOC ERROR:", err.response?.data || err);
-      m.reply("❌ Error al descargar el video en documento.");
+      console.error("YTDOCQ ERROR:", err.message);
+
+      // 🔁 fallback automático
+      const next = FALLBACK[FALLBACK.indexOf(args[0]) + 1];
+      if (next) {
+        return m.reply(`⚠️ ${args[0]}p falló, probando ${next}p...`)
+          .then(() => client.emit("message", {
+            key: m.key,
+            message: { conversation: `.ytdocq ${next} ${m.sender}` },
+            sender: m.sender
+          }));
+      }
+
+      m.reply("❌ No se pudo enviar el documento.");
+      delete global.ytDocCache[m.sender];
     }
   }
 };
