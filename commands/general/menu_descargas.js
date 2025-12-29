@@ -1,6 +1,3 @@
-const fs = require("fs");
-const path = require("path");
-
 module.exports = {
   command: ["menu_descargas"],
   description: "Muestra el menú de descargas",
@@ -26,7 +23,6 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // Botones del menú: 3 normales + 1 URL button al final
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
@@ -38,18 +34,10 @@ module.exports = {
         }
       }
     ];
-
-    // Ruta de la imagen local
-    const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu-descarga.png");
-
-    // Verificar si existe la imagen
-    if (!fs.existsSync(imagePath)) {
-      return m.reply("❌ La imagen del menú de descargas no se encontró. Verifica la ruta y el nombre del archivo.");
-    }
-
+    
     try {
       await client.sendMessage(m.chat, {
-        image: fs.readFileSync(imagePath), // Imagen local como buffer
+        image: { url: "https://i.ibb.co/NnW9LWdL/menu-descarga.png" }, // Imagen online
         caption: text,
         footer: "YerTX Bot • DVYER",
         buttons: buttons,
