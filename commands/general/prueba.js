@@ -1,87 +1,54 @@
-import fs from "fs";
-import path from "path";
-import moment from "moment-timezone";
-
-const cooldowns = new Map();
-const COOLDOWN_DURATION = 180000; // 3 minutos
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
-  command: ["menu1"],
-  description: "Muestra el menú principal",
+  command: ["m1"],
+
   run: async (client, m, { prefix }) => {
+    // Validación de owner/admin
+    const owners = ["51917391317@s.whatsapp.net", "51907376960@s.whatsapp.net"];
+    const isOwner = owners.includes(m.sender);
+    const groupMetadata = m.isGroup ? await client.groupMetadata(m.chat) : {};
+    const admins = m.isGroup ? groupMetadata.participants.filter(p => p.admin) : [];
+    const isAdmin = admins.some(p => p.id === m.sender);
+    if (!isOwner && !isAdmin) return m.reply("🚫 Solo OWNER o ADMINS pueden usar este comando.");
 
-    const chatId = m.key.remoteJid;
-    const now = Date.now();
-    const chatData = cooldowns.get(chatId) || { lastUsed: 0, menuMessage: null };
-    const timeLeft = COOLDOWN_DURATION - (now - chatData.lastUsed);
+    // Ruta del menú
+    const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu.png");
+    if (!fs.existsSync(imagePath)) return m.reply("❌ Imagen del menú no encontrada.");
 
-    if (timeLeft > 0) {
-      const senderTag = m.sender ? `@${m.sender.split('@')[0]}` : '@usuario';
-      await client.reply(chatId, `⚠️ Hey ${senderTag}, solo se puede enviar el menú cada 3 minutos. Desplázate hacia arriba para verlo.`, chatData.menuMessage || m);
-      return;
-    }
+    // 1️⃣ Enviar menú con 3 botones normales
+    await client.sendMessage(m.chat, {
+      image: fs.readFileSync(imagePath),
+      caption: `⧼KILLUA DV V1.00⧽
 
-    // Datos del usuario y bot
-    const name = m.pushName || 'Usuario';
-    const fecha = moment.tz('America/Argentina/Buenos_Aires').format('DD/MM/YYYY');
-    const hora = moment.tz('America/Argentina/Buenos_Aires').format('HH:mm:ss');
-    const botName = client.user?.name || 'YerTX Bot';
-
-    // Texto del menú
-    const text = `⧼ ${botName} V1.00 ⧽
-
-Hola 👋🏻 *${name}*
-
-📅 Fecha: ${fecha}
-⏰ Hora: ${hora}
+👤 Usuario: ${m.pushName}
+🏴 Modo: Activo
+🕶️ Versión: v2.0
 
 ━━━━━━━━━━━━━━━━━━
-👑 *CREADOR: DVYER*
-
-🔹 Navega usando los botones:`;
-
-    // Botones normales (máximo 3)
-    const buttons = [
-      { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
-      { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
-      { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 }
-    ];
-
-    // Ruta de la imagen local
-    const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu.png");
-
-    if (!fs.existsSync(imagePath)) {
-      return m.reply("❌ La imagen del menú no se encontró. Verifica la ruta y el nombre del archivo.");
-    }
-
-    // Enviar menú con imagen y botones normales
-    const menuMessage = await client.sendMessage(chatId, {
-      image: fs.readFileSync(imagePath),
-      caption: text,
-      footer: botName + " • DVYER",
-      buttons: buttons,
+👑 *CREADOR: DVYER*`,
+      buttons: [
+        { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
+        { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
+        { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 }
+      ],
+      footer: "YerTX Bot • DVYER",
       headerType: 4
     });
 
-    // Guardar cooldown
-    cooldowns.set(chatId, { lastUsed: now, menuMessage });
-
-    // Enviar un segundo mensaje como “reenviado desde el canal”
-    try {
-      await client.sendMessage(chatId, {
-        text: "📢 Únete a nuestro canal de WhatsApp para novedades y actualizaciones:",
-        contextInfo: {
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: ["120363401477412280@newsletter"], // tu canal
-            newsletterName: "YerTX Bot 📌"
-          },
-          forwardingScore: 999,
-          isForwarded: true
+    // 2️⃣ Enviar botón usando el ID del canal
+    const canalID = "120363401477412280@newsletter"; // ID de tu canal
+    await client.sendMessage(m.chat, {
+      text: "📢 ¡Únete al canal oficial del bot!",
+      contextInfo: {
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: canalID,
+          newsletterName: "Canal Oficial DVYER"
         }
-      });
-    } catch (err) {
-      console.error("Error enviando mensaje del canal:", err);
-    }
+      },
+      footer: "YerTX Bot • DVYER",
+      headerType: 1
+    });
   }
 };
-
