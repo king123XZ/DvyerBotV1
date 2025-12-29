@@ -17,14 +17,20 @@ module.exports = {
       return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
     }
 
-
+    // 📹 Enviando Video tipo GIF
     await client.sendMessage(m.chat, {
-      image: { url: "https://i.ibb.co/XxdTkYNq/menu.png" },
-      caption: `⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 - CREADOR DVYER ⧽
+      video: {
+        url: "https://cold-na-phx-8.gofile.io/download/web/699f187c-5d48-46a5-bb2a-3ba25a3a82b7/do_u_see_what_happens_when_u_break_your_promises_killua_zoldyck_hxh_h.mp4"
+      },
+      gifPlayback: true,
+      caption: `⧼ 𝐘𝐞𝐫𝐓𝐗 𝐁𝐎𝐓 ⧽
 
 👤 Usuario: ${m.pushName}
-🏴 Modo: activo 
-🕶️ Versión: v 2.0`
+🏴 Modo: Activo 
+🕶️ Versión: v2.0
+
+━━━━━━━━━━━━━━━━━━
+👑 *CREADOR: DVYER*`
     });
 
     const buttons = [
@@ -46,8 +52,8 @@ module.exports = {
     ];
 
     await client.sendMessage(m.chat, {
-      text: "Selecciona una categoría:",
-      footer: "YerTX Bot",
+      text: "📂 *Selecciona una categoría:*",
+      footer: "YerTX Bot • DVYER",
       buttons: buttons,
       headerType: 1
     });
