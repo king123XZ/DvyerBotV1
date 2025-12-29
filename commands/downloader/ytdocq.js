@@ -3,8 +3,7 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// orden de fallback
-const FALLBACK = ["720", "480", "360"];
+const VALID_QUALITIES = ["144", "240", "360", "480"];
 
 module.exports = {
   command: ["ytdocq"],
@@ -15,13 +14,16 @@ module.exports = {
       const quality = args[0];
       const owner = args[1];
 
-      // 🔐 solo el que pidió puede usar
       if (owner !== m.sender) return;
 
-      const cache = global.ytDocCache?.[m.sender];
-      if (!cache) return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
+      if (!VALID_QUALITIES.includes(quality)) {
+        return m.reply("❌ Calidad no permitida.");
+      }
 
-      if (!quality) return;
+      const cache = global.ytDocCache?.[m.sender];
+      if (!cache) {
+        return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
+      }
 
       await m.reply(`⬇️ Descargando documento *${quality}p*...`);
 
@@ -34,14 +36,17 @@ module.exports = {
         },
         {
           headers: { apikey: API_KEY },
-          timeout: 45000 // ⏱️ timeout alto
+          timeout: 60000 // ⏱️ estable
         }
       );
 
       const data = res.data?.result;
       const link = data?.media?.direct;
 
-      if (!link) throw new Error("NO_LINK");
+      if (!link) {
+        console.log("RESPUESTA API:", res.data);
+        return m.reply("❌ No se pudo generar el video.");
+      }
 
       await client.sendMessage(
         m.chat,
@@ -57,20 +62,8 @@ module.exports = {
       delete global.ytDocCache[m.sender];
 
     } catch (err) {
-      console.error("YTDOCQ ERROR:", err.message);
-
-      // 🔁 fallback automático
-      const next = FALLBACK[FALLBACK.indexOf(args[0]) + 1];
-      if (next) {
-        return m.reply(`⚠️ ${args[0]}p falló, probando ${next}p...`)
-          .then(() => client.emit("message", {
-            key: m.key,
-            message: { conversation: `.ytdocq ${next} ${m.sender}` },
-            sender: m.sender
-          }));
-      }
-
-      m.reply("❌ No se pudo enviar el documento.");
+      console.error("YTDOCQ ERROR:", err.response?.data || err.message);
+      m.reply("❌ Error al descargar. Intenta otra calidad.");
       delete global.ytDocCache[m.sender];
     }
   }
