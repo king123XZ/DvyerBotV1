@@ -1,3 +1,4 @@
+
 const axios = require("axios");
 const yts = require("yt-search");
 
@@ -35,27 +36,22 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
+      // Caption con enlace a tu canal
       const caption = `🎵 *YouTube MP3*
 📌 Título: ${result.title}
 👤 Autor: ${result.author?.name || "YouTube"}
-⏱ Duración: ${result.duration || "?"}s`;
+⏱ Duración: ${result.duration || "?"}s
 
-      // ✅ Enviar audio con botón de canal
+📢 No te olvides de seguir el canal del bot:
+https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c`;
+
       await client.sendMessage(
         m.chat,
         {
           audio: { url: audioUrl },
           mimetype: "audio/mpeg",
           fileName: `${result.title}.mp3`,
-          caption,
-          footer: "Killua-Bot V1.00 • DVyer",
-          buttons: [
-            {
-              url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c",
-              displayText: "📢 Ver canal",
-              type: 1 // botón tipo URL
-            }
-          ]
+          caption
         },
         { quoted: m }
       );
