@@ -9,7 +9,7 @@ module.exports = {
     try {
       if (!args.length) return m.reply("❌ Ingresa un link o nombre.");
 
-      await m.reply("⏳ Descargando audio...");
+      await m.reply("⏳ Procesando audio...");
 
       let videoUrl = args.join(" ");
       if (!videoUrl.startsWith("http")) {
@@ -27,27 +27,29 @@ module.exports = {
       if (!data.status) return m.reply("❌ Error en la API.");
 
       const audioUrl = data.result?.media?.audio;
-      const title = (data.result?.title || "audio").replace(/[\\/:*?"<>|]/g, "");
+      const title = (data.result?.title || "audio")
+        .replace(/[\\/:*?"<>|]/g, "")
+        .slice(0, 50);
 
       if (!audioUrl) return m.reply("❌ Audio no disponible.");
 
-      // 🔊 INTENTAR COMO AUDIO
+      // 🎧 INTENTO 1: AUDIO STREAM
       try {
         await client.sendMessage(
           m.chat,
           {
-            audio: { url: audioUrl },
+            audio: { url: audioUrl }, // 🔥 STREAM, NO DESCARGA
             mimetype: "audio/mpeg",
             fileName: `${title}.mp3`,
           },
           { quoted: m }
         );
       } catch (e) {
-        // 📄 FALLBACK A DOCUMENTO
+        // 📄 FALLBACK: DOCUMENTO STREAM
         await client.sendMessage(
           m.chat,
           {
-            document: { url: audioUrl },
+            document: { url: audioUrl }, // 🔥 STREAM
             mimetype: "audio/mpeg",
             fileName: `${title}.mp3`,
           },
@@ -57,8 +59,9 @@ module.exports = {
 
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.message);
-      m.reply("❌ El servidor tardó demasiado. Intenta otra vez.");
+      m.reply("❌ El servidor está ocupado. Intenta de nuevo.");
     }
   }
 };
+
 
