@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 const yts = require("yt-search");
 
@@ -16,7 +15,7 @@ module.exports = {
 
       let videoUrl = args.join(" ");
 
-      // 🔍 Buscar si no es link
+      // Buscar si no es link
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos.length) return m.reply("❌ No se encontraron resultados.");
@@ -36,8 +35,8 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
-      // Caption con enlace a tu canal
-      const caption = `🎵 *YouTube MP3*
+      // Texto con tu canal
+      const infoText = `🎵 *YouTube MP3*
 📌 Título: ${result.title}
 👤 Autor: ${result.author?.name || "YouTube"}
 ⏱ Duración: ${result.duration || "?"}s
@@ -45,16 +44,29 @@ module.exports = {
 📢 No te olvides de seguir el canal del bot:
 https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c`;
 
+      // Enviar audio con texto
       await client.sendMessage(
         m.chat,
         {
           audio: { url: audioUrl },
           mimetype: "audio/mpeg",
           fileName: `${result.title}.mp3`,
-          caption
+          contextInfo: {
+            externalAdReply: {
+              showAdAttribution: false,
+              mediaType: 2,
+              title: "Sigue el canal del bot",
+              body: infoText,
+              thumbnailUrl: "https://i.ibb.co/hFDcdpBg/menu.png",
+              sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+            }
+          }
         },
         { quoted: m }
       );
+
+      // También enviamos el texto aparte para celulares que no vean el externalAdReply
+      await client.sendMessage(m.chat, { text: infoText }, { quoted: m });
 
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.response?.data || err.message);
