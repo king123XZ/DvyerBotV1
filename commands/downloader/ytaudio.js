@@ -11,7 +11,12 @@ module.exports = {
     try {
       if (!args.length) return m.reply("❌ Ingresa un link o nombre de YouTube.");
 
-      await m.reply("⏳ Procesando audio...");
+      // Enviar mensaje inicial de procesamiento
+      const processingMsg = await client.sendMessage(
+        m.chat,
+        { text: "⏳ Procesando audio..." },
+        { quoted: m }
+      );
 
       let videoUrl = args.join(" ");
 
@@ -35,25 +40,26 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
-      // Enviar audio con preview de canal ("Ver canal")
+      // Reemplazar el mensaje de "Procesando" con el audio + preview de canal
       await client.sendMessage(
         m.chat,
         {
           audio: { url: audioUrl },
           mimetype: "audio/mpeg",
           fileName: `${result.title}.mp3`,
+          caption: `🎵 ${result.title}\n👤 ${result.author?.name || "YouTube"}\n⏱ Duración: ${result.duration || "?"}s`,
           contextInfo: {
             externalAdReply: {
               showAdAttribution: true,
               mediaType: 2,
               title: "📢 Canal oficial del bot",
-              body: `No te olvides de seguir el canal del bot`,
+              body: "No te olvides de seguir el canal del bot",
               thumbnailUrl: "https://i.ibb.co/hFDcdpBg/menu.png",
               sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
             }
           }
         },
-        { quoted: m }
+        { quoted: processingMsg }
       );
 
     } catch (err) {
