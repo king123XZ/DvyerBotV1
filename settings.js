@@ -18,7 +18,7 @@ global.mess = {
 
 global.thumbnailUrl = "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png"; //Cambia esta imagen
 
-global.my = { ch: "120363207586611704@newsletter", }; 
+global.my = { ch: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c@newsletter", }; 
              
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
