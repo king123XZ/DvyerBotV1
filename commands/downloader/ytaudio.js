@@ -11,16 +11,10 @@ module.exports = {
     try {
       if (!args.length) return m.reply("❌ Ingresa un link o nombre de YouTube.");
 
-      // Enviar mensaje inicial de procesamiento
-      const processingMsg = await client.sendMessage(
-        m.chat,
-        { text: "⏳ Procesando audio..." },
-        { quoted: m }
-      );
+      await m.reply("⏳ Procesando audio...");
 
       let videoUrl = args.join(" ");
 
-      // Buscar si no es link
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos.length) return m.reply("❌ No se encontraron resultados.");
@@ -28,6 +22,8 @@ module.exports = {
       }
 
       const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+
+      // 📡 Obtener audio de la API
       const { data } = await axios.post(
         "https://api-sky.ultraplus.click/youtube-mp3",
         { url: videoUrl },
@@ -40,31 +36,19 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
-      // Reemplazar el mensaje de "Procesando" con el audio + preview de canal
       await client.sendMessage(
         m.chat,
         {
           audio: { url: audioUrl },
           mimetype: "audio/mpeg",
           fileName: `${result.title}.mp3`,
-          caption: `🎵 ${result.title}\n👤 ${result.author?.name || "YouTube"}\n⏱ Duración: ${result.duration || "?"}s`,
-          contextInfo: {
-            externalAdReply: {
-              showAdAttribution: true,
-              mediaType: 2,
-              title: "📢 Canal oficial del bot",
-              body: "No te olvides de seguir el canal del bot",
-              thumbnailUrl: "https://i.ibb.co/hFDcdpBg/menu.png",
-              sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
-            }
-          }
         },
-        { quoted: processingMsg }
+        { quoted: m }
       );
 
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar el audio.");
+      m.reply("❌ Ocurrió un error al descargar el audio.");
     }
   }
 };
