@@ -26,6 +26,7 @@ creador dev yer
 🔹 Navega usando los botones:
 `;
 
+    // Botones del menú
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
@@ -33,7 +34,7 @@ creador dev yer
       {
         urlButton: {
           displayText: "📢 Mi Canal",
-          url: global.my.ch // Aquí usamos tu global con el enlace del canal
+          url: global.my.ch || "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
         }
       }
     ];
@@ -43,15 +44,22 @@ creador dev yer
 
     // Verificar si existe el archivo antes de enviar
     if (!fs.existsSync(imagePath)) {
+      console.log("❌ La imagen del menú no se encontró:", imagePath);
       return m.reply("❌ La imagen del menú de descargas no se encontró. Verifica la ruta y el nombre del archivo.");
     }
 
-    await client.sendMessage(m.chat, {
-      image: fs.readFileSync(imagePath),
-      caption: text,
-      footer: "YerTX Bot",
-      buttons: buttons,
-      headerType: 4
-    });
+    try {
+      await client.sendMessage(m.chat, {
+        image: fs.readFileSync(imagePath),
+        caption: text,
+        footer: "YerTX Bot",
+        buttons: buttons,
+        headerType: 4
+      });
+    } catch (error) {
+      console.error("Error enviando menú de descargas:", error);
+      m.reply("❌ Ocurrió un error al enviar el menú de descargas.");
+    }
   }
 };
+
