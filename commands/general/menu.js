@@ -1,10 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-
 module.exports = {
   command: ["menu", "help", "ayuda"],
 
-  run: async (client, m) => {
+  run: async (client, m, { prefix }) => {
     const owners = [
       "51917391317@s.whatsapp.net",
       "51907376960@s.whatsapp.net"
@@ -20,25 +17,7 @@ module.exports = {
       return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
     }
 
-    // 📂 RUTA ABSOLUTA DEL AUDIO
-    const audioPath = path.join(
-      __dirname,
-      "..",
-      "audio",
-      "do_u_see_what_happens_when_u_break_your_promises_killua_zoldyck_hxh_h.mp3"
-    );
-
-    // 🎧 ENVIAR AUDIO LOCAL
-    await client.sendMessage(m.chat, {
-      audio: fs.readFileSync(audioPath),
-      mimetype: "audio/mpeg",
-      ptt: true
-    });
-
-    // ⏱ pequeño delay
-    await new Promise(r => setTimeout(r, 800));
-
-    // 📹 VIDEO GIF
+    // 📹 VIDEO tipo GIF
     await client.sendMessage(m.chat, {
       video: {
         url: "https://files.catbox.moe/2jmexf.mp4"
@@ -47,7 +26,7 @@ module.exports = {
       caption: `⧼KILLUA DV V1.00⧽
 
 👤 Usuario: ${m.pushName}
-🏴 Modo: Activo
+🏴 Modo: Activo 
 🕶️ Versión: v2.0
 
 ━━━━━━━━━━━━━━━━━━
@@ -72,12 +51,12 @@ module.exports = {
       }
     ];
 
+    // 📂 BOTONES DEL MENÚ
     await client.sendMessage(m.chat, {
       text: "📂 *Selecciona una categoría:*",
       footer: "YerTX Bot • DVYER",
-      buttons,
+      buttons: buttons,
       headerType: 1
     });
   }
 };
-
