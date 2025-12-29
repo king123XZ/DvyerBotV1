@@ -26,7 +26,7 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // Botones: 3 normales + 1 URL button
+    // Botones del menú: 3 normales + 1 URL button al final
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
@@ -61,4 +61,3 @@ module.exports = {
     }
   }
 };
-
