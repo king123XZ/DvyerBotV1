@@ -16,9 +16,12 @@ global.mess = {
   wait: "→ Espera un momento...",
 };
 
-global.thumbnailUrl = "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png"; //Cambia esta imagen
+global.thumbnailUrl = "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png"; //Cambia esta imagen     
 
-global.my = { ch: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c@newsletter", }; 
+global.my = {
+  ch: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+};
+
              
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
