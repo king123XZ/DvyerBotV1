@@ -33,12 +33,7 @@ module.exports = {
       const { data } = await axios.post(
         "https://api-sky.ultraplus.click/youtube-mp3",
         { url: videoUrl },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            apikey: API_KEY
-          }
-        }
+        { headers: { "Content-Type": "application/json", apikey: API_KEY } }
       );
 
       if (!data.status) {
@@ -57,13 +52,24 @@ module.exports = {
 👤 Autor: ${result.author?.name || "YouTube"}
 ⏱ Duración: ${result.duration || "?"}s`;
 
+      // 🔹 Enviar audio con botón de canal
       await client.sendMessage(
         m.chat,
         {
           audio: { url: audioUrl },
           mimetype: "audio/mpeg",
           fileName: `${result.title}.mp3`,
-          caption
+          caption,
+          contextInfo: {
+            externalAdReply: {
+              showAdAttribution: true,
+              mediaType: 2,
+              title: "📢 Ver Canal",
+              body: "Únete al canal oficial del bot",
+              thumbnailUrl: "https://i.ibb.co/hFDcdpBg/menu.png",
+              sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c" // enlace directo a tu canal
+            }
+          }
         },
         { quoted: m }
       );
@@ -82,4 +88,3 @@ module.exports = {
     }
   }
 };
-;
