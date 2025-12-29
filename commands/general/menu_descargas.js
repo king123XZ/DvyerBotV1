@@ -26,7 +26,7 @@ module.exports = {
 🔹 *Navega usando los botones:*
 `;
 
-    // Botones del menú: 3 normales + 1 URL button
+    // Botones: 3 normales + 1 URL button
     const buttons = [
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
@@ -34,7 +34,7 @@ module.exports = {
       {
         urlButton: {
           displayText: "📢 Canal de Bot",
-          url: global.my.ch || "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+          url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
         }
       }
     ];
@@ -49,9 +49,9 @@ module.exports = {
 
     try {
       await client.sendMessage(m.chat, {
-        image: { url: imagePath }, // Imagen desde ruta local
+        image: fs.readFileSync(imagePath), // Imagen local como buffer
         caption: text,
-        footer: "YerTX Bot • DVYER", // Nombre del bot y creador
+        footer: "YerTX Bot • DVYER",
         buttons: buttons,
         headerType: 4
       });
@@ -61,3 +61,4 @@ module.exports = {
     }
   }
 };
+
