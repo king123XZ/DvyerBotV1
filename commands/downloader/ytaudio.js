@@ -1,5 +1,7 @@
 const axios = require("axios");
 const yts = require("yt-search");
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
   command: ["ytaudio"],
@@ -11,7 +13,7 @@ module.exports = {
     try {
       if (!args.length) return m.reply("❌ Ingresa un link o nombre de YouTube.");
 
-      await m.reply("⏳ Procesando audio...");
+      const processingMsg = await m.reply("⏳ Procesando audio...");
 
       let videoUrl = args.join(" ");
       if (!videoUrl.startsWith("http")) {
@@ -34,25 +36,25 @@ module.exports = {
       const audioUrl = result?.media?.audio;
       if (!audioUrl) return m.reply("❌ No se pudo obtener el audio.");
 
-      // Obtener tamaño del archivo
+      // Obtener tamaño del audio
       const head = await axios.head(audioUrl);
       const fileSize = parseInt(head.headers['content-length'] || 0);
 
-      // Si el archivo supera 16 MB, enviar como documento
-      const isLarge = fileSize > 16 * 1024 * 1024;
+      // Descarga temporal si el archivo es grande
+      let tempFilePath = null;
+      if (fileSize > 16 * 1024 * 1024) {
+        tempFilePath = path.join(__dirname, `../tmp/${Date.now()}-${result.title}.mp3`);
+        const writer = fs.createWriteStream(tempFilePath);
+        const response = await axios.get(audioUrl, { responseType: "stream" });
+        response.data.pipe(writer);
+        await new Promise((resolve, reject) => {
+          writer.on("finish", resolve);
+          writer.on("error", reject);
+        });
+      }
 
-      if (isLarge) {
-        await client.sendMessage(
-          m.chat,
-          {
-            document: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            fileName: `${result.title}.mp3`,
-            contextInfo: { forward: false, externalAdReply: { showAdAttribution: true } }
-          },
-          { quoted: m }
-        );
-      } else {
+      // Enviar audio o documento según tamaño
+      if (fileSize <= 16 * 1024 * 1024) {
         await client.sendMessage(
           m.chat,
           {
@@ -62,11 +64,27 @@ module.exports = {
           },
           { quoted: m }
         );
+      } else {
+        await client.sendMessage(
+          m.chat,
+          {
+            document: { url: tempFilePath },
+            mimetype: "audio/mpeg",
+            fileName: `${result.title}.mp3`,
+          },
+          { quoted: m }
+        );
+        fs.unlinkSync(tempFilePath); // eliminar archivo temporal
+      }
+
+      // Opcional: borrar mensaje de "procesando"
+      if (processingMsg.key) {
+        await client.sendMessage(m.chat, { delete: processingMsg.key });
       }
 
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.response?.data || err.message);
-      m.reply("❌ Ocurrió un error al descargar el audio.");
+      m.reply("❌ Ocurrió un error al descargar el audio. Intenta nuevamente.");
     }
   }
 };
