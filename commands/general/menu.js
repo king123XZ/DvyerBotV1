@@ -23,13 +23,13 @@ module.exports = {
       return m.reply("🚫 *Este comando solo puede usarlo el OWNER o los ADMINS del grupo.*");
     }
 
-    // 📷 Ruta de la imagen del menú
-    const imagePath = path.join(
-      __dirname,
-      "..",
-      "imagenesDvYer",
-      "menu.png" // cambia si es png o webp
-    );
+    // 📷 Ruta corregida del menú
+    const imagePath = path.join(__dirname, "..", "..", "imagenesDvYer", "menu.png"); // ajusta extensión si es jpg
+
+    // Comprobar si el archivo existe antes de enviar
+    if (!fs.existsSync(imagePath)) {
+      return m.reply("❌ La imagen del menú no se encontró. Verifica la ruta y el nombre del archivo.");
+    }
 
     // 📸 Enviar imagen con botones
     await client.sendMessage(m.chat, {
