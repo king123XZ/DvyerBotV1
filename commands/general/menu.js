@@ -28,7 +28,7 @@ module.exports = {
       __dirname,
       "..",
       "imagenesDvYer",
-      "menu.jpg" // cambia si es png o webp
+      "menu.png" // cambia si es png o webp
     );
 
     // 📸 Enviar imagen con botones
