@@ -3,89 +3,126 @@ const axios = require("axios")
 const API_URL = "https://api-sky.ultraplus.click/aptoide"
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"
 
-// Cache temporal
-global.apkButtonCache = global.apkButtonCache || {}
+// Cache por usuario
+global.apkUserCache = global.apkUserCache || {}
 
 module.exports = {
-  command: ["apk"],
+  command: ["apk", "apkget", "apknext"],
   run: async (client, m, args) => {
-    const text = args.join(" ")
-    if (!text) return m.reply("❌ Usa: .apk <nombre de la app>")
+    const cmd = m.command
+    const sender = m.sender
 
-    const { data } = await axios.post(
-      API_URL,
-      { query: text },
-      { headers: { apikey: API_KEY } }
-    )
+    /* =====================
+       🔍 BUSCAR APP
+    ===================== */
+    if (cmd === "apk") {
+      const query = args.join(" ")
+      if (!query) return m.reply("❌ Usa: .apk <nombre>")
 
-    if (!data.status || !data.result.results.length)
-      return m.reply("❌ No se encontraron resultados.")
+      const { data } = await axios.post(
+        API_URL,
+        { query },
+        { headers: { apikey: API_KEY } }
+      )
 
-    // Filtrar TRUSTED y tomar solo 3
-    const apps = data.result.results
-      .filter(a => a.malware === "TRUSTED")
-      .slice(0, 3)
+      const results = data?.result?.results
+        ?.filter(a => a.malware === "TRUSTED")
+        ?.slice(0, 3)
 
-    // Guardar cache por usuario
-    global.apkButtonCache[m.sender] = apps
+      if (!results || !results.length)
+        return m.reply("❌ No se encontraron apps seguras.")
 
-    for (let i = 0; i < apps.length; i++) {
-      const app = apps[i]
+      // Guardar cache
+      global.apkUserCache[sender] = {
+        index: 0,
+        apps: results,
+        time: Date.now()
+      }
 
-      const caption = `
+      return sendApp(client, m, sender)
+    }
+
+    /* =====================
+       📥 DESCARGAR APK
+    ===================== */
+    if (cmd === "apkget") {
+      const cache = global.apkUserCache[sender]
+      if (!cache) return m.reply("❌ No tienes una búsqueda activa.")
+
+      const app = cache.apps[cache.index]
+      if (!app) return m.reply("❌ App no válida.")
+
+      await m.reply("⏳ Descargando APK...")
+
+      return client.sendMessage(
+        m.chat,
+        {
+          document: { url: app.apk },
+          mimetype: "application/vnd.android.package-archive",
+          fileName: `${app.uname || app.name}.apk`,
+          caption: `📦 ${app.name}\n⭐ ${app.rating}`
+        },
+        { quoted: m }
+      )
+    }
+
+    /* =====================
+       ➡️ SIGUIENTE APP (5s)
+    ===================== */
+    if (cmd === "apknext") {
+      const cache = global.apkUserCache[sender]
+      if (!cache) return m.reply("❌ No tienes una búsqueda activa.")
+
+      if (Date.now() - cache.time < 5000)
+        return m.reply("⏱ Espera 5 segundos para ver la siguiente app.")
+
+      cache.index++
+      cache.time = Date.now()
+
+      if (!cache.apps[cache.index])
+        return m.reply("❌ No hay más resultados.")
+
+      return sendApp(client, m, sender)
+    }
+  }
+}
+
+/* =====================
+   📦 FUNCIÓN ENVIAR APP
+===================== */
+async function sendApp(client, m, sender) {
+  const cache = global.apkUserCache[sender]
+  const app = cache.apps[cache.index]
+
+  const caption = `
 📱 *${app.name}*
 👨‍💻 ${app.developer}
 ⭐ Rating: ${app.rating}
 ⬇️ Descargas: ${app.downloads.toLocaleString()}
 📏 ${(app.size / 1024 / 1024).toFixed(2)} MB
-      `.trim()
+  `.trim()
 
-      await client.sendMessage(
-        m.chat,
+  return client.sendMessage(
+    m.chat,
+    {
+      image: { url: app.icon },
+      caption,
+      footer: "APK Downloader • Killua Bot V1.000",
+      buttons: [
         {
-          image: { url: app.icon },
-          caption,
-          buttons: [
-            {
-              buttonId: `apk_download_${i}`,
-              buttonText: { displayText: "📥 DESCARGAR APK" },
-              type: 1
-            }
-          ],
-          footer: "APK Downloader •killua bot V1.000",
-          headerType: 4
+          buttonId: ".apkget",
+          buttonText: { displayText: "📥 DESCARGAR APK" },
+          type: 1
         },
-        { quoted: m }
-      )
-    }
-  },
-
-  // 📥 MANEJO DEL BOTÓN
-  onButton: async (client, m) => {
-    if (!m.buttonId) return
-    if (!m.buttonId.startsWith("apk_download_")) return
-
-    const index = parseInt(m.buttonId.split("_")[2])
-    const user = m.sender
-
-    // 🔒 Seguridad: solo el que pidió
-    if (!global.apkButtonCache[user])
-      return m.reply("❌ Este botón no es para ti.")
-
-    const app = global.apkButtonCache[user][index]
-    if (!app) return m.reply("❌ App no válida.")
-
-    await m.reply("⏳ Descargando APK...")
-
-    await client.sendMessage(
-      m.chat,
-      {
-        document: { url: app.apk },
-        mimetype: "application/vnd.android.package-archive",
-        fileName: `${app.uname || app.name}.apk`,
-        caption: `📦 ${app.name}\n⭐ ${app.rating}`
-      },
-      { quoted: m }
-    )
-  }
+        {
+          buttonId: ".apknext",
+          buttonText: { displayText: "➡️ SIGUIENTE APP" },
+          type: 1
+        }
+      ],
+      headerType: 4
+    },
+    { quoted: m }
+  )
 }
+
