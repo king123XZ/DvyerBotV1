@@ -52,7 +52,7 @@ module.exports = {
               type: 1
             }
           ],
-          footer: "APK Downloader • SkyUltraPlus",
+          footer: "APK Downloader •killua bot V1.000",
           headerType: 4
         },
         { quoted: m }
