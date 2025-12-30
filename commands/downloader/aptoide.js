@@ -3,7 +3,6 @@ const axios = require("axios")
 const API_URL = "https://api-sky.ultraplus.click/aptoide"
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"
 
-// Cache por usuario
 global.apkUserCache = global.apkUserCache || {}
 
 module.exports = {
@@ -12,9 +11,6 @@ module.exports = {
     const cmd = m.command
     const sender = m.sender
 
-    /* =====================
-       🔍 BUSCAR APP
-    ===================== */
     if (cmd === "apk") {
       const query = args.join(" ")
       if (!query) return m.reply("❌ Usa: .apk <nombre>")
@@ -32,7 +28,6 @@ module.exports = {
       if (!results || !results.length)
         return m.reply("❌ No se encontraron apps seguras.")
 
-      // Guardar cache
       global.apkUserCache[sender] = {
         index: 0,
         apps: results,
@@ -42,9 +37,7 @@ module.exports = {
       return sendApp(client, m, sender)
     }
 
-    /* =====================
-       📥 DESCARGAR APK
-    ===================== */
+    
     if (cmd === "apkget") {
       const cache = global.apkUserCache[sender]
       if (!cache) return m.reply("❌ No tienes una búsqueda activa.")
@@ -66,9 +59,6 @@ module.exports = {
       )
     }
 
-    /* =====================
-       ➡️ SIGUIENTE APP (5s)
-    ===================== */
     if (cmd === "apknext") {
       const cache = global.apkUserCache[sender]
       if (!cache) return m.reply("❌ No tienes una búsqueda activa.")
@@ -87,9 +77,6 @@ module.exports = {
   }
 }
 
-/* =====================
-   📦 FUNCIÓN ENVIAR APP
-===================== */
 async function sendApp(client, m, sender) {
   const cache = global.apkUserCache[sender]
   const app = cache.apps[cache.index]
