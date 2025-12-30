@@ -5,7 +5,6 @@ const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 module.exports = {
   command: ["apk", "aptoide"],
-  description: "Buscar apps en Aptoide (carrusel)",
 
   run: async (client, m, args) => {
     if (!args.length) return m.reply("❌ Usa:\n!apk minecraft");
@@ -13,53 +12,43 @@ module.exports = {
     const query = args.join(" ");
     await m.reply("🔎 Buscando aplicaciones...");
 
-    const { data } = await axios.post(
-      API_URL,
-      { query },
-      { headers: { apikey: API_KEY } }
-    );
-
-    if (!data.results || !data.results.length) {
-      return m.reply("⚠️ No se encontraron resultados.");
+    let res;
+    try {
+      res = await axios.post(
+        API_URL,
+        { query },
+        { headers: { apikey: API_KEY } }
+      );
+    } catch (e) {
+      console.error(e.response?.data || e);
+      return m.reply("❌ Error conectando con la API.");
     }
 
-    // Guardar resultados por chat
+    // 🔥 DETECCIÓN AUTOMÁTICA
+    const results =
+      res.data?.results ||
+      res.data?.data ||
+      res.data?.result ||
+      [];
+
+    if (!Array.isArray(results) || results.length === 0) {
+      console.log("Respuesta API:", res.data);
+      return m.reply("⚠️ No se encontraron resultados (API vacía).");
+    }
+
     if (!global.apkStore) global.apkStore = {};
-    global.apkStore[m.chat] = data.results;
+    global.apkStore[m.chat] = results;
 
-    const cards = data.results.slice(0, 5).map((app, i) => ({
-      header: {
-        title: app.name,
-        subtitle: `Versión ${app.version}`,
-      },
-      body: {
-        text:
-          `📱 Paquete: ${app.package}\n` +
-          `💾 Tamaño: ${app.size}`,
-      },
-      footer: {
-        text: "DVYER APK STORE",
-      },
-      buttons: [
-        {
-          buttonId: `apkdl_${i}`,
-          buttonText: { displayText: "⬇️ Descargar APK" },
-          type: 1,
-        },
-      ],
-    }));
+    let txt = `📦 *Resultados para:* ${query}\n\n`;
 
-    await client.sendMessage(
-      m.chat,
-      {
-        interactiveMessage: {
-          header: { title: "📦 Resultados Aptoide" },
-          body: { text: `Resultados para: *${query}*` },
-          footer: { text: "DVYER PRO" },
-          carouselMessage: { cards },
-        },
-      },
-      { quoted: m }
-    );
+    results.slice(0, 5).forEach((app, i) => {
+      txt += `*${i + 1}.* ${app.name || app.title}\n`;
+      txt += `🧩 Versión: ${app.version || "?"}\n`;
+      txt += `💾 Tamaño: ${app.size || "?"}\n\n`;
+    });
+
+    txt += `⬇️ Usa los botones para descargar`;
+
+    m.reply(txt);
   },
 };
