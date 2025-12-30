@@ -1,52 +1,104 @@
-const axios = require("axios");
+import axios from "axios"
 
-const API_URL = "https://api-sky.ultraplus.click/aptoide";
-const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+const API_URL = "https://api-sky.ultraplus.click/aptoide"
+const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"
 
-function formatSize(bytes) {
-  if (!bytes) return "Desconocido";
-  return (bytes / 1024 / 1024).toFixed(2) + " MB";
-}
+// 🧠 Cache en memoria
+global.apkCache = global.apkCache || {}
 
-module.exports = {
-  command: ["apk", "aptoide"],
+const handler = async (m, { conn, text, command }) => {
 
-  run: async (client, m, args) => {
-    if (!args.length) return m.reply("❌ Usa:\n!apk whatsapp");
+  // 🔍 BUSCAR APPS
+  if (command === "apk") {
+    if (!text) return m.reply("❌ Usa: .apk <nombre>")
 
-    const query = args.join(" ");
-    await m.reply("🔎 Buscando aplicaciones...");
+    if (!global.apkCache[text]) {
+      const { data } = await axios.post(
+        API_URL,
+        { query: text },
+        { headers: { apikey: API_KEY } }
+      )
 
-    const res = await axios.post(
-      API_URL,
-      { query },
-      { headers: { apikey: API_KEY } }
-    );
+      if (!data.status || !data.result.results.length)
+        return m.reply("❌ No se encontraron resultados.")
 
-    const results = res?.data?.result?.results;
+      // 🔒 Filtro TRUSTED + ⭐ ordenar
+      const apps = data.result.results
+        .filter(a => a.malware === "TRUSTED")
+        .sort((a, b) => (b.rating + b.downloads) - (a.rating + a.downloads))
 
-    if (!Array.isArray(results) || results.length === 0) {
-      return m.reply("⚠️ No se encontraron resultados.");
+      global.apkCache[text] = apps
     }
 
-    // Guardar resultados por chat
-    if (!global.apkStore) global.apkStore = {};
-    global.apkStore[m.chat] = results;
+    const apps = global.apkCache[text].slice(0, 5)
 
-    let txt = `📦 *Resultados para:* ${query}\n`;
-    txt += `🔢 Total: ${results.length}\n\n`;
+    let sections = apps.map((app, i) => ({
+      title: `${i + 1}. ${app.name}`,
+      rows: [
+        {
+          title: "📄 Ver información",
+          description: "Datos + enlace (NO descarga)",
+          rowId: `.apkdl1 ${i + 1}`
+        },
+        {
+          title: "📥 Descargar APK",
+          description: "Enviar como documento",
+          rowId: `.apkdl2 ${i + 1}`
+        }
+      ]
+    }))
 
-    results.slice(0, 5).forEach((app, i) => {
-      txt += `*${i + 1}.* ${app.name}\n`;
-      txt += `🧩 Versión: ${app.version}\n`;
-      txt += `💾 Tamaño: ${formatSize(app.size)}\n`;
-      txt += `⭐ Rating: ${app.rating}\n`;
-      txt += `⬇️ Descargas: ${app.downloads}\n\n`;
-    });
+    await conn.sendMessage(m.chat, {
+      text: `🎠 *Resultados Aptoide*\n\n🔍 Búsqueda: *${text}*`,
+      footer: "SkyUltraPlus • APK Downloader",
+      buttonText: "Selecciona una app",
+      sections
+    }, { quoted: m })
+  }
 
-    txt += `⬇️ Para descargar usa:\n!apkdl número\nEjemplo: !apkdl 1`;
+  // 📄 SOLO INFO + LINK
+  if (command === "apkdl1") {
+    const index = parseInt(text) - 1
+    const apps = Object.values(global.apkCache).flat()
+    const app = apps[index]
 
-    m.reply(txt);
-  },
-};
+    if (!app) return m.reply("❌ App no válida.")
 
+    let info = `
+📱 *${app.name}*
+👨‍💻 Developer: ${app.developer}
+📦 Package: ${app.package}
+🔢 Versión: ${app.version}
+⭐ Rating: ${app.rating}
+⬇️ Descargas: ${app.downloads.toLocaleString()}
+🛡 Malware: ${app.malware}
+📏 Tamaño: ${(app.size / 1024 / 1024).toFixed(2)} MB
+
+🔗 *Enlace APK:*
+${app.apk}
+    `.trim()
+
+    return m.reply(info)
+  }
+
+  // 📥 DESCARGAR APK
+  if (command === "apkdl2") {
+    const index = parseInt(text) - 1
+    const apps = Object.values(global.apkCache).flat()
+    const app = apps[index]
+
+    if (!app) return m.reply("❌ App no válida.")
+
+    await m.reply("⏳ Descargando APK...")
+
+    await conn.sendMessage(m.chat, {
+      document: { url: app.apk },
+      fileName: `${app.uname || app.name}.apk`,
+      mimetype: "application/vnd.android.package-archive",
+      caption: `📦 ${app.name}\n⭐ ${app.rating} | ⬇️ ${app.downloads.toLocaleString()}`
+    }, { quoted: m })
+  }
+}
+
+handler.command = ["apk", "apkdl1", "apkdl2"]
+export default handler
