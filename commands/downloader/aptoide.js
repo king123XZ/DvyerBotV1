@@ -4,100 +4,80 @@ const API_URL = "https://api-sky.ultraplus.click/aptoide"
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"
 
 // 🧠 Cache global
-global.apkCache = global.apkCache || {}
+global.apkCache = global.apkCache || []
 
 module.exports = {
-  command: ["apk", "apkdl1", "apkdl2"],
+  command: ["apk", "apkdl1"],
   run: async (client, m, args) => {
 
     const text = args.join(" ")
     const cmd = m.command
 
-    // 🔍 BUSCAR
+    // 🔍 BUSCAR APPS
     if (cmd === "apk") {
-      if (!text) return m.reply("❌ Usa: .apk <nombre>")
+      if (!text) return m.reply("❌ Usa: .apk <nombre de la app>")
 
-      if (!global.apkCache[text]) {
-        const { data } = await axios.post(
-          API_URL,
-          { query: text },
-          { headers: { apikey: API_KEY } }
+      const { data } = await axios.post(
+        API_URL,
+        { query: text },
+        { headers: { apikey: API_KEY } }
+      )
+
+      if (!data.status || !data.result.results.length)
+        return m.reply("❌ No se encontraron resultados.")
+
+      // 🔒 Filtrar TRUSTED + ordenar
+      const apps = data.result.results
+        .filter(a => a.malware === "TRUSTED")
+        .sort((a, b) => (b.downloads + b.rating) - (a.downloads + a.rating))
+        .slice(0, 5)
+
+      global.apkCache = apps
+
+      let msg = `📦 *Resultados para:* ${text}\n\n`
+
+      apps.forEach((app, i) => {
+        msg += `*${i + 1}.* ${app.name}\n`
+        msg += `⭐ Rating: ${app.rating}\n`
+        msg += `⬇️ Descargas: ${app.downloads.toLocaleString()}\n`
+        msg += `📏 ${(app.size / 1024 / 1024).toFixed(2)} MB\n`
+        msg += `🧩 ${app.package}\n\n`
+      })
+
+      msg += `📥 Para descargar:\n👉 *.apkdl1 número*\nEjemplo: *.apkdl1 1*`
+
+      // Enviar texto
+      await m.reply(msg)
+
+      // Enviar imágenes (una por app)
+      for (const app of apps) {
+        await client.sendMessage(
+          m.chat,
+          { image: { url: app.icon }, caption: `📱 ${app.name}` },
+          { quoted: m }
         )
-
-        if (!data.status || !data.result.results.length)
-          return m.reply("❌ No se encontraron resultados.")
-
-        // 🔒 TRUSTED + ⭐ ordenar
-        global.apkCache[text] = data.result.results
-          .filter(a => a.malware === "TRUSTED")
-          .sort((a, b) => (b.rating + b.downloads) - (a.rating + a.downloads))
       }
-
-      const apps = global.apkCache[text].slice(0, 5)
-
-      const sections = apps.map((app, i) => ({
-        title: `${i + 1}. ${app.name}`,
-        rows: [
-          {
-            title: "📄 Ver información",
-            description: "Datos + enlace",
-            rowId: `.apkdl1 ${i + 1}`
-          },
-          {
-            title: "📥 Descargar APK",
-            description: "Enviar como documento",
-            rowId: `.apkdl2 ${i + 1}`
-          }
-        ]
-      }))
-
-      return client.sendMessage(m.chat, {
-        text: `🎠 *Resultados Aptoide*\n\n🔍 *${text}*`,
-        footer: "SkyUltraPlus • APK Downloader",
-        buttonText: "Seleccionar app",
-        sections
-      }, { quoted: m })
     }
 
-    // 📄 INFO
+    // 📥 DESCARGAR APK
     if (cmd === "apkdl1") {
       const index = parseInt(text) - 1
-      const apps = Object.values(global.apkCache).flat()
-      const app = apps[index]
+      const app = global.apkCache[index]
 
-      if (!app) return m.reply("❌ App no válida.")
-
-      return m.reply(`
-📱 *${app.name}*
-👨‍💻 Developer: ${app.developer}
-📦 Package: ${app.package}
-🔢 Versión: ${app.version}
-⭐ Rating: ${app.rating}
-⬇️ Descargas: ${app.downloads.toLocaleString()}
-📏 Tamaño: ${(app.size / 1024 / 1024).toFixed(2)} MB
-🛡 Malware: ${app.malware}
-
-🔗 APK:
-${app.apk}
-      `.trim())
-    }
-
-    // 📥 DESCARGA
-    if (cmd === "apkdl2") {
-      const index = parseInt(text) - 1
-      const apps = Object.values(global.apkCache).flat()
-      const app = apps[index]
-
-      if (!app) return m.reply("❌ App no válida.")
+      if (!app) return m.reply("❌ Número de app inválido.")
 
       await m.reply("⏳ Descargando APK...")
 
-      return client.sendMessage(m.chat, {
-        document: { url: app.apk },
-        mimetype: "application/vnd.android.package-archive",
-        fileName: `${app.uname || app.name}.apk`,
-        caption: `📦 ${app.name}\n⭐ ${app.rating}`
-      }, { quoted: m })
+      return client.sendMessage(
+        m.chat,
+        {
+          document: { url: app.apk },
+          mimetype: "application/vnd.android.package-archive",
+          fileName: `${app.uname || app.name}.apk`,
+          caption: `📦 ${app.name}\n⭐ ${app.rating}`
+        },
+        { quoted: m }
+      )
     }
   }
 }
