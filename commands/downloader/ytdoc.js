@@ -1,5 +1,5 @@
 module.exports = {
-  command: ["ytdoc"],
+  //command: ["ytdoc"],
   category: "downloader",
 
   run: async (client, m, args) => {
