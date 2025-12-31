@@ -10,7 +10,7 @@ if (!global.ytDocCache) global.ytDocCache = {};
 if (!global.ytCooldown) global.ytCooldown = {};
 
 module.exports = {
-  command: ["ytdocq"],
+ // command: ["ytdocq"],
   category: "downloader",
 
   run: async (client, m) => {
