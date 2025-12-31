@@ -1,7 +1,7 @@
 const axios = require("axios");
 const movies = require("../../lib/movies");
 
-const API_KEY = "TU_API_KEY_AQUI";
+const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const MAX_MB = 1800;
 
 module.exports = {
