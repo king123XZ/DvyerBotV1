@@ -3,7 +3,7 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// Máx 360p para estabilidad
+// 🔒 Máx 360p (estable)
 const QUALITY_ORDER = ["360", "240", "144"];
 
 module.exports = {
@@ -26,20 +26,12 @@ module.exports = {
 
       let data, link, usedQuality;
 
-      // 🔁 Prueba calidades automáticamente
       for (const quality of QUALITY_ORDER) {
         try {
           const res = await axios.post(
             API_URL,
-            {
-              url,
-              type: "video",
-              quality
-            },
-            {
-              headers: { apikey: API_KEY },
-              timeout: 60000
-            }
+            { url, type: "video", quality },
+            { headers: { apikey: API_KEY }, timeout: 60000 }
           );
 
           data = res.data?.result;
@@ -56,7 +48,6 @@ module.exports = {
         return m.reply("❌ No se pudo generar el video.");
       }
 
-      // 🧼 Nombre seguro
       const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
       const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
 
@@ -68,15 +59,14 @@ module.exports = {
           fileName,
           caption:
             `📄 *${data.title}*\n` +
-            `📺 Calidad usada: *${usedQuality}p*\n` +
-            `✅ Envío como documento`
+            `📺 Calidad: *${usedQuality}p*`
         },
         { quoted: m }
       );
 
     } catch (err) {
-      console.error("YTDOC ERROR:", err.response?.data || err);
-      m.reply("❌ Error al descargar. Intenta más tarde.");
+      console.error("YTDOC ERROR:", err);
+      m.reply("❌ Error al descargar. Intenta otro video.");
     }
   }
 };
