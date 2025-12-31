@@ -2,7 +2,9 @@ const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
-const VALID_QUALITIES = ["144", "240", "360", "480"];
+
+// 🔒 Máximo permitido
+const QUALITY_ORDER = ["360", "240", "144"];
 
 if (!global.ytDocCache) global.ytDocCache = {};
 if (!global.ytCooldown) global.ytCooldown = {};
@@ -11,53 +13,59 @@ module.exports = {
   command: ["ytdocq"],
   category: "downloader",
 
-  run: async (client, m, args) => {
+  run: async (client, m) => {
     try {
-      const quality = args[0];
-
-      if (!quality)
-        return m.reply("❌ Usa: *ytdocq 360*");
-
-      if (!VALID_QUALITIES.includes(quality))
-        return m.reply("❌ Calidad permitida: 144 / 240 / 360 / 480");
-
-      // ⏳ Cooldown anti-spam (10s)
+      // ⏳ Cooldown anti-spam
       const now = Date.now();
-      if (global.ytCooldown[m.sender] && now - global.ytCooldown[m.sender] < 10000) {
-        return m.reply("⏳ Espera unos segundos antes de volver a usar el comando.");
+      if (global.ytCooldown[m.sender] && now - global.ytCooldown[m.sender] < 15000) {
+        return m.reply("⏳ Espera unos segundos antes de otra descarga.");
       }
       global.ytCooldown[m.sender] = now;
 
       const cache = global.ytDocCache[m.sender];
-      if (!cache || !cache.url) {
+      if (!cache?.url) {
         return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
       }
 
-      await m.reply(`⬇️ Descargando documento *${quality}p*...`);
-
-      const res = await axios.post(
-        API_URL,
-        {
-          url: cache.url,
-          type: "video",
-          quality
-        },
-        {
-          headers: { apikey: API_KEY },
-          timeout: 60000
-        }
+      await m.reply(
+        "🎥 Preparando video...\n" +
+        "📺 Calidad automática: hasta *360p*\n" +
+        "⏱️ Tiempo estimado: *15–30 segundos*"
       );
 
-      const data = res.data?.result;
-      const link = data?.media?.direct;
-      if (!link) {
-        console.log("RESPUESTA API:", res.data);
-        throw "LINK_INVALIDO";
+      let data, link, usedQuality;
+
+      // 🔁 Selección automática y segura
+      for (const quality of QUALITY_ORDER) {
+        try {
+          const res = await axios.post(
+            API_URL,
+            {
+              url: cache.url,
+              type: "video",
+              quality
+            },
+            {
+              headers: { apikey: API_KEY },
+              timeout: 60000
+            }
+          );
+
+          data = res.data?.result;
+          link = data?.media?.direct;
+
+          if (link) {
+            usedQuality = quality;
+            break;
+          }
+        } catch (_) {}
       }
 
-      // 🧼 Sanitizar nombre
+      if (!link) throw "NO_QUALITY_AVAILABLE";
+
+      // 🧼 Nombre seguro
       const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
-      const fileName = `${safeTitle} - ${quality}p.mp4`;
+      const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
 
       await client.sendMessage(
         m.chat,
@@ -65,7 +73,10 @@ module.exports = {
           document: { url: link },
           mimetype: "video/mp4",
           fileName,
-          caption: `📄 *${data.title}*\n📺 Calidad: ${quality}p`
+          caption:
+            `📄 *${data.title}*\n` +
+            `📺 Calidad usada: *${usedQuality}p*\n` +
+            `✅ Envío seguro`
         },
         { quoted: m }
       );
@@ -73,8 +84,8 @@ module.exports = {
       delete global.ytDocCache[m.sender];
 
     } catch (err) {
-      console.error("❌ YTDOCQ ERROR:", err.response?.data || err);
-      m.reply("❌ Error al descargar. Prueba otra calidad.");
+      console.error("YTDOCQ ERROR:", err);
+      m.reply("❌ No se pudo descargar el video. Intenta más tarde.");
       delete global.ytDocCache[m.sender];
     }
   }
