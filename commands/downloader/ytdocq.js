@@ -2,8 +2,10 @@ const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
-
 const VALID_QUALITIES = ["144", "240", "360", "480"];
+
+if (!global.ytDocCache) global.ytDocCache = {};
+if (!global.ytCooldown) global.ytCooldown = {};
 
 module.exports = {
   command: ["ytdocq"],
@@ -12,16 +14,22 @@ module.exports = {
   run: async (client, m, args) => {
     try {
       const quality = args[0];
-      const owner = args[1];
 
-      if (owner !== m.sender) return;
+      if (!quality)
+        return m.reply("❌ Usa: *ytdocq 360*");
 
-      if (!VALID_QUALITIES.includes(quality)) {
-        return m.reply("❌ Calidad no permitida.");
+      if (!VALID_QUALITIES.includes(quality))
+        return m.reply("❌ Calidad permitida: 144 / 240 / 360 / 480");
+
+      // ⏳ Cooldown anti-spam (10s)
+      const now = Date.now();
+      if (global.ytCooldown[m.sender] && now - global.ytCooldown[m.sender] < 10000) {
+        return m.reply("⏳ Espera unos segundos antes de volver a usar el comando.");
       }
+      global.ytCooldown[m.sender] = now;
 
-      const cache = global.ytDocCache?.[m.sender];
-      if (!cache) {
+      const cache = global.ytDocCache[m.sender];
+      if (!cache || !cache.url) {
         return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
       }
 
@@ -36,25 +44,28 @@ module.exports = {
         },
         {
           headers: { apikey: API_KEY },
-          timeout: 60000 // ⏱️ estable
+          timeout: 60000
         }
       );
 
       const data = res.data?.result;
       const link = data?.media?.direct;
-
       if (!link) {
         console.log("RESPUESTA API:", res.data);
-        return m.reply("❌ No se pudo generar el video.");
+        throw "LINK_INVALIDO";
       }
+
+      // 🧼 Sanitizar nombre
+      const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
+      const fileName = `${safeTitle} - ${quality}p.mp4`;
 
       await client.sendMessage(
         m.chat,
         {
           document: { url: link },
           mimetype: "video/mp4",
-          fileName: `${data.title} - ${quality}p.mp4`,
-          caption: `📄 ${data.title}\n📺 Calidad: ${quality}p`
+          fileName,
+          caption: `📄 *${data.title}*\n📺 Calidad: ${quality}p`
         },
         { quoted: m }
       );
@@ -62,8 +73,8 @@ module.exports = {
       delete global.ytDocCache[m.sender];
 
     } catch (err) {
-      console.error("YTDOCQ ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar. Intenta otra calidad.");
+      console.error("❌ YTDOCQ ERROR:", err.response?.data || err);
+      m.reply("❌ Error al descargar. Prueba otra calidad.");
       delete global.ytDocCache[m.sender];
     }
   }
