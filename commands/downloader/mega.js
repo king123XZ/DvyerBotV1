@@ -1,5 +1,5 @@
-import { File } from 'megajs'
-import mime from 'mime-types'
+const { File } = require('megajs')
+const mime = require('mime-types')
 
 let handler = async (m, { conn, text }) => {
     try {
@@ -46,7 +46,7 @@ let handler = async (m, { conn, text }) => {
 handler.help = ['mega']
 handler.tags = ['downloader']
 handler.command = /^(mega)$/i
-export default handler
+module.exports = handler
 
 // Función para formatear bytes
 function formatBytes(bytes) {
