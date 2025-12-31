@@ -4,7 +4,7 @@ const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
 const QUALITY_ORDER = ["360", "240", "144"];
-const MAX_SIZE_MB = 500;
+const MAX_SIZE_MB = 1700;
 
 module.exports = {
   command: ["ytdoc"],
