@@ -3,7 +3,7 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// 🔒 Máx 360p (estable)
+// 🔒 Máx 360p para estabilidad
 const QUALITY_ORDER = ["360", "240", "144"];
 
 module.exports = {
@@ -15,17 +15,24 @@ module.exports = {
       const url = args[0];
 
       if (!url || !url.startsWith("http")) {
-        return m.reply("❌ Usa: .ytdoc <link de YouTube>");
+        return m.reply(
+          "❌ Usa correctamente:\n" +
+          ".ytdoc <link de YouTube>\n\n" +
+          "🤖 *KILLUA-BOT V1.00*"
+        );
       }
 
       await m.reply(
-        "📥 Descargando video\n" +
+        "📥 *Descargando video*\n" +
         "📺 Calidad automática: *hasta 360p*\n" +
-        "⏱️ Tiempo estimado: *15–30 segundos*"
+        "⏱️ Tiempo estimado: *15–30 segundos*\n\n" +
+        "🤖 *KILLUA-BOT V1.00*\n" +
+        "📢 Canal: https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
       );
 
       let data, link, usedQuality;
 
+      // 🔁 Selección automática de calidad
       for (const quality of QUALITY_ORDER) {
         try {
           const res = await axios.post(
@@ -45,9 +52,13 @@ module.exports = {
       }
 
       if (!link) {
-        return m.reply("❌ No se pudo generar el video.");
+        return m.reply(
+          "❌ No se pudo generar el video.\n\n" +
+          "🤖 *KILLUA-BOT V1.00*"
+        );
       }
 
+      // 🧼 Nombre de archivo seguro
       const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
       const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
 
@@ -59,14 +70,20 @@ module.exports = {
           fileName,
           caption:
             `📄 *${data.title}*\n` +
-            `📺 Calidad: *${usedQuality}p*`
+            `📺 Calidad: *${usedQuality}p*\n\n` +
+            `🤖 *KILLUA-BOT V1.00*\n` +
+            `📢 Canal:\nhttps://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c`
         },
         { quoted: m }
       );
 
     } catch (err) {
       console.error("YTDOC ERROR:", err);
-      m.reply("❌ Error al descargar. Intenta otro video.");
+      m.reply(
+        "❌ Error al descargar el video.\n" +
+        "Intenta con otro enlace.\n\n" +
+        "🤖 *KILLUA-BOT V1.00*"
+      );
     }
   }
 };
