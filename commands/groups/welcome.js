@@ -2,71 +2,54 @@ module.exports = {
   command: ["welcome"],
   isGroup: true,
   isAdmin: true,
-  isBotAdmin: true,
 
   run: async (client, m, args) => {
+    const id = m.chat;
 
-    // 🔒 ASEGURAR DB
-    if (!global.db.data) await global.loadDatabase();
-
-    // 🔧 INICIALIZAR CHAT
-    if (!global.db.data.chats[m.chat]) {
-      global.db.data.chats[m.chat] = {
+    if (!global.db.data.chats[id]) {
+      global.db.data.chats[id] = {
         welcome: false,
-        welcomeText: "👋 Bienvenido @user a *{group}*",
+        welcomeText: "👋 Bienvenido @user a *{group}*\n👥 Miembros: {count}",
         welcomeAdminText: "👑 El admin @user se unió a *{group}*",
         welcomeImage: null
       };
     }
 
-    const chat = global.db.data.chats[m.chat];
+    const chat = global.db.data.chats[id];
 
-    if (!args[0]) {
-      return m.reply(
-        `⚙️ *WELCOME CONFIG*\n\n` +
-        `Estado: ${chat.welcome ? "ON ✅" : "OFF ❌"}\n\n` +
-        `Comandos:\n` +
-        `!welcome on\n` +
-        `!welcome off\n` +
-        `!welcome text <mensaje>\n` +
-        `!welcome admin <mensaje>\n` +
-        `!welcome img (responde a imagen)`
-      );
-    }
+    if (!args[0])
+      return m.reply("⚙️ Usa:\n• welcome on\n• welcome off\n• welcome setmsg <texto>\n• welcome setadmin <texto>\n• welcome setimg");
 
     if (args[0] === "on") {
       chat.welcome = true;
-      return m.reply("✅ Bienvenida activada");
+      return m.reply("✅ Bienvenida ACTIVADA");
     }
 
     if (args[0] === "off") {
       chat.welcome = false;
-      return m.reply("❌ Bienvenida desactivada");
+      return m.reply("❌ Bienvenida DESACTIVADA");
     }
 
-    if (args[0] === "text") {
+    if (args[0] === "setmsg") {
       chat.welcomeText = args.slice(1).join(" ");
-      return m.reply("✅ Texto de bienvenida actualizado");
+      return m.reply("✏️ Mensaje de bienvenida actualizado");
     }
 
-    if (args[0] === "admin") {
+    if (args[0] === "setadmin") {
       chat.welcomeAdminText = args.slice(1).join(" ");
-      return m.reply("✅ Texto de bienvenida para admins actualizado");
+      return m.reply("👑 Mensaje para admins actualizado");
     }
 
-    if (args[0] === "img") {
-      if (!m.quoted || !m.quoted.imageMessage)
-        return m.reply("❌ Responde a una imagen");
+    if (args[0] === "setimg") {
+      if (!m.quoted || !m.quoted.mimetype?.includes("image"))
+        return m.reply("📸 Responde a una imagen");
 
       const buffer = await m.quoted.download();
-      const fs = require("fs");
+      const path = `./media/welcome_${id}.jpg`;
 
-      if (!fs.existsSync("./media")) fs.mkdirSync("./media");
-
-      const path = `./media/welcome_${m.chat}.jpg`;
       fs.writeFileSync(path, buffer);
-
       chat.welcomeImage = path;
+
       return m.reply("🖼 Imagen de bienvenida guardada");
     }
   }
