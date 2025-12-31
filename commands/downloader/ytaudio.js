@@ -14,7 +14,7 @@ module.exports = {
         return m.reply("❌ Ingresa un enlace o nombre del video.");
       }
 
-      await m.reply("⏳ Procesando audio...");
+      await m.reply("⏳ Descargando...Sigue el canal  KILLUA-BOT en WhatsApp: https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c");
 
       let videoUrl = args.join(" ");
 
