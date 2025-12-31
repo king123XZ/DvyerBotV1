@@ -1,50 +1,59 @@
 const axios = require("axios")
 
-const API_KEY = "may-3697c22b"
 const API_URL = "https://api.soymaycol.icu/ytdl"
+const API_KEY = "may-3697c22b"
 
 module.exports = {
   command: ["ytmp3", "ytdl"],
 
   run: async (client, m, args) => {
     const url = args[0]
-
     if (!url)
       return m.reply("❌ Usa: *.ytmp3 <link de YouTube>*")
 
-    if (!/youtube\.com|youtu\.be/.test(url))
+    if (!/youtu\.be|youtube\.com/.test(url))
       return m.reply("❌ Enlace de YouTube inválido")
 
     try {
-      await m.reply("⏳ Descargando audio...")
+      await m.reply("⏳ Procesando audio, espera unos segundos...")
 
       const { data } = await axios.get(API_URL, {
         params: {
           url,
           apikey: API_KEY
         },
-        timeout: 20000
+        timeout: 60000 // ⬅️ 60 segundos
       })
 
       if (!data.status)
-        return m.reply("❌ Error al procesar el video")
+        return m.reply("❌ No se pudo procesar el video")
 
-      const result = data.result
+      const r = data.result
+      const fileName = `${r.title}.mp3`
 
       await client.sendMessage(
         m.chat,
         {
-          audio: { url: result.url },
+          document: { url: r.url },
           mimetype: "audio/mpeg",
-          fileName: `${result.title}.mp3`,
-          caption: `🎵 *${result.title}*\n🎧 Calidad: ${result.quality}`
+          fileName,
+          caption:
+`🎵 *${r.title}*
+🎧 Calidad: ${r.quality}
+
+📥 Enviado como documento`
         },
         { quoted: m }
       )
 
     } catch (err) {
       console.error(err)
-      return m.reply("❌ Falló la descarga, intenta más tarde")
+
+      if (err.code === "ECONNABORTED") {
+        return m.reply("⚠️ La API tardó demasiado, intenta otra vez.")
+      }
+
+      return m.reply("❌ Error al descargar el audio.")
     }
   }
 }
