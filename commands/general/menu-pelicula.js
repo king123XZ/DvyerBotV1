@@ -5,32 +5,33 @@ module.exports = {
   category: "media",
 
   run: async (client, m) => {
+    try {
+      const sections = [
+        {
+          title: "🎬 PELÍCULAS DISPONIBLES",
+          rows: movies.map(movie => ({
+            title: `${movie.id}. ${movie.title}`,
+            description: movie.quality,
+            rowId: `.pelicula ${movie.id}`
+          }))
+        }
+      ];
 
-    const sections = [
-      {
-        title: "🎬 PELÍCULAS DISPONIBLES",
-        rows: movies.map(movie => ({
-          title: `${movie.id}. ${movie.title}`,
-          description: movie.quality,
-          rowId: `.pelicula ${movie.id}` // 👈 NO HAY LINKS
-        }))
-      }
-    ];
+      await client.sendMessage(
+        m.chat,
+        {
+          text: "🎬 *MENÚ DE PELÍCULAS*\n\nSelecciona una película 👇\n\n🔐 Contraseña: www.blizzboygames.net\n👑 DevYer",
+          footer: "DevYer • MediaFire",
+          title: "🍿 CATÁLOGO",
+          buttonText: "📂 Ver películas",
+          sections: sections
+        },
+        { quoted: m }
+      );
 
-    await client.sendMessage(
-      m.chat,
-      {
-        text:
-          "🎬 *MENÚ DE PELÍCULAS*\n\n" +
-          "Selecciona una película para descargar.\n\n" +
-          "🔐 Contraseña: www.blizzboygames.net\n\n" +
-          "👑 DevYer",
-        footer: "DevYer • killua Movies",
-        title: "🍿 CATÁLOGO",
-        buttonText: "📂 Ver películas",
-        sections
-      },
-      { quoted: m }
-    );
+    } catch (e) {
+      console.error("ERROR MENU PELICULAS:", e);
+      m.reply("❌ Error al mostrar el menú de películas.");
+    }
   }
 };
