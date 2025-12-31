@@ -1,5 +1,4 @@
-const axios = require("axios");
-const cheerio = require("cheerio");
+switch (command) {
 
 case "dni": {
   if (!args[0]) return m.reply("📌 Usa: *.dni 12345678*");
@@ -10,12 +9,13 @@ case "dni": {
   }
 
   try {
+    const axios = require("axios");
+    const cheerio = require("cheerio");
+
     const url = `https://eldni.com/pe/buscar-datos-por-dni?dni=${dni}`;
 
     const { data } = await axios.get(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0"
-      }
+      headers: { "User-Agent": "Mozilla/5.0" }
     });
 
     const $ = cheerio.load(data);
@@ -24,9 +24,7 @@ case "dni": {
     const paterno = $("td:contains('Apellido Paterno')").next().text().trim();
     const materno = $("td:contains('Apellido Materno')").next().text().trim();
 
-    if (!nombres) {
-      return m.reply("❌ No se encontraron datos para ese DNI");
-    }
+    if (!nombres) return m.reply("❌ No se encontraron datos");
 
     m.reply(
 `🔍 *CONSULTA DNI*
@@ -34,14 +32,13 @@ case "dni": {
 🪪 DNI: ${dni}
 👤 Nombres: ${nombres}
 📛 Apellido Paterno: ${paterno}
-📛 Apellido Materno: ${materno}
-
-⚠️ Uso personal`
+📛 Apellido Materno: ${materno}`
     );
 
-  } catch (err) {
-    console.error(err);
-    m.reply("❌ Error al consultar, intenta más tarde");
+  } catch (e) {
+    m.reply("❌ Error al consultar DNI");
   }
 }
 break;
+
+}
