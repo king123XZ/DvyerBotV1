@@ -9,30 +9,26 @@ module.exports = {
       return m.reply("❌ Enlace de YouTube no válido.");
     }
 
-    global.ytDocCache = global.ytDocCache || {};
+    // 📦 Guardar cache
+    if (!global.ytDocCache) global.ytDocCache = {};
     global.ytDocCache[m.sender] = {
       url,
       time: Date.now()
     };
 
-    const buttons = [
-      { buttonId: `.ytdocq 144 ${m.sender}`, buttonText: { displayText: "📱 144p" }, type: 1 },
-      { buttonId: `.ytdocq 240 ${m.sender}`, buttonText: { displayText: "📱 240p" }, type: 1 },
-      { buttonId: `.ytdocq 360 ${m.sender}`, buttonText: { displayText: "📺 360p" }, type: 1 },
-      { buttonId: `.ytdocq 480 ${m.sender}`, buttonText: { displayText: "📄 480p" }, type: 1 }
-    ];
-
-    await client.sendMessage(
-      m.chat,
-      {
-        text: "📥 *Selecciona la calidad del video (DOCUMENTO):*\n\n⚠️ Calidades optimizadas para evitar errores",
-        footer: "Killua-Bot V1.00",
-        buttons,
-        headerType: 1
-      },
-      { quoted: m }
+    // 🚀 Llamar directamente al comando automático
+    await m.reply(
+      "📥 Enlace recibido\n" +
+      "🎥 Calidad automática: *hasta 360p*\n" +
+      "⏱️ Tiempo estimado: *15–30 segundos*"
     );
+
+    // Ejecuta el otro comando sin botones
+    await client.emit("command", {
+      command: "ytdocq",
+      sender: m.sender,
+      chat: m.chat,
+      quoted: m
+    });
   }
 };
-
-
