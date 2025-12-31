@@ -44,16 +44,14 @@ module.exports = {
             usedQuality = quality;
             break;
           }
-        } catch (e) {
-          continue;
-        }
+        } catch (_) {}
       }
 
       if (!link) {
         return m.reply("❌ No se pudo generar el video.");
       }
 
-      // 🔍 Comprobar tamaño del archivo
+      // 🔍 Comprobar tamaño
       const head = await axios.head(link);
       const sizeBytes = Number(head.headers["content-length"] || 0);
       const sizeMB = sizeBytes / (1024 * 1024);
@@ -80,7 +78,16 @@ module.exports = {
             `🎬 ${data.title}\n` +
             `📺 Calidad: ${usedQuality}p\n` +
             `📦 Tamaño: ${sizeMB.toFixed(2)} MB\n\n` +
-            "KILLUA-BOT V1.00"
+            "KILLUA-BOT V1.00",
+          buttons: [
+            {
+              buttonId: ".canal",
+              buttonText: { displayText: "📢 Ver canal" },
+              type: 1,
+              url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
+            }
+          ],
+          headerType: 1
         },
         { quoted: m }
       );
