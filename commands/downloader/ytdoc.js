@@ -3,7 +3,6 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// 🔒 Máx 360p para estabilidad
 const QUALITY_ORDER = ["360", "240", "144"];
 
 module.exports = {
@@ -32,7 +31,6 @@ module.exports = {
 
       let data, link, usedQuality;
 
-      // 🔁 Selección automática de calidad
       for (const quality of QUALITY_ORDER) {
         try {
           const res = await axios.post(
