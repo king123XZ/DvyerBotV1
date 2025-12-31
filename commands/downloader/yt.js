@@ -1,68 +1,53 @@
-const axios = require('axios');
-const { ytdl } = require('../lib/ytdl');
-
-const MAX_MB = 1500; // 1.5 GB
+const { ytdl } = require('../../lib/ytdl');
 
 module.exports = {
-  command: ['ytdl', 'yt'],
+  command: ['yt', 'ytdl'],
   category: 'downloader',
 
   run: async (client, m, args) => {
-    try {
-      if (args.length < 2) {
-        return m.reply(
-          `❌ Uso:\n` +
-          `!ytdl <url> <360|720>\n\n` +
-          `Ejemplo:\n` +
-          `!ytdl https://youtu.be/xxxx 360`
-        );
-      }
+    if (!args[0] || !args[1]) {
+      return m.reply(
+        `❌ Uso incorrecto\n\n` +
+        `Ejemplos:\n` +
+        `!yt https://youtu.be/xxxx mp3\n` +
+        `!yt https://youtu.be/xxxx 360`
+      );
+    }
 
-      const url = args[0];
-      const format = args[1];
+    const url = args[0];
+    const format = args[1].toLowerCase();
 
-      await m.reply('⏳ Descargando video, espera...');
+    await m.reply("⏳ Descargando, espera...");
 
-      const res = await ytdl(url, format);
-      if (res.error) return m.reply(`❌ Error: ${res.error}`);
+    const res = await ytdl(url, format);
 
-      // 🔎 OBTENER PESO DEL ARCHIVO
-      const head = await axios.head(res.link, {
-        maxRedirects: 5,
-        timeout: 20000
-      });
+    if (res.error) {
+      return m.reply("❌ Error: " + res.error);
+    }
 
-      const sizeBytes = parseInt(head.headers['content-length'] || 0);
-      const sizeMB = sizeBytes / (1024 * 1024);
-
-      if (!sizeBytes) {
-        return m.reply('❌ No se pudo calcular el tamaño del archivo');
-      }
-
-      if (sizeMB > MAX_MB) {
-        return m.reply(
-          `❌ Archivo demasiado pesado\n\n` +
-          `📦 Tamaño: ${sizeMB.toFixed(2)} MB\n` +
-          `📛 Máximo permitido: ${MAX_MB} MB`
-        );
-      }
-
-      const caption =
-        `🎬 *${res.title || 'Video'}*\n` +
-        `📦 Tamaño: ${sizeMB.toFixed(2)} MB\n` +
-        `📁 Enviado como documento`;
-
-      // 📤 ENVIAR COMO DOCUMENTO
-      await client.sendMessage(m.chat, {
-        document: { url: res.link },
-        mimetype: 'video/mp4',
-        fileName: `${res.title || 'video'}.mp4`,
-        caption
-      }, { quoted: m });
-
-    } catch (err) {
-      console.error(err);
-      m.reply('❌ Error al enviar el video');
+    // AUDIO → DOCUMENTO
+    if (['mp3','m4a','webm','aac','flac','ogg','wav','apus'].includes(format)) {
+      await client.sendMessage(
+        m.chat,
+        {
+          document: { url: res.link },
+          mimetype: "audio/mpeg",
+          fileName: `${res.title}.mp3`
+        },
+        { quoted: m }
+      );
+    } 
+    // VIDEO → DOCUMENTO (HASTA 1500 MB)
+    else {
+      await client.sendMessage(
+        m.chat,
+        {
+          document: { url: res.link },
+          mimetype: "video/mp4",
+          fileName: `${res.title}.mp4`
+        },
+        { quoted: m }
+      );
     }
   }
 };
