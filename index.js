@@ -22,7 +22,11 @@ const { Boom } = require("@hapi/boom");
 const { exec } = require("child_process");
 
 const mainHandler = require("./main");
-const welcome = require("./lib/system/welcome"); // ✅ BIENVENIDA
+const welcome = require("./lib/system/welcome");
+
+client.ev.on("group-participants.update", async (update) => {
+  welcome(client, update);
+});
 
 // Logs
 const print = (label, value) =>
