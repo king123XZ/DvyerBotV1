@@ -3,7 +3,7 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// Solo hasta 360p
+// Prioridad de calidad (máx 360p)
 const QUALITY_ORDER = ["360", "240", "144"];
 
 module.exports = {
@@ -16,12 +16,13 @@ module.exports = {
 
       if (!url || !url.startsWith("http")) {
         return m.reply(
-          "❌ Uso correcto:\n" +
+          "❌ *Uso correcto:*\n" +
           ".ytdoc <link de YouTube>\n\n" +
           "🤖 *KILLUA-BOT V1.00*"
         );
       }
 
+      // Mensaje inicial
       await m.reply(
         "📥 *Descargando video*\n" +
         "📺 Calidad automática: *hasta 360p*\n" +
@@ -31,11 +32,16 @@ module.exports = {
 
       let data, link, usedQuality;
 
+      // Intentar calidades en orden
       for (const quality of QUALITY_ORDER) {
         try {
           const res = await axios.post(
             API_URL,
-            { url, type: "video", quality },
+            {
+              url,
+              type: "video",
+              quality
+            },
             {
               headers: { apikey: API_KEY },
               timeout: 60000
@@ -57,15 +63,16 @@ module.exports = {
       if (!link) {
         return m.reply(
           "❌ No se pudo generar el video.\n" +
-          "Intenta con otro enlace.\n\n" +
+          "Prueba con otro enlace.\n\n" +
           "🤖 *KILLUA-BOT V1.00*"
         );
       }
 
-      // Nombre seguro
+      // Limpiar nombre del archivo
       const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
       const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
 
+      // Enviar DOCUMENTO + BOTÓN VERDE
       await client.sendMessage(
         m.chat,
         {
@@ -76,15 +83,15 @@ module.exports = {
             `📄 *${data.title}*\n` +
             `📺 Calidad: *${usedQuality}p*\n\n` +
             `🤖 *KILLUA-BOT V1.00*`,
-          contextInfo: {
-            externalAdReply: {
-              title: "KILLUA-BOT V1.00",
-              body: "📢 Ver canal oficial",
-              mediaType: 1,
-              sourceUrl: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c",
-              showAdAttribution: true
+          buttons: [
+            {
+              buttonId: "ver_canal",
+              buttonText: { displayText: "📢 Ver canal" },
+              type: 1,
+              url: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
             }
-          }
+          ],
+          headerType: 1
         },
         { quoted: m }
       );
@@ -93,7 +100,7 @@ module.exports = {
       console.error("YTDOC ERROR:", err);
       m.reply(
         "❌ Error al descargar el video.\n" +
-        "Intenta más tarde.\n\n" +
+        "Intenta con otro enlace.\n\n" +
         "🤖 *KILLUA-BOT V1.00*"
       );
     }
