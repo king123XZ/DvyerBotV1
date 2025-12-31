@@ -1,39 +1,72 @@
-// ❆ YTMP3 REAL – ESTABLE
-import { exec } from "child_process"
-import fs from "fs"
-import path from "path"
+// ❆ 𝖸𝖳𝖬𝖯𝟥 
+// Hecho por Ado :D
+import axios from 'axios';
 
-export default {
-  command: ["ytmp3"],
-  run: async (client, m, args) => {
-    const url = args[0]
-    if (!url) return m.reply("❌ Usa: *.ytmp3 <link de YouTube>*")
-
-    const id = Date.now()
-    const file = path.resolve(`./tmp_${id}.mp3`)
-
-    await m.reply("⏳ Descargando audio...")
-
-    const cmd = `yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${file}" "${url}"`
-
-    exec(cmd, async (err) => {
-      if (err || !fs.existsSync(file)) {
-        console.error(err)
-        return m.reply("❌ Error al descargar")
+async function downloadYoutubeShort(videoUrl) {
+  try {
+    const cfApiUrl = 'https://api.nekolabs.web.id/tools/bypass/cf-turnstile';
+    const cfPayload = {
+      url: 'https://ezconv.cc',
+      siteKey: '0x4AAAAAAAi2NuZzwS99-7op'
+    };
+    
+    const { data: cfResponse } = await axios.post(cfApiUrl, cfPayload);
+    
+    if (!cfResponse.success || !cfResponse.result) {
+      return {
+        success: false,
+        error: 'No se pudo obtener el token de captcha'
+      };
+    }
+    
+    const captchaToken = cfResponse.result;
+    
+    const convertApiUrl = 'https://ds1.ezsrv.net/api/convert';
+    const convertPayload = {
+      url: videoUrl,
+      quality: '320',
+      trim: false,
+      startT: 0,
+      endT: 0,
+      captchaToken: captchaToken
+    };
+    
+    const { data: convertResponse } = await axios.post(convertApiUrl, convertPayload, {
+      headers: {
+        'Content-Type': 'application/json'
       }
-
-      await client.sendMessage(
-        m.chat,
-        {
-          document: fs.readFileSync(file),
-          mimetype: "audio/mpeg",
-          fileName: "audio.mp3"
-        },
-        { quoted: m }
-      )
-
-      fs.unlinkSync(file)
-    })
+    });
+    
+    if (convertResponse.status !== 'done') {
+      return {
+        success: false,
+        error: `La conversión falló. Estado: ${convertResponse.status}`
+      };
+    }
+    
+    return {
+      success: true,
+      data: {
+        title: convertResponse.title,
+        downloadUrl: convertResponse.url,
+        status: convertResponse.status
+      }
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data ? error.response.data : error.message
+    };
   }
 }
 
+const youtubeShortUrl = ''; // Aquí la URL del vídeo a descargar!
+
+downloadYoutubeShort(youtubeShortUrl)
+  .then(response => {
+    console.log(JSON.stringify(response, null, 2));
+  })
+  .catch(error => {
+    console.log(JSON.stringify({ success: false, error: error.message }, null, 2));
+  });
