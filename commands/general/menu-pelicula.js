@@ -1,37 +1,49 @@
-const movies = require("../../lib/movies");
-
 module.exports = {
   command: ["peliculas"],
   category: "media",
 
   run: async (client, m) => {
     try {
-      const sections = [
-        {
-          title: "🎬 PELÍCULAS DISPONIBLES",
-          rows: movies.map(movie => ({
-            title: `${movie.id}. ${movie.title}`,
-            description: movie.quality,
-            rowId: `.pelicula ${movie.id}`
-          }))
-        }
-      ];
-
       await client.sendMessage(
         m.chat,
         {
-          text: "🎬 *MENÚ DE PELÍCULAS*\n\nSelecciona una película 👇\n\n🔐 Contraseña: www.blizzboygames.net\n👑 DevYer",
-          footer: "DevYer • MediaFire",
-          title: "🍿 CATÁLOGO",
-          buttonText: "📂 Ver películas",
-          sections: sections
+          image: {
+            url: "https://i.ibb.co/r2HCv5s9/killu-peliculas.png"
+          },
+          caption:
+            "🎬 *MENÚ DE PELÍCULAS*\n\n" +
+            "Selecciona una opción 👇\n\n" +
+            "🔐 Contraseña: www.blizzboygames.net\n" +
+            "👑 DevYer",
+          buttons: [
+            {
+              buttonId: ".pelicula 1",
+              buttonText: { displayText: "🎬 Dragon Ball Broly" },
+              type: 1
+            },
+            {
+              buttonId: ".pelicula 2",
+              buttonText: { displayText: "🔥 Kimetsu Mugen Train" },
+              type: 1
+            },
+            {
+              buttonId: ".pelicula 3",
+              buttonText: { displayText: "🦖 Godzilla 2" },
+              type: 1
+            },
+            {
+              buttonId: ".peliculas2",
+              buttonText: { displayText: "➡️ Más películas" },
+              type: 1
+            }
+          ],
+          headerType: 4
         },
         { quoted: m }
       );
-
     } catch (e) {
       console.error("ERROR MENU PELICULAS:", e);
-      m.reply("❌ Error al mostrar el menú de películas.");
+      m.reply("❌ No se pudo mostrar el menú.");
     }
   }
 };
