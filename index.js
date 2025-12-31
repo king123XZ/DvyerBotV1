@@ -21,7 +21,8 @@ const { smsg } = require("./lib/message");
 const { Boom } = require("@hapi/boom");
 const { exec } = require("child_process");
 
-const mainHandler = require("./main"); // << CORRECTO
+const mainHandler = require("./main");
+const welcome = require("./lib/system/welcome"); // ✅ BIENVENIDA
 
 // Logs
 const print = (label, value) =>
@@ -142,25 +143,26 @@ async function startBot() {
     if (connection === "open") log.success("Su conexión fue exitosa");
   });
 
-  // RECIBIR MENSAJES (arreglado)
+  // MENSAJES
   client.ev.on("messages.upsert", async ({ messages }) => {
     try {
       let m = messages[0];
       if (!m.message) return;
 
-      m.message =
-        m.message.ephemeralMessage?.message || m.message;
-
+      m.message = m.message.ephemeralMessage?.message || m.message;
       if (m.key.remoteJid === "status@broadcast") return;
 
       m = smsg(client, m);
-
-      // ✅ CORRECTO: solo 2 parámetros
       await mainHandler(client, m);
 
     } catch (err) {
       console.log("Error en handler:", err);
     }
+  });
+
+  // 👋 BIENVENIDA / DESPEDIDA
+  client.ev.on("group-participants.update", async (update) => {
+    await welcome(client, update);
   });
 
   client.decodeJid = (jid) => {
@@ -185,3 +187,4 @@ fs.watchFile(file, () => {
   delete require.cache[file];
   require(file);
 });
+
