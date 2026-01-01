@@ -42,8 +42,8 @@ module.exports = {
           type: 1
         },
         {
-          buttonId: ".canal",
-          buttonText: { displayText: "📢 Canal" },
+          buttonId: ".peliculas",
+          buttonText: { displayText: "PELICULAS" },
           type: 1
         }
       ],
