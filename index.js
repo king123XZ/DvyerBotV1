@@ -1,4 +1,3 @@
-
 require("./settings");
 require("./lib/database");
 
@@ -113,14 +112,13 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
   // ===== REGISTRO =====
   if (!client.authState.creds.registered) {
     const phoneNumber = await question(
-      log.warn("Ingrese su número de WhatsApp\n") +
-        log.info("Ejemplo: 51999999999\n")
+      "📱 Ingrese su número de WhatsApp (ej: 51999999999): "
     );
 
     try {
       log.info("Solicitando código de emparejamiento...");
       const pairing = await client.requestPairingCode(phoneNumber, "DVYER102");
-      log.success(`Código de emparejamiento: ${chalk.cyanBright(pairing)} (15s)`);
+      log.success(`Código de emparejamiento: ${pairing} (15s)`);
     } catch (err) {
       log.error("Error al solicitar el código");
       exec(`rm -rf ${sessionPath}`);
@@ -132,13 +130,14 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
   await global.loadDatabase();
   console.log(chalk.yellow("Base de datos cargada correctamente."));
 
-  // ===== CONEXIÓN =====
+  // ===== CONEXIÓN (SOLUCIONADA) =====
   client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
 
     if (connection === "close") {
       const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
 
+      // Reconexiones normales
       if (
         [
           DisconnectReason.connectionLost,
@@ -152,20 +151,33 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
         return;
       }
 
+      // Sesión cerrada realmente por WhatsApp
       if (
-        [
-          DisconnectReason.loggedOut,
-          DisconnectReason.forbidden,
-          DisconnectReason.multideviceMismatch,
-          DisconnectReason.badSession,
-        ].includes(reason)
+        reason === DisconnectReason.loggedOut ||
+        reason === DisconnectReason.forbidden
       ) {
-        log.error("Sesión inválida, borra y vuelve a vincular");
+        log.error("Sesión cerrada desde WhatsApp, vuelve a vincular");
         exec(`rm -rf ${sessionPath}`);
         process.exit(1);
       }
 
-      client.end(`Motivo desconocido: ${reason}`);
+      // Multidevice (NO matar bot)
+      if (reason === DisconnectReason.multideviceMismatch) {
+        log.warn("Multidevice mismatch detectado, reintentando conexión...");
+        startBot(botNumber);
+        return;
+      }
+
+      // Bad session
+      if (reason === DisconnectReason.badSession) {
+        log.warn("Bad session detectada, limpiando sesión...");
+        exec(`rm -rf ${sessionPath}`);
+        startBot(botNumber);
+        return;
+      }
+
+      log.warning(`Desconexión desconocida: ${reason}`);
+      startBot(botNumber);
     }
 
     if (connection === "open") {
@@ -189,7 +201,7 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
     }
   });
 
-  // ===== WELCOME / DESPEDIDA =====
+  // ===== WELCOME =====
   client.ev.on("group-participants.update", async (update) => {
     try {
       await welcome(client, update);
