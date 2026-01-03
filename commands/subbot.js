@@ -6,12 +6,12 @@ module.exports = {
     const userNumber = args[0];
     if (!userNumber) return m.reply("❌ Uso: .subbot 51900111222");
 
-    await m.reply("⏳ Solicitando vinculación al servidor SkyUltraPlus...");
+    await m.reply("⏳ Conectando con el alojamiento SkyUltraPlus...");
 
     try {
         await startSubBot(client, m, userNumber);
     } catch (e) {
-        m.reply("❌ Error al conectar con el alojamiento.");
+        m.reply("❌ Error de sistema al intentar vincular.");
     }
   },
 };
