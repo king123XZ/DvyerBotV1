@@ -1,15 +1,21 @@
-const { startSubBot } = require("../lib/startSubBot")
+const { startSubBot } = require('../lib/startSubBot');
 
 module.exports = {
-  command: ["subbot"],
-  isOwner: true,
+    name: 'subbot',
+    category: 'owner',
+    async execute(client, m, args) {
+        // Validar si es el owner (ajusta según tu sistema)
+        if (!m.isOwner) return m.reply("Solo el dueño puede usar esto.");
 
-  run: async (client, m) => {
-    const botId = `subbot-${Date.now()}`
-    await m.reply("⏳ Creando sub-bot…")
+        const userNumber = args[0]; // Ejemplo: .subbot 51900XXX
+        if (!userNumber) return m.reply("Indica el número. Ej: .subbot 54911...");
 
-    await startSubBot(m.sender, botId)
-
-    await m.reply("📲 Revisa tu WhatsApp, te envié el código.")
-  }
-}
+        m.reply("⏳ Generando código de vinculación, espera...");
+        
+        try {
+            await startSubBot(client, m, userNumber);
+        } catch (e) {
+            m.reply(`❌ Fallo crítico: ${e.message}`);
+        }
+    }
+};
