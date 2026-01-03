@@ -2,20 +2,23 @@ const { startSubBot } = require('../lib/subBotManager');
 
 module.exports = {
     name: 'subbot',
-    alias: ['vincular'],
     async execute(client, m, args) {
-        // El número debe incluir código de país sin el símbolo +
-        const userNumber = args[0];
-        if (!userNumber) return m.reply("❌ Uso: .subbot 519XXXXXXXX");
+        // 1. Reacción inmediata para confirmar que el bot recibió el comando
+        await client.sendMessage(m.chat, { react: { text: "⏳", key: m.key } });
 
-        m.reply("⏳ Iniciando instancia... solicitando código a WhatsApp.");
+        const userNumber = args[0];
+        if (!userNumber) {
+            return client.sendMessage(m.chat, { text: "❌ Escribe el número. Ej: .subbot 51900111222" }, { quoted: m });
+        }
 
         try {
-            // Lanza la función sin bloquear el bot principal
+            // 2. Mensaje de confirmación de inicio
+            await client.sendMessage(m.chat, { text: "🔄 Iniciando servidor de vinculación... espera el código." }, { quoted: m });
+            
             await startSubBot(client, m, userNumber);
         } catch (e) {
-            m.reply("❌ Error crítico al iniciar sesión secundaria.");
-            console.log(e);
+            console.error("Error en comando subbot:", e);
+            await client.sendMessage(m.chat, { text: `❌ Error interno: ${e.message}` });
         }
     }
 };
