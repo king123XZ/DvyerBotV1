@@ -1,3 +1,4 @@
+
 require("./settings");
 require("./lib/database");
 
@@ -23,6 +24,16 @@ const { exec } = require("child_process");
 
 const mainHandler = require("./main");
 const welcome = require("./lib/system/welcome");
+
+// ================= SISTEMA ANTI-CRASH =================
+// Evita que el panel de SkyUltraPlus se apague por errores en subbots
+process.on('uncaughtException', (err) => {
+    console.log(chalk.red.bold("\n⚠️ ERROR DE SISTEMA CAPTURADO:"), err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.log(chalk.red.bold("\n⚠️ PROMESA RECHAZADA CAPTURADA:"), reason);
+});
 
 // ================= LOGS =================
 const print = (label, value) =>
@@ -92,7 +103,7 @@ print(
 console.log(chalk.yellow.bold("╚" + "═".repeat(30)));
 
 // ================= START BOT =================
-async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
+async function startBot(botNumber = "main") {
   const sessionPath = path.join(__dirname, "sessions", botNumber);
 
   if (!fs.existsSync("./sessions")) fs.mkdirSync("./sessions");
@@ -105,24 +116,32 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
     version,
     logger: pino({ level: "silent" }),
     printQRInTerminal: false,
-    browser: ["Linux", "Opera"],
+    browser: ["Linux", "Opera", "3.0.0"],
     auth: state,
   });
 
-  // ===== REGISTRO =====
+  // ===== REGISTRO (SOLO PARA BOT PRINCIPAL) =====
   if (!client.authState.creds.registered) {
-    const phoneNumber = await question(
-      "📱 Ingrese su número de WhatsApp (ej: 51999999999): "
-    );
+    if (botNumber === "main") {
+        const phoneNumber = await question(
+          chalk.cyan.bold("\n📱 Ingrese su número de WhatsApp (ej: 51999999999): ")
+        );
 
-    try {
-      log.info("Solicitando código de emparejamiento...");
-      const pairing = await client.requestPairingCode(phoneNumber, "DVYER102");
-      log.success(`Código de emparejamiento: ${pairing} (15s)`);
-    } catch (err) {
-      log.error("Error al solicitar el código");
-      exec(`rm -rf ${sessionPath}`);
-      process.exit(1);
+        try {
+          log.info("Solicitando código de emparejamiento para el Bot Principal...");
+          // Usamos un retraso para evitar el error 408 inicial
+          await new Promise(r => setTimeout(r, 3000));
+          const pairing = await client.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ''));
+          log.success(`🔥 CÓDIGO DE VINCULACIÓN: ${pairing}`);
+        } catch (err) {
+          log.error("Error al solicitar el código principal");
+          exec(`rm -rf ${sessionPath}`);
+          process.exit(1);
+        }
+    } else {
+        // Los subbots NO usan la consola, se gestionan en lib/subBotManager.js
+        log.warn(`Subbot [${botNumber}] requiere vinculación externa.`);
+        return;
     }
   }
 
@@ -130,14 +149,13 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
   await global.loadDatabase();
   console.log(chalk.yellow("Base de datos cargada correctamente."));
 
-  // ===== CONEXIÓN (SOLUCIONADA) =====
+  // ===== CONEXIÓN =====
   client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
 
     if (connection === "close") {
       const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
 
-      // Reconexiones normales
       if (
         [
           DisconnectReason.connectionLost,
@@ -146,42 +164,25 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
           DisconnectReason.timedOut,
         ].includes(reason)
       ) {
-        log.warning("Reconectando...");
+        log.warning(`[${botNumber}] Reconectando...`);
         startBot(botNumber);
         return;
       }
 
-      // Sesión cerrada realmente por WhatsApp
-      if (
-        reason === DisconnectReason.loggedOut ||
-        reason === DisconnectReason.forbidden
-      ) {
-        log.error("Sesión cerrada desde WhatsApp, vuelve a vincular");
+      if (reason === DisconnectReason.loggedOut || reason === DisconnectReason.forbidden) {
+        log.error(`[${botNumber}] Sesión cerrada permanentemente.`);
         exec(`rm -rf ${sessionPath}`);
-        process.exit(1);
-      }
-
-      // Multidevice (NO matar bot)
-      if (reason === DisconnectReason.multideviceMismatch) {
-        log.warn("Multidevice mismatch detectado, reintentando conexión...");
-        startBot(botNumber);
+        // Solo matamos el proceso si es el bot principal
+        if (botNumber === "main") process.exit(1); 
         return;
       }
 
-      // Bad session
-      if (reason === DisconnectReason.badSession) {
-        log.warn("Bad session detectada, limpiando sesión...");
-        exec(`rm -rf ${sessionPath}`);
-        startBot(botNumber);
-        return;
-      }
-
-      log.warning(`Desconexión desconocida: ${reason}`);
+      log.warning(`Desconexión [${botNumber}] Código: ${reason}`);
       startBot(botNumber);
     }
 
     if (connection === "open") {
-      log.success(`Conectado correctamente (${botNumber})`);
+      log.success(`✅ Conectado correctamente: Instancia [${botNumber}]`);
     }
   });
 
@@ -224,6 +225,7 @@ async function startBot(botNumber = process.env.BOT_NUMBER || "main") {
   client.ev.on("creds.update", saveCreds);
 }
 
+// Iniciar bot principal
 startBot();
 
 // ===== AUTO RELOAD =====
