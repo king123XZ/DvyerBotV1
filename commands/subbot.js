@@ -1,16 +1,15 @@
-const { createSubBot } = require("../lib/subBotManager")
-const handler = require("../main")
+const { startSubBot } = require("../lib/startSubBot")
 
 module.exports = {
   command: ["subbot"],
-  category: "owner",
   isOwner: true,
 
   run: async (client, m) => {
+    const botId = `subbot-${Date.now()}`
     await m.reply("⏳ Creando sub-bot…")
 
-    await createSubBot(m.sender, handler)
+    await startSubBot(m.sender, botId)
 
-    await m.reply("📲 Te envié el código para vincular tu WhatsApp.")
+    await m.reply("📲 Revisa tu WhatsApp, te envié el código.")
   }
 }
