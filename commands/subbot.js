@@ -2,21 +2,20 @@ const { startSubBot } = require('../lib/subBotManager');
 
 module.exports = {
     name: 'subbot',
-    category: 'owner',
+    alias: ['vincular'],
     async execute(client, m, args) {
-        // Validación de número
+        // El número debe incluir código de país sin el símbolo +
         const userNumber = args[0];
-        if (!userNumber || isNaN(userNumber)) {
-            return m.reply("❌ Por favor indica el número con código de país.\nEjemplo: `.subbot 51900123456`");
-        }
+        if (!userNumber) return m.reply("❌ Uso: .subbot 519XXXXXXXX");
 
-        m.reply("⏳ Procesando solicitud... Generando tu código de vinculación.");
+        m.reply("⏳ Iniciando instancia... solicitando código a WhatsApp.");
 
         try {
+            // Lanza la función sin bloquear el bot principal
             await startSubBot(client, m, userNumber);
         } catch (e) {
-            console.error(e);
-            m.reply("❌ Ocurrió un fallo al intentar iniciar el subbot. Revisa la consola.");
+            m.reply("❌ Error crítico al iniciar sesión secundaria.");
+            console.log(e);
         }
     }
 };
