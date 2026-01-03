@@ -1,17 +1,16 @@
-const { startSubBot } = require('../lib/startSubBot'); 
+const { startSubBot } = require('../lib/startSubBot');
 
 module.exports = {
-  command: ["subbot", "vincular"],
-  run: async (client, m, args) => {
-    const userNumber = args[0];
-    if (!userNumber) return m.reply("❌ Uso: .subbot 51900111222");
-
-    await m.reply("⏳ Conectando con el alojamiento SkyUltraPlus...");
-
-    try {
-        await startSubBot(client, m, userNumber);
-    } catch (e) {
-        m.reply("❌ Error de sistema al intentar vincular.");
+    command: ["subbot"],
+    run: async (client, m, args) => {
+        const userNumber = args[0];
+        if (!userNumber) return m.reply("❌ Indica el número. Ejemplo: `.subbot 51900123456`.");
+        
+        try {
+            await startSubBot(client, m, userNumber);
+        } catch (e) {
+            console.log(e);
+            m.reply("❌ Error al intentar conectar con el alojamiento.");
+        }
     }
-  },
 };
