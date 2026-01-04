@@ -1,19 +1,27 @@
 const { startSubBot } = require("../lib/startSubBot");
-const { mainHandler } = require("../main");
+const mainHandler = require("../main");
 
 module.exports = {
+  name: "subbot",
   command: ["subbot"],
+  category: "owner",
   isOwner: true,
-  cooldown: 10,
 
-  async run(client, m) {
-    const number = m.sender.split("@")[0];
+  run: async (client, m) => {
+    const sender = m.sender.replace(/[^0-9]/g, "");
 
-    await m.reply("📲 Generando subbot...");
+    await m.reply("📲 Creando subbot...");
 
-    const sock = await startSubBot(number, mainHandler);
+    try {
+      await startSubBot({
+        number: sender,
+        mainHandler
+      });
 
-    const code = await sock.requestPairingCode(number);
-    await m.reply(`✅ Código de vinculación:\n\n*${code}*`);
+      await m.reply("✅ Subbot iniciado. Revisa el código de vinculación.");
+    } catch (e) {
+      console.log(e);
+      m.reply("❌ Error al crear subbot.");
+    }
   }
 };
