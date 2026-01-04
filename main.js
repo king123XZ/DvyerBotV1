@@ -8,7 +8,7 @@ const antilink = require("./commands/antilink");
 const { resolveLidToRealJid } = require("./lib/utils");
 const cooldown = require("./lib/cooldown");
 
-// cargar comandos
+/* ===== CARGAR COMANDOS (NO QUITAR) ===== */
 seeCommands();
 
 /* ================= MAIN HANDLER ================= */
@@ -67,7 +67,7 @@ async function mainHandler(client, m) {
       try { await antilink(client, m); } catch {}
     }
 
-    if (!global.comandos?.has(command)) return;
+    if (!global.comandos || !global.comandos.has(command)) return;
     const cmd = global.comandos.get(command);
 
     const isOwner = global.owner
@@ -89,7 +89,10 @@ async function mainHandler(client, m) {
   }
 }
 
-/* ===== EXPORT CORRECTO ===== */
-module.exports = {
-  mainHandler
-};
+/* ===== EXPORT LIMPIO PARA SUBBOTS ===== */
+module.exports = { mainHandler };
+
+/* ===== AUTOSAVE DB ===== */
+setInterval(async () => {
+  try { if (global.db?.data) await global.db.write(); } catch {}
+}, 30_000);
