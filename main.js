@@ -1,4 +1,3 @@
-
 require("./settings");
 const fs = require("fs");
 const path = require("path");
@@ -10,9 +9,9 @@ const seeCommands = require("./lib/system/commandLoader");
 const initDB = require("./lib/system/initDB");
 const antilink = require("./commands/antilink");
 const { resolveLidToRealJid } = require("./lib/utils");
-const cooldown = require("./lib/cooldown"); // 🧠 ANTI-SPAM
+const cooldown = require("./lib/cooldown");
 
-// Cargamos comandos al iniciar
+// cargar comandos
 seeCommands();
 
 /* ================= MAIN HANDLER ================= */
@@ -20,7 +19,6 @@ const mainHandler = async (client, m) => {
   try {
     if (!m?.message) return;
 
-    /* ===== BODY ===== */
     let body =
       m.message.conversation ||
       m.message.extendedTextMessage?.text ||
@@ -33,14 +31,10 @@ const mainHandler = async (client, m) => {
 
     if (!body) return;
 
-    /* ===== DB SAFE ===== */
     try {
       initDB(m);
-    } catch (e) {
-      console.log("DB error:", e);
-    }
+    } catch {}
 
-    /* ===== PREFIX ===== */
     const prefixes = [".", "!", "#", "/"];
     const prefix = prefixes.find(p => body.startsWith(p));
     if (!prefix) return;
@@ -49,7 +43,6 @@ const mainHandler = async (client, m) => {
     const text = args.join(" ");
     const command = body.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase();
 
-    /* ===== INFO ===== */
     const pushname = m.pushName || "Sin nombre";
     const sender = m.sender || m.key?.participant || m.key?.remoteJid;
     if (!sender) return;
@@ -57,7 +50,6 @@ const mainHandler = async (client, m) => {
     const from = m.chat;
     const botJid = client.user?.id?.split(":")[0] + "@s.whatsapp.net";
 
-    /* ===== ADMINS ===== */
     let isAdmins = false;
     let isBotAdmins = false;
     let groupName = "";
@@ -71,35 +63,29 @@ const mainHandler = async (client, m) => {
         );
 
         const resolvedAdmins = await Promise.all(
-          admins.map(async (a) => {
-            return resolveLidToRealJid(a.jid, client, from).catch(() => a.jid);
-          })
+          admins.map(a =>
+            resolveLidToRealJid(a.jid, client, from).catch(() => a.jid)
+          )
         );
 
         isAdmins = resolvedAdmins.includes(sender);
         isBotAdmins = resolvedAdmins.includes(botJid);
       }
 
-      // 🔗 ANTILINK
       try {
         await antilink(client, m);
       } catch {}
     }
 
-    /* ===== BUSCAR COMANDO ===== */
     if (!global.comandos?.has(command)) return;
     const cmd = global.comandos.get(command);
 
-    /* ===== LOG ===== */
     console.log(
-      chalk.black(
-        chalk.bgCyan(` CMD: ${command} `)
-      ),
+      chalk.black(chalk.bgCyan(` CMD: ${command} `)),
       chalk.white(`de ${pushname}`),
       chalk.gray(`en ${m.isGroup ? groupName : "Privado"}`)
     );
 
-    /* ===== OWNER ===== */
     const isOwner = global.owner
       .map(n => n + "@s.whatsapp.net")
       .includes(sender);
@@ -109,13 +95,11 @@ const mainHandler = async (client, m) => {
     if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.");
     if (cmd.isBotAdmin && !isBotAdmins) return m.reply("⚠️ Necesito admin.");
 
-    /* ===== COOLDOWN (ANTI-SPAM) ===== */
     const wait = cooldown(sender, command, cmd.cooldown || 5);
     if (wait) {
-      return m.reply(`⏳ Espera *${wait}s* antes de usar *${command}*`);
+      return m.reply(`⏳ Espera *${wait}s* para usar *${command}*`);
     }
 
-    /* ===== EJECUCIÓN ===== */
     try {
       if (cmd.run) {
         await cmd.run(client, m, args, { text, prefix, command });
@@ -123,7 +107,7 @@ const mainHandler = async (client, m) => {
         await cmd.execute(client, m, args, { text, prefix, command });
       }
     } catch (err) {
-      console.log(chalk.red("Error en comando:"), err);
+      console.log(chalk.red("Error comando:"), err);
       m.reply("❌ Error al ejecutar el comando.");
     }
 
@@ -132,7 +116,7 @@ const mainHandler = async (client, m) => {
   }
 };
 
-/* ===== EXPORT (IMPORTANTE PARA SUBBOTS) ===== */
+/* ===== EXPORT LIMPIO PARA SUBBOTS ===== */
 module.exports = mainHandler;
 
 /* ===== AUTO SAVE DB ===== */
@@ -142,10 +126,13 @@ setInterval(async () => {
   } catch {}
 }, 30_000);
 
-/* ===== HOT RELOAD ===== */
-const mainFile = require.resolve(__filename);
-fs.watchFile(mainFile, () => {
-  fs.unwatchFile(mainFile);
-  delete require.cache[mainFile];
-  require(mainFile);
-});
+/* ===== HOT RELOAD (SOLO DEV) ===== */
+if (process.env.NODE_ENV !== "production") {
+  const mainFile = require.resolve(__filename);
+  fs.watchFile(mainFile, () => {
+    fs.unwatchFile(mainFile);
+    delete require.cache[mainFile];
+    require(mainFile);
+    console.log("♻️ main.js recargado");
+  });
+}
