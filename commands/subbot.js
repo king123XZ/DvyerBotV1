@@ -1,22 +1,19 @@
-const { startSubBot } = require("../lib/startSubBot");
-const mainHandler = require("../main");
+const { startSubBot } = require('../lib/startSubBot');
+// IMPORTANTE: Importamos el handler principal para que el subbot sepa qué hacer
+const { handler } = require('../main'); 
 
-module.exports = {
-  name: "subbot",
-  command: ["subbot"],
-  isOwner: true,
+// ... (dentro de tu comando)
+const run = async (conn, m, { args, text }) => {
+  let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender;
+  let number = who.split('@')[0];
 
-  run: async (client, m) => {
-    const number = m.sender.replace(/[^0-9]/g, "");
-
-    await m.reply("📲 Iniciando subbot...");
-
-    try {
-      await startSubBot(number, mainHandler);
-      await m.reply("✅ Subbot creado. Revisa el código de vinculación.");
-    } catch (e) {
-      console.log(e);
-      await m.reply("❌ Error al crear subbot.");
-    }
+  try {
+    // PASAMOS EL 'handler' COMO SEGUNDO ARGUMENTO
+    await startSubBot(number, handler, conn, m);
+    m.reply(`🚀 Iniciando subbot para: ${number}`);
+  } catch (err) {
+    m.reply(`❌ Error al iniciar: ${err.message}`);
   }
 };
+
+module.exports = { run };
