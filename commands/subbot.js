@@ -1,19 +1,26 @@
 const { startSubBot } = require('../lib/startSubBot');
-// IMPORTANTE: Importamos el handler principal para que el subbot sepa qué hacer
-const { handler } = require('../main'); 
+// Importamos el handler directamente desde el main
+const mainHandler = require('../main'); 
 
-// ... (dentro de tu comando)
-const run = async (conn, m, { args, text }) => {
-  let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender;
+const run = async (conn, m, { args }) => {
+  // Obtenemos el número del usuario que solicitó el subbot
+  let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender;
   let number = who.split('@')[0];
 
   try {
-    // PASAMOS EL 'handler' COMO SEGUNDO ARGUMENTO
-    await startSubBot(number, handler, conn, m);
-    m.reply(`🚀 Iniciando subbot para: ${number}`);
+    // IMPORTANTE: Pasamos 'mainHandler' como segundo argumento
+    await startSubBot(number, mainHandler);
+    m.reply(`🚀 Generando sesión para el subbot: ${number}...`);
   } catch (err) {
-    m.reply(`❌ Error al iniciar: ${err.message}`);
+    console.error(err);
+    m.reply(`❌ Error al iniciar subbot: ${err.message}`);
   }
 };
 
-module.exports = { run };
+// Ajusta estas propiedades según como maneje los comandos tu bot
+module.exports = { 
+    run,
+    name: "subbot",
+    alias: ["serbot"],
+    isGroup: false
+};
