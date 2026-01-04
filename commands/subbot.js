@@ -1,16 +1,34 @@
-const { startSubBot } = require('../lib/startSubBot');
+const { startSubBot } = require("../lib/starSubBot");
 
 module.exports = {
-    command: ["subbot"],
-    run: async (client, m, args) => {
-        const userNumber = args[0];
-        if (!userNumber) return m.reply("❌ Indica el número. Ejemplo: `.subbot 51900123456`.");
-        
-        try {
-            await startSubBot(client, m, userNumber);
-        } catch (e) {
-            console.log(e);
-            m.reply("❌ Error al intentar conectar con el alojamiento.");
-        }
+  name: "subbot",
+  alias: ["botsub", "vincular"],
+  category: "owner",
+  cooldown: 30,
+
+  async run(client, m) {
+    try {
+      // 🔐 Solo privado (recomendado)
+      if (m.isGroup) {
+        return m.reply("⚠️ Usa este comando en privado.");
+      }
+
+      // 📲 TOMAMOS EL NÚMERO AUTOMÁTICAMENTE
+      const senderJid = m.sender;
+      const userNumber = senderJid.split("@")[0];
+
+      await m.reply(
+        "🤖 *Creando tu SubBot...*\n\n" +
+        "📲 Tu número fue detectado automáticamente.\n" +
+        "⏳ Espera unos segundos, se enviará tu código."
+      );
+
+      // 🚀 INICIAR SUBBOT
+      await startSubBot(client, m, userNumber);
+
+    } catch (e) {
+      console.error("Error comando subbot:", e);
+      m.reply("❌ Error al crear tu subbot.");
     }
+  }
 };
