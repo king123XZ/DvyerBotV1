@@ -1,4 +1,4 @@
-const { startSubBot } = require("../lib/starSubBot");
+const { startSubBot } = require("../lib/startSubBot");
 
 module.exports = {
   name: "subbot",
