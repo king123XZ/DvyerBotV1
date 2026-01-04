@@ -1,23 +1,25 @@
 const { startSubBot } = require('../lib/startSubBot');
-// Importamos el handler directamente del archivo principal
-const mainHandler = require('../main'); 
+// Aquí cargamos tu archivo main.js
+const main = require('../main'); 
 
 async function run(conn, m, { args }) {
-  // Determinamos el número para la sesión
+  // Identificamos al usuario
   let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender;
   let number = who.split('@')[0];
 
   try {
-    // IMPORTANTE: Pasamos el mainHandler para que el subbot sepa responder
-    await startSubBot(number, mainHandler);
-    m.reply(`🚀 Generando sesión para el subbot: ${number}...\n\nRevisa la consola para el código si es necesario.`);
+    // IMPORTANTE: 'main' contiene la función que exportaste en tu main.js
+    // Se la pasamos a startSubBot para que no de el error de "no es función"
+    await startSubBot(number, main);
+    
+    m.reply(`🚀 Generando sub-bot para: ${number}\n\nRevisa la consola para el código de vinculación.`);
   } catch (err) {
-    console.error("Error en comando subbot:", err);
+    console.error("Error al iniciar subbot:", err);
     m.reply(`❌ Error al iniciar: ${err.message}`);
   }
 }
 
 module.exports = {
-  command: ["subbot", "serbot", "jadibot"], // Formato que pediste
+  command: ["subbot", "serbot", "jadibot"],
   run
 };
