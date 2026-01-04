@@ -1,30 +1,31 @@
 const { startSubBot } = require("../lib/startSubBot");
+const mainHandler = require("../main");
 
 module.exports = {
-  name: "subbot",
-  alias: ["botsub", "vincular"],
+  command: ["subbot"],
   category: "owner",
-  cooldown: 30,
 
-  async run(client, m) {
+  run: async (client, m) => {
+    const number = m.sender.split("@")[0];
+
+    await m.reply("⏳ Generando código de subbot...");
+
     try {
-      if (m.isGroup) {
-        return m.reply("⚠️ Usa este comando en privado.");
+      const { code } = await startSubBot(number, mainHandler);
+
+      if (code) {
+        await m.reply(
+          `📲 *Vinculación SubBot*\n\n` +
+          `🔢 Número: ${number}\n` +
+          `🔐 Código: *${code}*\n\n` +
+          `📱 WhatsApp → Dispositivos vinculados`
+        );
+      } else {
+        await m.reply("✅ Subbot ya conectado");
       }
-
-      const userNumber = m.sender.split("@")[0];
-
-      await m.reply(
-        "🤖 *Creando tu SubBot...*\n" +
-        "📲 Número detectado automáticamente.\n" +
-        "⏳ Enviando código..."
-      );
-
-      await startSubBot(client, m, userNumber);
-
     } catch (e) {
-      console.error("Error subbot:", e);
-      m.reply("❌ Error al crear el subbot.");
+      await m.reply("❌ Error creando subbot");
+      console.log(e);
     }
   }
 };
