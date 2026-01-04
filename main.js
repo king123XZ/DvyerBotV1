@@ -1,22 +1,24 @@
 require("./settings");
 const fs = require("fs");
+const path = require("path");
+const moment = require("moment");
 const chalk = require("chalk");
+const gradient = require("gradient-string");
 
 const seeCommands = require("./lib/system/commandLoader");
 const initDB = require("./lib/system/initDB");
 const antilink = require("./commands/antilink");
 const { resolveLidToRealJid } = require("./lib/utils");
-const cooldown = require("./lib/cooldown");
 
-/* ===== CARGAR COMANDOS (NO QUITAR) ===== */
 seeCommands();
 
-/* ================= MAIN HANDLER ================= */
-async function mainHandler(client, m) {
+module.exports = async (client, m) => {
   try {
-    if (!m?.message) return;
+    let body = "";
 
-    let body =
+    if (!m.message) return;
+
+    body =
       m.message.conversation ||
       m.message.extendedTextMessage?.text ||
       m.message.imageMessage?.caption ||
@@ -26,73 +28,108 @@ async function mainHandler(client, m) {
       m.message.templateButtonReplyMessage?.selectedId ||
       "";
 
-    if (!body) return;
+    // 🔒 DB seguro
+    try {
+      initDB(m);
+    } catch (e) {
+      console.log("DB error:", e);
+    }
 
-    try { initDB(m); } catch {}
+    // 🔒 Antilink SOLO en grupos
+    if (m.isGroup) {
+      try {
+        await antilink(client, m);
+      } catch (e) {
+        console.log("Antilink error:", e);
+      }
+    }
 
-    const prefixes = [".", "!", "#", "/"];
+    const prefixes = ['.', '!', '#', '/'];
     const prefix = prefixes.find(p => body.startsWith(p));
     if (!prefix) return;
 
     const args = body.trim().split(/ +/).slice(1);
     const text = args.join(" ");
-    const command = body.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase();
 
+    const command = body
+      .slice(prefix.length)
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase();
+
+    const pushname = m.pushName || "Sin nombre";
     const sender = m.sender || m.key?.participant || m.key?.remoteJid;
     if (!sender) return;
 
     const from = m.chat;
-    const botJid = client.user?.id?.split(":")[0] + "@s.whatsapp.net";
+    const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net";
 
     let isAdmins = false;
     let isBotAdmins = false;
+    let groupName = "";
 
     if (m.isGroup) {
       const metadata = await client.groupMetadata(from).catch(() => null);
       if (metadata) {
-        const admins = metadata.participants.filter(p =>
-          p.admin === "admin" || p.admin === "superadmin"
+        groupName = metadata.subject || "";
+
+        const admins = metadata.participants.filter(
+          p => p.admin === "admin" || p.admin === "superadmin"
         );
 
         const resolvedAdmins = await Promise.all(
-          admins.map(a =>
-            resolveLidToRealJid(a.jid, client, from).catch(() => a.jid)
-          )
+          admins.map(async (a) => {
+            const real = await resolveLidToRealJid(a.jid, client, from).catch(() => a.jid);
+            return real;
+          })
         );
 
         isAdmins = resolvedAdmins.includes(sender);
         isBotAdmins = resolvedAdmins.includes(botJid);
       }
-
-      try { await antilink(client, m); } catch {}
     }
 
-    if (!global.comandos || !global.comandos.has(command)) return;
+    // ===== LOG =====
+    console.log(
+      chalk.blueBright(
+        `\n[CMD] ${command} | ${pushname} | ${sender} | ${m.isGroup ? groupName : "Privado"}`
+      )
+    );
+
+    if (!global.comandos.has(command)) return;
+
     const cmd = global.comandos.get(command);
 
-    const isOwner = global.owner
-      .map(n => n + "@s.whatsapp.net")
-      .includes(sender);
+    if (cmd.isOwner &&
+      !global.owner.map(n => n + "@s.whatsapp.net").includes(sender)
+    ) return m.reply("⚠️ Solo el owner puede usar este comando.");
 
-    if (cmd.isOwner && !isOwner) return m.reply("⚠️ Solo el owner.");
-    if (cmd.isGroup && !m.isGroup) return m.reply("⚠️ Solo en grupos.");
-    if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.");
-    if (cmd.isBotAdmin && !isBotAdmins) return m.reply("⚠️ Necesito admin.");
+    if (cmd.isGroup && !m.isGroup)
+      return m.reply("⚠️ Este comando solo funciona en grupos.");
 
-    const wait = cooldown(sender, command, cmd.cooldown || 5);
-    if (wait) return m.reply(`⏳ Espera *${wait}s*`);
+    if (cmd.isAdmin && !isAdmins)
+      return m.reply("⚠️ Necesitas ser admin.");
 
-    await cmd.run?.(client, m, args, { text, prefix, command });
+    if (cmd.isBotAdmin && !isBotAdmins)
+      return m.reply("⚠️ Necesito admin.");
 
-  } catch (e) {
-    console.log("🔥 MAIN ERROR:", e);
+    try {
+      await cmd.run(client, m, args, { text });
+    } catch (err) {
+      console.log("Error comando:", err);
+      m.reply("❌ Error interno, pero sigo activo.");
+    }
+
+  } catch (fatal) {
+    console.log("FATAL MAIN ERROR:", fatal);
   }
-}
+};
 
-/* ===== EXPORT LIMPIO PARA SUBBOTS ===== */
-module.exports = { mainHandler };
-
-/* ===== AUTOSAVE DB ===== */
-setInterval(async () => {
-  try { if (global.db?.data) await global.db.write(); } catch {}
-}, 30_000);
+// 🔁 AUTO RELOAD
+const mainFile = require.resolve(__filename);
+fs.watchFile(mainFile, () => {
+  fs.unwatchFile(mainFile);
+  console.log(chalk.yellowBright(`\nRecargando ${path.basename(__filename)}`));
+  delete require.cache[mainFile];
+  require(mainFile);
+});
