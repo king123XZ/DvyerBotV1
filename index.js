@@ -1,3 +1,8 @@
+/************************************************
+ * BOT WHATSAPP - DOCKER / PTERODACTYL SAFE
+ * Node.js 18.x / 20.x LTS
+ ************************************************/
+
 require("./settings");
 require("./lib/database");
 
@@ -19,17 +24,24 @@ const { Boom } = require("@hapi/boom");
 
 const { smsg } = require("./lib/message");
 const welcome = require("./lib/system/welcome");
-
-// ⚠️ ASEGÚRATE que main.js exporte una función
 const mainHandler = require("./main");
 
-// ================== CONFIG ==================
+// ================= CONFIG =================
 const SESSIONS_DIR = path.join(__dirname, "sessions");
-const RECONNECT_DELAY = 3000;
+const RECONNECT_DELAY = 4000;
 let reconnecting = false;
 
-// ================== HELPERS ==================
+// ================= SAFE HELPERS =================
 const delay = ms => new Promise(r => setTimeout(r, ms));
+
+const safeUser = () =>
+  process.env.USER ||
+  process.env.USERNAME ||
+  "container";
+
+const safeMkdir = dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+};
 
 const clearSession = dir => {
   try {
@@ -57,10 +69,10 @@ const log = {
   error: msg => console.log(chalk.bgRed.white(" ERROR "), msg),
 };
 
-// ================== BANNER ==================
-console.log(chalk.yellow.bold("════════════════════════════"));
-log.info(`Usuario: ${os.userInfo().username}`);
-log.info(`Sistema: ${os.platform()} ${os.arch()}`);
+// ================= BANNER (SAFE) =================
+console.log(chalk.yellow("════════════════════════════"));
+log.info(`Usuario: ${safeUser()}`);
+log.info(`OS: ${os.platform()} ${os.arch()}`);
 log.info(`Node: ${process.version}`);
 log.info(`RAM Libre: ${(os.freemem() / 1024 / 1024).toFixed(0)} MB`);
 log.info(
@@ -69,13 +81,13 @@ log.info(
     hour12: false,
   })}`
 );
-console.log(chalk.yellow.bold("════════════════════════════"));
+console.log(chalk.yellow("════════════════════════════"));
 
-// ================== START BOT ==================
+// ================= START BOT =================
 async function startBot(botNumber = "main") {
   const sessionPath = path.join(SESSIONS_DIR, botNumber);
-  if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR);
-  if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath);
+  safeMkdir(SESSIONS_DIR);
+  safeMkdir(sessionPath);
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
   const { version } = await fetchLatestBaileysVersion();
@@ -83,13 +95,13 @@ async function startBot(botNumber = "main") {
   const client = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: false,
     browser: ["Linux", "Chrome"],
-    logger: pino({ level: "silent" }), // 👈 menos RAM
+    printQRInTerminal: false,
     generateHighQualityLinkPreview: false,
+    logger: pino({ level: "silent" }), // 👈 RAM LOW
   });
 
-  // ===== EMPAREJAMIENTO =====
+  // ============ EMPAREJAMIENTO ============
   if (!client.authState.creds.registered) {
     const phone = await question("📱 Número WhatsApp (519xxxxxxxx): ");
     try {
@@ -102,11 +114,11 @@ async function startBot(botNumber = "main") {
     }
   }
 
-  // ===== DATABASE =====
+  // ============ DATABASE ============
   await global.loadDatabase();
   log.success("Base de datos cargada");
 
-  // ===== CONEXIÓN =====
+  // ============ CONNECTION ============
   client.ev.on("connection.update", async update => {
     const { connection, lastDisconnect } = update;
 
@@ -128,7 +140,7 @@ async function startBot(botNumber = "main") {
       }
 
       if (reason === DisconnectReason.badSession) {
-        log.warn("Bad session detectada, limpiando...");
+        log.warn("Bad session detectada");
         clearSession(sessionPath);
       }
 
@@ -143,7 +155,7 @@ async function startBot(botNumber = "main") {
     }
   });
 
-  // ===== MENSAJES =====
+  // ============ MESSAGES ============
   client.ev.on("messages.upsert", async ({ messages }) => {
     const m = messages?.[0];
     if (!m?.message) return;
@@ -160,14 +172,14 @@ async function startBot(botNumber = "main") {
     }
   });
 
-  // ===== WELCOME =====
+  // ============ WELCOME ============
   client.ev.on("group-participants.update", async update => {
     try {
       await welcome(client, update);
     } catch {}
   });
 
-  // ===== DECODE JID =====
+  // ============ JID DECODE ============
   client.decodeJid = jid => {
     if (!jid) return jid;
     if (/:\d+@/gi.test(jid)) {
@@ -182,8 +194,208 @@ async function startBot(botNumber = "main") {
 
 startBot();
 
-// ================= AUTO RELOAD =================
+// ============ AUTO RESTART SAFE ============
 fs.watch(__filename, () => {
-  console.log(chalk.yellow("♻ Código actualizado, reiniciando..."));
+  console.log(chalk.yellow("♻ Archivo actualizado, reiniciando..."));
   process.exit(0);
-});
+});/************************************************
+ * BOT WHATSAPP - DOCKER / PTERODACTYL SAFE
+ * Node.js 18.x / 20.x LTS
+ ************************************************/
+
+require("./settings");
+require("./lib/database");
+
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  jidDecode,
+  DisconnectReason,
+} = require("@whiskeysockets/baileys");
+
+const pino = require("pino");
+const chalk = require("chalk");
+const fs = require("fs");
+const path = require("path");
+const readline = require("readline");
+const os = require("os");
+const { Boom } = require("@hapi/boom");
+
+const { smsg } = require("./lib/message");
+const welcome = require("./lib/system/welcome");
+const mainHandler = require("./main");
+
+// ================= CONFIG =================
+const SESSIONS_DIR = path.join(__dirname, "sessions");
+const RECONNECT_DELAY = 4000;
+let reconnecting = false;
+
+// ================= SAFE HELPERS =================
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+const safeUser = () =>
+  process.env.USER ||
+  process.env.USERNAME ||
+  "container";
+
+const safeMkdir = dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+};
+
+const clearSession = dir => {
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch {}
+};
+
+const question = text => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise(resolve =>
+    rl.question(text, ans => {
+      rl.close();
+      resolve(ans.trim());
+    })
+  );
+};
+
+const log = {
+  info: msg => console.log(chalk.bgBlue.white(" INFO "), msg),
+  success: msg => console.log(chalk.bgGreen.white(" OK "), msg),
+  warn: msg => console.log(chalk.bgYellow.black(" WARN "), msg),
+  error: msg => console.log(chalk.bgRed.white(" ERROR "), msg),
+};
+
+// ================= BANNER (SAFE) =================
+console.log(chalk.yellow("════════════════════════════"));
+log.info(`Usuario: ${safeUser()}`);
+log.info(`OS: ${os.platform()} ${os.arch()}`);
+log.info(`Node: ${process.version}`);
+log.info(`RAM Libre: ${(os.freemem() / 1024 / 1024).toFixed(0)} MB`);
+log.info(
+  `Fecha: ${new Date().toLocaleString("es-PE", {
+    timeZone: "America/Lima",
+    hour12: false,
+  })}`
+);
+console.log(chalk.yellow("════════════════════════════"));
+
+// ================= START BOT =================
+async function startBot(botNumber = "main") {
+  const sessionPath = path.join(SESSIONS_DIR, botNumber);
+  safeMkdir(SESSIONS_DIR);
+  safeMkdir(sessionPath);
+
+  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+  const { version } = await fetchLatestBaileysVersion();
+
+  const client = makeWASocket({
+    version,
+    auth: state,
+    browser: ["Linux", "Chrome"],
+    printQRInTerminal: false,
+    generateHighQualityLinkPreview: false,
+    logger: pino({ level: "silent" }), // 👈 RAM LOW
+  });
+
+  // ============ EMPAREJAMIENTO ============
+  if (!client.authState.creds.registered) {
+    const phone = await question("📱 Número WhatsApp (519xxxxxxxx): ");
+    try {
+      const code = await client.requestPairingCode(phone);
+      log.success(`Código de vinculación: ${code}`);
+    } catch (e) {
+      log.error("No se pudo generar el código");
+      clearSession(sessionPath);
+      process.exit(1);
+    }
+  }
+
+  // ============ DATABASE ============
+  await global.loadDatabase();
+  log.success("Base de datos cargada");
+
+  // ============ CONNECTION ============
+  client.ev.on("connection.update", async update => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "close") {
+      const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+
+      if (reconnecting) return;
+      reconnecting = true;
+
+      log.warn(`Desconectado (${reason})`);
+
+      if (
+        reason === DisconnectReason.loggedOut ||
+        reason === DisconnectReason.forbidden
+      ) {
+        log.error("Sesión cerrada desde WhatsApp");
+        clearSession(sessionPath);
+        process.exit(1);
+      }
+
+      if (reason === DisconnectReason.badSession) {
+        log.warn("Bad session detectada");
+        clearSession(sessionPath);
+      }
+
+      await delay(RECONNECT_DELAY);
+      reconnecting = false;
+      startBot(botNumber);
+    }
+
+    if (connection === "open") {
+      reconnecting = false;
+      log.success(`Bot conectado (${botNumber})`);
+    }
+  });
+
+  // ============ MESSAGES ============
+  client.ev.on("messages.upsert", async ({ messages }) => {
+    const m = messages?.[0];
+    if (!m?.message) return;
+    if (m.key.remoteJid === "status@broadcast") return;
+
+    try {
+      const msg = smsg(client, m);
+      if (typeof mainHandler !== "function") {
+        throw new Error("mainHandler no es una función");
+      }
+      await mainHandler(client, msg);
+    } catch (e) {
+      log.error(e.message);
+    }
+  });
+
+  // ============ WELCOME ============
+  client.ev.on("group-participants.update", async update => {
+    try {
+      await welcome(client, update);
+    } catch {}
+  });
+
+  // ============ JID DECODE ============
+  client.decodeJid = jid => {
+    if (!jid) return jid;
+    if (/:\d+@/gi.test(jid)) {
+      const d = jidDecode(jid) || {};
+      return d.user && d.server ? `${d.user}@${d.server}` : jid;
+    }
+    return jid;
+  };
+
+  client.ev.on("creds.update", saveCreds);
+}
+
+startBot();
+
+// ============ AUTO RESTART SAFE ============
+fs.watch(__filename, () => {
+  console.log(chalk.yellow("♻ Archivo actualizado, reiniciando..."));
+  process.exit(0);
+}); 
