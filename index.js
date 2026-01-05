@@ -15,119 +15,160 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const os = require("os");
-const { smsg } = require("./lib/message");
 const { Boom } = require("@hapi/boom");
 
-const mainHandler = require("./main");
+const { smsg } = require("./lib/message");
 const welcome = require("./lib/system/welcome");
 
-/* ================= ANTI CRASH ================= */
-process.on("uncaughtException", console.error);
-process.on("unhandledRejection", console.error);
+// ⚠️ ASEGÚRATE que main.js exporte una función
+const mainHandler = require("./main");
 
-/* ================= LOG ================= */
-const log = {
-  info: (m) => console.log(chalk.blue("[INFO]"), m),
-  warn: (m) => console.log(chalk.yellow("[WARN]"), m),
-  error: (m) => console.log(chalk.red("[ERROR]"), m),
-  success: (m) => console.log(chalk.green("[OK]"), m),
-};
+// ================== CONFIG ==================
+const SESSIONS_DIR = path.join(__dirname, "sessions");
+const RECONNECT_DELAY = 3000;
+let reconnecting = false;
 
-/* ================= UTILS ================= */
-function destroySession(botNumber, client) {
-  const dir = path.join(__dirname, "sessions", botNumber);
-  try {
-    client?.ev?.removeAllListeners();
-    client?.ws?.close();
-  } catch {}
+// ================== HELPERS ==================
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+const clearSession = dir => {
   try {
     fs.rmSync(dir, { recursive: true, force: true });
-    log.warn(`🗑️ Sesión eliminada: ${botNumber}`);
   } catch {}
-}
+};
 
-/* ================= START BOT ================= */
+const question = text => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise(resolve =>
+    rl.question(text, ans => {
+      rl.close();
+      resolve(ans.trim());
+    })
+  );
+};
+
+const log = {
+  info: msg => console.log(chalk.bgBlue.white(" INFO "), msg),
+  success: msg => console.log(chalk.bgGreen.white(" OK "), msg),
+  warn: msg => console.log(chalk.bgYellow.black(" WARN "), msg),
+  error: msg => console.log(chalk.bgRed.white(" ERROR "), msg),
+};
+
+// ================== BANNER ==================
+console.log(chalk.yellow.bold("════════════════════════════"));
+log.info(`Usuario: ${os.userInfo().username}`);
+log.info(`Sistema: ${os.platform()} ${os.arch()}`);
+log.info(`Node: ${process.version}`);
+log.info(`RAM Libre: ${(os.freemem() / 1024 / 1024).toFixed(0)} MB`);
+log.info(
+  `Fecha: ${new Date().toLocaleString("es-PE", {
+    timeZone: "America/Lima",
+    hour12: false,
+  })}`
+);
+console.log(chalk.yellow.bold("════════════════════════════"));
+
+// ================== START BOT ==================
 async function startBot(botNumber = "main") {
-  const sessionDir = path.join(__dirname, "sessions", botNumber);
-  if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+  const sessionPath = path.join(SESSIONS_DIR, botNumber);
+  if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR);
+  if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath);
 
-  const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
   const { version } = await fetchLatestBaileysVersion();
 
   const client = makeWASocket({
     version,
-    logger: pino({ level: "silent" }),
-    browser: ["Linux", "Chrome", "3.0"],
     auth: state,
+    printQRInTerminal: false,
+    browser: ["Linux", "Chrome"],
+    logger: pino({ level: "silent" }), // 👈 menos RAM
+    generateHighQualityLinkPreview: false,
   });
 
-  /* ===== VINCULACIÓN AUTOMÁTICA ===== */
+  // ===== EMPAREJAMIENTO =====
   if (!client.authState.creds.registered) {
+    const phone = await question("📱 Número WhatsApp (519xxxxxxxx): ");
     try {
-      await new Promise((r) => setTimeout(r, 3000));
-      const code = await client.requestPairingCode(botNumber);
-      console.log(chalk.green(`📲 Código ${botNumber}: ${code}`));
-    } catch {
-      destroySession(botNumber, client);
-      return;
+      const code = await client.requestPairingCode(phone);
+      log.success(`Código de vinculación: ${code}`);
+    } catch (e) {
+      log.error("No se pudo generar el código");
+      clearSession(sessionPath);
+      process.exit(1);
     }
   }
 
-  /* ===== DB ===== */
+  // ===== DATABASE =====
   await global.loadDatabase();
-  setInterval(() => global.db.write(), 30_000);
+  log.success("Base de datos cargada");
 
-  /* ===== CONEXIÓN ===== */
-  client.ev.on("connection.update", ({ connection, lastDisconnect }) => {
-    if (connection === "open") {
-      log.success(`Conectado: ${botNumber}`);
-    }
+  // ===== CONEXIÓN =====
+  client.ev.on("connection.update", async update => {
+    const { connection, lastDisconnect } = update;
 
     if (connection === "close") {
       const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
 
+      if (reconnecting) return;
+      reconnecting = true;
+
+      log.warn(`Desconectado (${reason})`);
+
       if (
         reason === DisconnectReason.loggedOut ||
-        reason === DisconnectReason.forbidden ||
-        reason === DisconnectReason.badSession
+        reason === DisconnectReason.forbidden
       ) {
-        log.error(`Sesión inválida: ${botNumber}`);
-        destroySession(botNumber, client);
-        if (botNumber === "main") process.exit(1);
-        return;
+        log.error("Sesión cerrada desde WhatsApp");
+        clearSession(sessionPath);
+        process.exit(1);
       }
 
-      log.warn(`Reconectando ${botNumber}`);
+      if (reason === DisconnectReason.badSession) {
+        log.warn("Bad session detectada, limpiando...");
+        clearSession(sessionPath);
+      }
+
+      await delay(RECONNECT_DELAY);
+      reconnecting = false;
       startBot(botNumber);
+    }
+
+    if (connection === "open") {
+      reconnecting = false;
+      log.success(`Bot conectado (${botNumber})`);
     }
   });
 
-  /* ===== MENSAJES ===== */
-  const cache = new Set();
-
+  // ===== MENSAJES =====
   client.ev.on("messages.upsert", async ({ messages }) => {
-    const m = messages[0];
-    if (!m?.message || cache.has(m.key.id)) return;
-
-    cache.add(m.key.id);
-    setTimeout(() => cache.delete(m.key.id), 60_000);
+    const m = messages?.[0];
+    if (!m?.message) return;
+    if (m.key.remoteJid === "status@broadcast") return;
 
     try {
       const msg = smsg(client, m);
+      if (typeof mainHandler !== "function") {
+        throw new Error("mainHandler no es una función");
+      }
       await mainHandler(client, msg);
     } catch (e) {
-      console.log(e);
+      log.error(e.message);
     }
   });
 
-  /* ===== WELCOME ===== */
-  client.ev.on("group-participants.update", async (u) => {
+  // ===== WELCOME =====
+  client.ev.on("group-participants.update", async update => {
     try {
-      await welcome(client, u);
+      await welcome(client, update);
     } catch {}
   });
 
-  client.decodeJid = (jid) => {
+  // ===== DECODE JID =====
+  client.decodeJid = jid => {
     if (!jid) return jid;
     if (/:\d+@/gi.test(jid)) {
       const d = jidDecode(jid) || {};
@@ -139,7 +180,10 @@ async function startBot(botNumber = "main") {
   client.ev.on("creds.update", saveCreds);
 }
 
-module.exports = { startBot };
-
-/* ===== START MAIN ===== */
 startBot();
+
+// ================= AUTO RELOAD =================
+fs.watch(__filename, () => {
+  console.log(chalk.yellow("♻ Código actualizado, reiniciando..."));
+  process.exit(0);
+});
