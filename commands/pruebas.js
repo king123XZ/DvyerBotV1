@@ -1,46 +1,45 @@
 const axios = require("axios");
 
 module.exports = {
-  name: "youtube",
-  alias: ["descargar", "enlace"],
-  category: "media",
-  isOwner: false, // poner true si solo el dueño puede usar
-  run: async (client, m, { args, command }) => {
-    if (!args || !args[0]) return m.reply("❌ Por favor, envía un enlace de YouTube.");
-    
+  command: ["yt1"], // comando principal
+  category: "downloader",
+
+  run: async (client, m, args) => {
     const url = args[0];
-    const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"; // tu API key
+
+    if (!url || !url.startsWith("http")) {
+      return m.reply("❌ Enlace de YouTube no válido.");
+    }
 
     try {
-      // llama al endpoint de YouTube
-      const res = await axios.post(
+      await m.reply("⏳ Descargando video desde YouTube...");
+
+      // Llamada a la API de UltraPlus
+      const response = await axios.post(
         "https://api-sky.ultraplus.click/aio1",
-        { url },
-        { headers: { apikey: API_KEY } }
+        { url }, // enviar el enlace de YouTube
+        {
+          headers: {
+            apikey: "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"
+          },
+          responseType: "arraybuffer" // para obtener el video como archivo
+        }
       );
 
-      if (!res.data.status) return m.reply("❌ Error al obtener el video.");
+      // Convertir la respuesta en Buffer para enviar por WhatsApp
+      const videoBuffer = Buffer.from(response.data);
 
-      const video = res.data.result;
+      // Enviar el video al chat
+      await client.sendMessage(
+        m.chat,
+        { video: videoBuffer, caption: "🎬 Tu video de YouTube" },
+        { quoted: m }
+      );
 
-      if (command.toLowerCase() === "descargar") {
-        // envía el video a WhatsApp
-        await client.sendMessage(
-          m.from,
-          { video: { url: video.media }, caption: `🎬 ${video.title}` },
-          { quoted: m }
-        );
-      } else if (command.toLowerCase() === "enlace") {
-        // envía solo el link directo
-        await client.sendMessage(
-          m.from,
-          { text: `🎬 ${video.title}\n🔗 Enlace directo: ${video.media}` },
-          { quoted: m }
-        );
-      }
     } catch (err) {
-      console.log(err);
-      m.reply("❌ Ocurrió un error al procesar tu solicitud.");
+      console.error(err);
+      m.reply("❌ Ocurrió un error al descargar el video. Revisa el enlace o intenta de nuevo.");
     }
-  },
+  }
 };
+
