@@ -33,7 +33,7 @@ module.exports = {
         },
         {
           buttonId: ".menu_utilidades",
-          buttonText: { displayText: "🛠 Utilidades" },
+          buttonText: { displayText: "🛠 Utilidades/grupos" },
           type: 1
         },
         {
