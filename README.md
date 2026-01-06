@@ -24,3 +24,30 @@
 </a>
 
 </div>
+## 🚀 [Instalación](https://media.giphy.com/media/nWGRHBnAl5Kmc/giphy.gif) en **Termux**
+
+> 📱 Compatible con Android usando **Termux**
+
+🔗 **Descargar Termux (F-Droid):**  
+https://f-droid.org/repo/com.termux_118.apk
+
+---
+
+### 📥 Comandos de instalación
+
+```bash
+cd && termux-setup-storage
+
+apt-get update -y && apt-get upgrade -y
+
+pkg install -y git nodejs ffmpeg imagemagick
+pkg install -y yarn
+
+git clone https://github.com/DevYerZx/killua-bot-dev.git
+cd killua-bot-dev
+
+yarn install
+npm install
+npm update
+
+npm start
