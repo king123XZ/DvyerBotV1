@@ -48,6 +48,7 @@ async function mainHandler(client, m) {
 
     if (!body) return
 
+    // iniciar DB sin bloquear
     try { initDB(m) } catch {}
 
     const prefixes = [".", "!", "#", "/"]
@@ -66,10 +67,7 @@ async function mainHandler(client, m) {
       const sender = m.sender || m.key?.participant
       const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
 
-      let isAdmins = false
-      let isOwner = false
-
-      // Cache de grupo
+      // Obtener metadata del grupo
       let cached = groupCache.get(from)
       if (!cached || cached.expires < Date.now()) {
         const meta = await client.groupMetadata(from).catch(() => null)
@@ -80,13 +78,13 @@ async function mainHandler(client, m) {
         }
       }
 
-      if (cached) {
-        isAdmins = cached.admins.includes(sender)
-        isOwner = global.owner.map(o => o + "@s.whatsapp.net").includes(sender)
-      }
+      // ⚠️ Condiciones para ignorar el mensaje
+      const isOwner = global.owner.map(o => o + "@s.whatsapp.net").includes(sender)
+      const isAdmin = cached?.admins.includes(sender)
+      const isBot = sender === botJid
 
-      // 🔹 Ignorar dueño, admins y el bot
-      if (!isAdmins && !isOwner && sender !== botJid) {
+      // Solo eliminar si NO es dueño, admin ni bot
+      if (!isOwner && !isAdmin && !isBot) {
         await antilink.execute(client, m)
       }
 
@@ -113,6 +111,9 @@ async function mainHandler(client, m) {
     if (inCooldown(sender, command))
       return m.reply("⏳ Espera un momento...")
 
+    const from = m.chat
+    const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
+
     let isAdmins = false
     let isBotAdmins = false
     let groupName = ""
@@ -120,20 +121,30 @@ async function mainHandler(client, m) {
     /* ========= GROUP METADATA CACHE ========= */
     if (m.isGroup) {
       let cached = groupCache.get(from)
+
       if (!cached || cached.expires < Date.now()) {
         const meta = await client.groupMetadata(from).catch(() => null)
         if (meta) {
           const admins = meta.participants
             .filter(p => p.admin)
             .map(p => p.jid)
+
+          const resolvedAdmins = await Promise.all(
+            admins.map(j =>
+              resolveLidToRealJid(j, client, from).catch(() => j)
+            )
+          )
+
           cached = {
-            admins,
+            admins: resolvedAdmins,
             subject: meta.subject || "",
             expires: Date.now() + GROUP_TTL,
           }
+
           groupCache.set(from, cached)
         }
       }
+
       if (cached) {
         groupName = cached.subject
         isAdmins = cached.admins.includes(sender)
@@ -183,4 +194,3 @@ fs.watchFile(file, () => {
   require(file)
   console.log(chalk.yellow("♻ main.js recargado"))
 })
-
