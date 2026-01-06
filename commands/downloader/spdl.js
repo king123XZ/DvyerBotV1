@@ -7,42 +7,41 @@ module.exports = {
   category: "downloader",
 
   run: async (client, m, args) => {
-    if (!args[0]) {
-      return m.reply("❌ Falta el enlace de Spotify.");
-    }
+    if (!args[0]) return m.reply("❌ Falta el enlace de Spotify.");
 
     const url = args[0];
     await m.reply("⬇️ Descargando audio desde Spotify...");
 
     try {
       const res = await axios.post(
-        "https://api-sky.ultraplus.click/spotify/download",
+        "https://api-sky.ultraplus.click/aio1",
         { url },
         { headers: { apikey: API_KEY } }
       );
 
-      // ✅ LINK REAL
-      const audioUrl = res.data?.result?.response?.url;
+      const data = res.data;
 
-      if (!audioUrl) {
-        console.log("RESPUESTA API:", res.data);
+      if (!data.status || !data.result?.media) {
+        console.log("RESPUESTA API:", data);
         return m.reply("❌ No se pudo obtener el enlace del audio.");
       }
+
+      const { title, media } = data.result;
 
       await client.sendMessage(
         m.chat,
         {
-          audio: { url: audioUrl },
+          audio: { url: media },
           mimetype: "audio/mpeg",
-          fileName: "spotify.mp3",
-          caption: "🎧 *Spotify Downloader*\n👑 Creador: DevYer"
+          fileName: `${title}.mp3`,
+          caption: `🎧 *${title}*\n👑 Creador: DevYer`
         },
         { quoted: m }
       );
 
     } catch (err) {
       console.error("SPOTIFY DL ERROR:", err.response?.data || err);
-      m.reply("❌ Error al descargar el audio.");
+      m.reply("❌ Error al descargar el audio de Spotify.");
     }
   }
 };
