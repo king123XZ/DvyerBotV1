@@ -16,8 +16,9 @@ module.exports = {
       const cache = global.ytCache?.[m.sender];
 
       // 🔐 Validaciones
-      if (!cache) return;
-      if (!quality || !QUALITIES.includes(quality)) return;
+      if (!cache) return m.reply("⚠️ Primero usa el comando de búsqueda de YouTube.");
+      if (!quality || !QUALITIES.includes(quality))
+        return m.reply(`⚠️ Debes indicar una calidad válida: ${QUALITIES.join(", ")}`);
 
       await m.reply(`⬇️ Descargando *${quality}p*...`);
 
@@ -31,7 +32,7 @@ module.exports = {
         },
         {
           headers: { apikey: API_KEY },
-          timeout: 45000 // 🔥 CLAVE
+          timeout: 45000
         }
       );
 
@@ -55,19 +56,14 @@ module.exports = {
     } catch (err) {
       console.error("YTQ ERROR:", err.message);
 
-      // ⚠️ fallback automático
+      // fallback automático sin usar client.emit
       const nextQuality = getFallback(args[0]);
-
       if (nextQuality) {
-        return client.sendMessage(m.chat, {
-          text: `⚠️ *${args[0]}p falló*\n🔁 Probando automáticamente *${nextQuality}p*...`
-        }, { quoted: m }).then(() => {
-          client.emit("message", {
-            key: m.key,
-            message: { conversation: `.ytq ${nextQuality}` },
-            sender: m.sender
+        return m.reply(`⚠️ *${args[0]}p falló*\n🔁 Probando automáticamente *${nextQuality}p*...`)
+          .then(() => {
+            // re-ejecutar el comando de forma directa
+            module.exports.run(client, m, [nextQuality]);
           });
-        });
       }
 
       m.reply("❌ No se pudo descargar el video en ninguna calidad.");
@@ -80,6 +76,6 @@ module.exports = {
 function getFallback(q) {
   const order = ["1080", "720", "480", "360", "240", "144"];
   const i = order.indexOf(q);
-  return i >= 0 ? order[i + 1] : null;
+  return i >= 0 && i + 1 < order.length ? order[i + 1] : null;
 }
 
