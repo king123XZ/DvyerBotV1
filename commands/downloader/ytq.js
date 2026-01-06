@@ -3,8 +3,8 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// calidades permitidas en orden
-const QUALITIES = ["144", "240", "360", "480", "720", "1080"];
+// solo calidades soportadas por la API
+const QUALITIES = ["144", "240", "360"];
 
 module.exports = {
   command: ["ytq"],
@@ -12,17 +12,15 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      const quality = args[0];
+      const quality = args[0] || "360"; // default 360p
       const cache = global.ytCache?.[m.sender];
 
-      // 🔐 Validaciones
       if (!cache) return m.reply("⚠️ Primero usa el comando de búsqueda de YouTube.");
-      if (!quality || !QUALITIES.includes(quality))
+      if (!QUALITIES.includes(quality))
         return m.reply(`⚠️ Debes indicar una calidad válida: ${QUALITIES.join(", ")}`);
 
       await m.reply(`⬇️ Descargando *${quality}p*...`);
 
-      // ⏱️ timeout alto (45s)
       const res = await axios.post(
         API_URL,
         {
@@ -50,20 +48,15 @@ module.exports = {
         { quoted: m }
       );
 
-      // limpiar cache
       delete global.ytCache[m.sender];
 
     } catch (err) {
       console.error("YTQ ERROR:", err.message);
 
-      // fallback automático sin usar client.emit
       const nextQuality = getFallback(args[0]);
       if (nextQuality) {
         return m.reply(`⚠️ *${args[0]}p falló*\n🔁 Probando automáticamente *${nextQuality}p*...`)
-          .then(() => {
-            // re-ejecutar el comando de forma directa
-            module.exports.run(client, m, [nextQuality]);
-          });
+          .then(() => module.exports.run(client, m, [nextQuality]));
       }
 
       m.reply("❌ No se pudo descargar el video en ninguna calidad.");
@@ -72,10 +65,11 @@ module.exports = {
   }
 };
 
-// 🔁 fallback automático
+// fallback descendente solo hasta 144p
 function getFallback(q) {
-  const order = ["1080", "720", "480", "360", "240", "144"];
+  const order = ["360", "240", "144"];
   const i = order.indexOf(q);
   return i >= 0 && i + 1 < order.length ? order[i + 1] : null;
 }
+
 
