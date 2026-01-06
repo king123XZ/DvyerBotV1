@@ -64,7 +64,11 @@ async function mainHandler(client, m) {
 
       const args = body.trim().split(/\s+/).slice(1)
       const text = args.join(" ")
-      const command = body.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase()
+      const command = body
+        .slice(prefix.length)
+        .trim()
+        .split(/\s+/)[0]
+        .toLowerCase()
 
       if (!global.comandos?.has(command)) return
       const cmd = global.comandos.get(command)
@@ -94,7 +98,9 @@ async function mainHandler(client, m) {
               .map(p => p.jid)
 
             const resolved = await Promise.all(
-              admins.map(j => resolveLidToRealJid(j, client, from).catch(() => j))
+              admins.map(j =>
+                resolveLidToRealJid(j, client, from).catch(() => j)
+              )
             )
 
             cached = {
@@ -132,7 +138,6 @@ async function mainHandler(client, m) {
         chalk.gray(m.isGroup ? groupName : "Privado")
       )
 
-      // ===== SANDBOX (ANTI-CRASH)
       try {
         await cmd.run(client, m, args, { text, prefix, command })
       } catch (err) {
@@ -146,9 +151,8 @@ async function mainHandler(client, m) {
   })
 }
 
-/* ===== EXPORT ===== */
+/* ===== EXPORT LIMPIO (CLAVE) ===== */
 module.exports = mainHandler
-module.exports.mainHandler = mainHandler
 
 /* ===== HOT RELOAD ===== */
 const file = require.resolve(__filename)
