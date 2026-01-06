@@ -1,75 +1,91 @@
-// commands/antilink.js
+const fs = require("fs")
+const path = require("path")
 
-const WA_GROUP = /chat\.whatsapp\.com\/[A-Za-z0-9]+/i
-const WA_CHANNEL = /whatsapp\.com\/channel\/[A-Za-z0-9]+/i
+const DB_PATH = path.join(__dirname, "../database/antilink.json")
 
-// grupos con antilink activo
-const antilinkGroups = new Set()
+if (!fs.existsSync(DB_PATH)) {
+  fs.writeFileSync(DB_PATH, JSON.stringify({}))
+}
 
-module.exports = async function antilink(client, m) {
-  if (!m.isGroup) return
-  if (!m.message) return
+const loadDB = () => JSON.parse(fs.readFileSync(DB_PATH))
+const saveDB = data => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
 
-  const text =
-    m.message.conversation ||
-    m.message.extendedTextMessage?.text ||
-    m.message.imageMessage?.caption ||
-    m.message.videoMessage?.caption ||
-    ""
+/* ===== REGEX REAL PARA WHATSAPP ===== */
+const WA_LINK_REGEX =
+  /(chat\.whatsapp\.com\/|whatsapp\.com\/channel\/)/i
 
-  if (!text) return
+/* ===== COMANDO ===== */
+module.exports = {
+  command: ["antilink"],
+  isGroup: true,
+  isAdmin: true,
+  isBotAdmin: true,
 
-  // ⛔ solo links de WhatsApp
-  if (!WA_GROUP.test(text) && !WA_CHANNEL.test(text)) return
+  run: async (client, m, args) => {
+    const db = loadDB()
 
-  // metadata
-  const meta = await client.groupMetadata(m.chat).catch(() => null)
-  if (!meta) return
-
-  const admins = meta.participants
-    .filter(p => p.admin)
-    .map(p => p.jid)
-
-  // admin no se borra
-  if (admins.includes(m.sender)) return
-
-  // 🧹 borrar mensaje
-  await client.sendMessage(m.chat, {
-    delete: {
-      remoteJid: m.chat,
-      fromMe: false,
-      id: m.key.id,
-      participant: m.sender
+    if (!args[0]) {
+      return m.reply(
+        `🔒 *Antilink*\n\n` +
+        `Estado: *${db[m.chat] ? "ON ✅" : "OFF ❌"}*\n\n` +
+        `Usa:\n` +
+        `• .antilink on\n` +
+        `• .antilink off`
+      )
     }
-  })
 
-  await client.sendMessage(m.chat, {
-    text: "🚫 Enlaces de grupos o canales de WhatsApp no permitidos"
-  })
+    if (args[0] === "on") {
+      db[m.chat] = true
+      saveDB(db)
+      return m.reply("✅ Antilink activado")
+    }
+
+    if (args[0] === "off") {
+      delete db[m.chat]
+      saveDB(db)
+      return m.reply("❌ Antilink desactivado")
+    }
+  },
+
+  /* ===== VERIFICAR SI ESTA ACTIVO ===== */
+  isActive: chat => {
+    const db = loadDB()
+    return db[chat] === true
+  },
+
+  /* ===== EJECUTAR ANTILINK ===== */
+  execute: async (client, m) => {
+    try {
+      if (!WA_LINK_REGEX.test(m.text || "")) return
+
+      const sender = m.sender
+      const metadata = await client.groupMetadata(m.chat)
+
+      const admins = metadata.participants
+        .filter(p => p.admin)
+        .map(p => p.id)
+
+      // ❌ NO TOCAR ADMINS
+      if (admins.includes(sender)) return
+
+      // 🧹 BORRAR MENSAJE
+      await client.sendMessage(m.chat, {
+        delete: {
+          remoteJid: m.chat,
+          fromMe: false,
+          id: m.key.id,
+          participant: sender,
+        },
+      })
+
+      // ⚠️ ADVERTENCIA
+      await client.sendMessage(m.chat, {
+        text: `🚫 @${sender.split("@")[0]} enlaces de WhatsApp no permitidos`,
+        mentions: [sender],
+      })
+
+    } catch (e) {
+      console.log("[ANTILINK ERROR]", e)
+    }
+  },
 }
-
-/* ===== COMANDO ON / OFF ===== */
-module.exports.command = ["antilink"]
-module.exports.isGroup = true
-module.exports.isAdmin = true
-module.exports.isBotAdmin = true
-
-module.exports.run = async (client, m, args) => {
-  const opt = args[0]?.toLowerCase()
-  if (!opt || !["on", "off"].includes(opt)) {
-    return m.reply("Uso:\n.antilink on\n.antilink off")
-  }
-
-  if (opt === "on") {
-    antilinkGroups.add(m.chat)
-    return m.reply("✅ Antilink activado")
-  }
-
-  if (opt === "off") {
-    antilinkGroups.delete(m.chat)
-    return m.reply("❌ Antilink desactivado")
-  }
-}
-
-// control interno
-module.exports.isActive = chat => antilinkGroups.has(chat)
