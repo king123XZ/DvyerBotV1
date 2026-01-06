@@ -4,9 +4,10 @@ const chalk = require("chalk")
 
 const seeCommands = require("./lib/system/commandLoader")
 const initDB = require("./lib/system/initDB")
+const antilink = require("./commands/antilink")
 const { resolveLidToRealJid } = require("./lib/utils")
 
-/* ===== CARGAR COMANDOS ===== */
+/* ===== LOAD COMMANDS ===== */
 seeCommands()
 
 /* ===== CACHE & PROTECTIONS ===== */
@@ -15,7 +16,7 @@ const cooldown = new Map()
 const GROUP_TTL = 2 * 60 * 1000 // 2 minutos
 const COOLDOWN_MS = 2000
 
-/* ===== LIMPIAR MEMORIA ===== */
+/* ===== CLEAN MEMORY ===== */
 setInterval(() => {
   groupCache.clear()
   cooldown.clear()
@@ -29,9 +30,6 @@ function inCooldown(sender, command) {
   cooldown.set(key, now + COOLDOWN_MS)
   return false
 }
-
-/* ===== REGEX LINKS WHATSAPP ===== */
-const WA_LINK_REGEX = /(https?:\/\/)?(chat\.whatsapp\.com\/[A-Za-z0-9]+|whatsapp\.com\/channel\/[A-Za-z0-9]+)/i
 
 /* ===== MAIN HANDLER ===== */
 async function mainHandler(client, m) {
@@ -55,26 +53,49 @@ async function mainHandler(client, m) {
     const prefixes = [".", "!", "#", "/"]
     const prefix = prefixes.find(p => body.startsWith(p))
 
-    /* ===== ANTILINK ===== */
-    if (!prefix && m.isGroup && WA_LINK_REGEX.test(body)) {
-      try {
-        // borrar mensaje
-        await client.sendMessage(m.chat, { delete: m.key })
+    /* ========= 🔒 ANTILINK REAL (IGNORAR DUEÑO/ADM/BOT) ========= */
+    if (
+      !prefix &&
+      m.isGroup &&
+      /chat\.whatsapp\.com\/|whatsapp\.com\/channel\//i.test(body) &&
+      typeof antilink.isActive === "function" &&
+      typeof antilink.execute === "function" &&
+      antilink.isActive(m.chat)
+    ) {
+      const from = m.chat
+      const sender = m.sender || m.key?.participant
+      const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
 
-        // enviar aviso
-        await client.sendMessage(m.chat, {
-          text: `🚫 *Enlace eliminado*\n@${(m.sender || m.key?.participant).split("@")[0]} no está permitido enviar enlaces de grupos o canales.`,
-          mentions: [m.sender || m.key?.participant]
-        })
-      } catch (err) {
-        console.log(chalk.red("ANTILINK ERROR:"), err)
+      let isAdmins = false
+      let isOwner = false
+
+      // Cache de grupo
+      let cached = groupCache.get(from)
+      if (!cached || cached.expires < Date.now()) {
+        const meta = await client.groupMetadata(from).catch(() => null)
+        if (meta) {
+          const admins = meta.participants.filter(p => p.admin).map(p => p.jid)
+          cached = { admins, subject: meta.subject || "", expires: Date.now() + GROUP_TTL }
+          groupCache.set(from, cached)
+        }
       }
+
+      if (cached) {
+        isAdmins = cached.admins.includes(sender)
+        isOwner = global.owner.map(o => o + "@s.whatsapp.net").includes(sender)
+      }
+
+      // 🔹 Ignorar dueño, admins y el bot
+      if (!isAdmins && !isOwner && sender !== botJid) {
+        await antilink.execute(client, m)
+      }
+
       return
     }
 
     if (!prefix) return
 
-    /* ===== PARSE COMANDO ===== */
+    /* ========= COMMAND PARSER ========= */
     const args = body.trim().split(/\s+/).slice(1)
     const text = args.join(" ")
     const command = body
@@ -92,14 +113,11 @@ async function mainHandler(client, m) {
     if (inCooldown(sender, command))
       return m.reply("⏳ Espera un momento...")
 
-    const from = m.chat
-    const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
-
     let isAdmins = false
     let isBotAdmins = false
     let groupName = ""
 
-    /* ===== GROUP METADATA CACHE ===== */
+    /* ========= GROUP METADATA CACHE ========= */
     if (m.isGroup) {
       let cached = groupCache.get(from)
       if (!cached || cached.expires < Date.now()) {
@@ -108,15 +126,8 @@ async function mainHandler(client, m) {
           const admins = meta.participants
             .filter(p => p.admin)
             .map(p => p.jid)
-
-          const resolvedAdmins = await Promise.all(
-            admins.map(j =>
-              resolveLidToRealJid(j, client, from).catch(() => j)
-            )
-          )
-
           cached = {
-            admins: resolvedAdmins,
+            admins,
             subject: meta.subject || "",
             expires: Date.now() + GROUP_TTL,
           }
@@ -134,7 +145,7 @@ async function mainHandler(client, m) {
       .map(o => o + "@s.whatsapp.net")
       .includes(sender)
 
-    /* ===== PERMISSIONS ===== */
+    /* ========= PERMISSIONS ========= */
     if (cmd.isOwner && !isOwner) return m.reply("⚠️ Solo el owner.")
     if (cmd.isGroup && !m.isGroup) return m.reply("⚠️ Solo en grupos.")
     if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.")
@@ -148,7 +159,7 @@ async function mainHandler(client, m) {
       chalk.gray(m.isGroup ? groupName : "Privado")
     )
 
-    /* ===== RUN COMMAND ===== */
+    /* ========= RUN COMMAND ========= */
     try {
       await cmd.run(client, m, args, { text, prefix, command })
     } catch (err) {
