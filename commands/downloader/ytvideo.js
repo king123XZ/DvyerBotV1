@@ -8,21 +8,22 @@ module.exports = {
 
   run: async (client, m, args) => {
     const url = args[0];
+
     if (!url || !url.startsWith("http")) {
       return m.reply("❌ Enlace de YouTube no válido.");
     }
 
-    await m.reply("⬇️ Descargando video de YouTube...");
+    await m.reply("⬇️ Descargando video de YouTube en la mejor calidad disponible (hasta 360p)...");
 
-    // Calidades a intentar de mayor a menor
-    const qualities = ["480", "240"];
+    // Intentamos 360p primero, luego 240p, y finalmente 144p
+    const qualities = ["360", "240", "144"];
     let downloaded = false;
 
-    for (let i = 0; i < qualities.length; i++) {
+    for (let q of qualities) {
       try {
         const res = await axios.post(
           "https://api-sky.ultraplus.click/youtube-mp4",
-          { url, quality: qualities[i] },
+          { url, quality: q },
           { headers: { apikey: API_KEY } }
         );
 
@@ -34,21 +35,21 @@ module.exports = {
           {
             video: { url: videoUrl },
             mimetype: "video/mp4",
-            fileName: `youtube_${qualities[i]}p.mp4`,
-            caption: `🎬 Descargado en ${qualities[i]}p`,
+            fileName: `youtube_${q}p.mp4`,
+            caption: `🎬 Descargado en ${q}p`,
           },
           { quoted: m }
         );
 
         downloaded = true;
-        break; // salió bien, no intenta más calidades
+        break; // salió bien, no intentamos más calidades
       } catch (err) {
-        console.log(`Fallo en ${qualities[i]}p, intentando otra calidad...`, err.message || err);
+        console.log(`Fallo al descargar en ${q}p, intentando otra calidad...`, err.message || err);
       }
     }
 
     if (!downloaded) {
-      m.reply("❌ No se pudo descargar el video en ninguna calidad.");
+      m.reply("❌ No se pudo descargar el video en ninguna calidad disponible.");
     }
   }
 };
