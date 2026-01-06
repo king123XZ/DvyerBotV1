@@ -53,17 +53,16 @@ async function mainHandler(client, m) {
     const prefixes = [".", "!", "#", "/"]
     const prefix = prefixes.find(p => body.startsWith(p))
 
-    /* ========= 🔒 ANTILINK REAL (SIN LAG) ========= */
+    /* ========= 🔒 ANTILINK REAL (FUNCIONA) ========= */
     if (
-      !prefix &&
       m.isGroup &&
-      /chat\.whatsapp\.com\/|whatsapp\.com\/channel\//i.test(body) &&
+      !prefix &&
+      typeof antilink === "function" &&
       typeof antilink.isActive === "function" &&
-      typeof antilink.execute === "function" &&
       antilink.isActive(m.chat)
     ) {
-      await antilink.execute(client, m)
-      return
+      await antilink(client, m)
+      // NO return → no rompe el flujo
     }
 
     if (!prefix) return
