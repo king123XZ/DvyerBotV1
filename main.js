@@ -48,21 +48,21 @@ async function mainHandler(client, m) {
 
     if (!body) return
 
-    // iniciar DB sin bloquear
     try { initDB(m) } catch {}
 
     const prefixes = [".", "!", "#", "/"]
     const prefix = prefixes.find(p => body.startsWith(p))
 
-    /* ========= ANTILINK (SIN LAG) ========= */
+    /* ========= 🔒 ANTILINK REAL (SIN LAG) ========= */
     if (
       !prefix &&
       m.isGroup &&
-      /https?:\/\//i.test(body) &&
+      /chat\.whatsapp\.com\/|whatsapp\.com\/channel\//i.test(body) &&
       typeof antilink.isActive === "function" &&
+      typeof antilink.execute === "function" &&
       antilink.isActive(m.chat)
     ) {
-      await antilink(client, m)
+      await antilink.execute(client, m)
       return
     }
 
@@ -169,3 +169,4 @@ fs.watchFile(file, () => {
   require(file)
   console.log(chalk.yellow("♻ main.js recargado"))
 })
+
