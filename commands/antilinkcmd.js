@@ -10,19 +10,19 @@ module.exports = {
     if (!args[0]) {
       return m.reply(
         "📛 *ANTILINK*\n\n" +
-        "• `.antilink on` → activar\n" +
-        "• `.antilink off` → desactivar"
+        "• `.antilink on`\n" +
+        "• `.antilink off`"
       )
     }
 
     if (args[0] === "on") {
       antilink.setActive(m.chat, true)
-      return m.reply("✅ *Antilink activado*\nSe eliminarán enlaces de WhatsApp.")
+      return m.reply("✅ Antilink activado")
     }
 
     if (args[0] === "off") {
       antilink.setActive(m.chat, false)
-      return m.reply("❌ *Antilink desactivado*")
+      return m.reply("❌ Antilink desactivado")
     }
 
     m.reply("⚠️ Usa `.antilink on` o `.antilink off`")
