@@ -13,8 +13,8 @@ seeCommands()
 /* ===== CACHE & PROTECTIONS ===== */
 const groupCache = new Map()
 const cooldown = new Map()
-const GROUP_TTL = 2 * 60 * 1000 // 2 min
-const COOLDOWN_MS = 2500
+const GROUP_TTL = 2 * 60 * 1000 // 2 minutos
+const COOLDOWN_MS = 2000
 
 /* ===== CLEAN MEMORY ===== */
 setInterval(() => {
@@ -48,22 +48,34 @@ async function mainHandler(client, m) {
 
     if (!body) return
 
+    // iniciar DB sin bloquear
     try { initDB(m) } catch {}
 
     const prefixes = [".", "!", "#", "/"]
     const prefix = prefixes.find(p => body.startsWith(p))
 
-    // 🔒 ANTILINK solo si hay link
-    if (!prefix && m.isGroup && /https?:\/\//i.test(body)) {
+    /* ========= ANTILINK (SIN LAG) ========= */
+    if (
+      !prefix &&
+      m.isGroup &&
+      /https?:\/\//i.test(body) &&
+      typeof antilink.isActive === "function" &&
+      antilink.isActive(m.chat)
+    ) {
       await antilink(client, m)
       return
     }
 
     if (!prefix) return
 
+    /* ========= COMMAND PARSER ========= */
     const args = body.trim().split(/\s+/).slice(1)
     const text = args.join(" ")
-    const command = body.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase()
+    const command = body
+      .slice(prefix.length)
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase()
 
     if (!global.comandos?.has(command)) return
     const cmd = global.comandos.get(command)
@@ -81,6 +93,7 @@ async function mainHandler(client, m) {
     let isBotAdmins = false
     let groupName = ""
 
+    /* ========= GROUP METADATA CACHE ========= */
     if (m.isGroup) {
       let cached = groupCache.get(from)
 
@@ -91,12 +104,14 @@ async function mainHandler(client, m) {
             .filter(p => p.admin)
             .map(p => p.jid)
 
-          const resolved = await Promise.all(
-            admins.map(j => resolveLidToRealJid(j, client, from).catch(() => j))
+          const resolvedAdmins = await Promise.all(
+            admins.map(j =>
+              resolveLidToRealJid(j, client, from).catch(() => j)
+            )
           )
 
           cached = {
-            admins: resolved,
+            admins: resolvedAdmins,
             subject: meta.subject || "",
             expires: Date.now() + GROUP_TTL,
           }
@@ -116,6 +131,7 @@ async function mainHandler(client, m) {
       .map(o => o + "@s.whatsapp.net")
       .includes(sender)
 
+    /* ========= PERMISSIONS ========= */
     if (cmd.isOwner && !isOwner) return m.reply("⚠️ Solo el owner.")
     if (cmd.isGroup && !m.isGroup) return m.reply("⚠️ Solo en grupos.")
     if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.")
@@ -129,6 +145,7 @@ async function mainHandler(client, m) {
       chalk.gray(m.isGroup ? groupName : "Privado")
     )
 
+    /* ========= RUN COMMAND ========= */
     try {
       await cmd.run(client, m, args, { text, prefix, command })
     } catch (err) {
@@ -152,4 +169,3 @@ fs.watchFile(file, () => {
   require(file)
   console.log(chalk.yellow("♻ main.js recargado"))
 })
-
