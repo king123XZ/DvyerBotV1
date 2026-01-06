@@ -4,7 +4,7 @@ module.exports = {
   run: async (client, m) => {
 
     const text = `
-⧼ KILLUA-BOT V1.00 - 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦 ⧽
+⧼ KILLUA-BOT V1.00 - UTILIDADES/GRUPOS ⧽
 ──────────────────────────────
 
 🛠 Comandos disponibles:
