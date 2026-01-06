@@ -1,5 +1,7 @@
 const axios = require("axios");
 
+const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45"; // reemplaza con tu API key
+
 module.exports = {
   command: ["ytvideo"],
   category: "downloader",
@@ -12,18 +14,17 @@ module.exports = {
 
     await m.reply("⬇️ Descargando video de YouTube...");
 
-    // Array de calidades a intentar de mayor a menor
+    // Calidades a intentar de mayor a menor
     const qualities = ["480", "240"];
-
     let downloaded = false;
 
     for (let i = 0; i < qualities.length; i++) {
       try {
-        const res = await axios.get(`https://api-sky.ultraplus.click/youtube/download?url=${encodeURIComponent(url)}&quality=${qualities[i]}`, {
-          headers: { apikey: "sk_f606dcf6-f301-4d69-b54b-505c12ebec45" },
-          responseType: "json",
-          timeout: 20000 // 20 segundos de espera
-        });
+        const res = await axios.post(
+          "https://api-sky.ultraplus.click/youtube-mp4",
+          { url, quality: qualities[i] },
+          { headers: { apikey: API_KEY } }
+        );
 
         const videoUrl = res.data?.result?.url;
         if (!videoUrl) continue;
@@ -40,7 +41,7 @@ module.exports = {
         );
 
         downloaded = true;
-        break; // si funcionó, salimos del bucle
+        break; // salió bien, no intenta más calidades
       } catch (err) {
         console.log(`Fallo en ${qualities[i]}p, intentando otra calidad...`, err.message || err);
       }
@@ -51,3 +52,4 @@ module.exports = {
     }
   }
 };
+
