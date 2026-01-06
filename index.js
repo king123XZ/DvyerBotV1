@@ -27,7 +27,7 @@ const { smsg } = require("./lib/message")
 const welcome = require("./lib/system/welcome")
 const mainHandler = require("./main")
 
-// 🔥 AUTO-RESTART
+// 🔥 AUTO-RESTART INTELIGENTE
 const { startAutoRestart } = require("./lib/system/autoRestart")
 
 // ================= CONFIG =================
@@ -46,7 +46,10 @@ const log = {
 }
 
 const question = q => {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
   return new Promise(res =>
     rl.question(q, a => {
       rl.close()
@@ -85,13 +88,13 @@ async function startBot(botNumber = "main") {
     generateHighQualityLinkPreview: false,
   })
 
-  // ========= EMPAREJAR =========
+  // ========= EMPAREJAMIENTO =========
   if (!state.creds.registered) {
     const phone = await question("📱 Número WhatsApp (519xxxxxxxx): ")
     try {
       const code = await client.requestPairingCode(phone)
-      log.ok(`Código: ${code}`)
-    } catch {
+      log.ok(`Código de vinculación: ${code}`)
+    } catch (e) {
       log.err("No se pudo emparejar")
       clearSession(sessionPath)
       process.exit(1)
@@ -102,7 +105,7 @@ async function startBot(botNumber = "main") {
   if (!databaseLoaded) {
     await global.loadDatabase()
     databaseLoaded = true
-    log.ok("Base de datos lista")
+    log.ok("Base de datos cargada")
   }
 
   // ========= CONEXIÓN =========
@@ -111,7 +114,10 @@ async function startBot(botNumber = "main") {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode
       log.warn(`Desconectado (${code})`)
 
-      if ([DisconnectReason.loggedOut, DisconnectReason.forbidden].includes(code)) {
+      if (
+        code === DisconnectReason.loggedOut ||
+        code === DisconnectReason.forbidden
+      ) {
         clearSession(sessionPath)
       }
 
@@ -122,39 +128,34 @@ async function startBot(botNumber = "main") {
     if (connection === "open") {
       log.ok("Bot conectado correctamente")
 
-      // 🔥 ACTIVAR AUTO-RESTART INTELIGENTE
-      try {
-        startAutoRestart(client)
-        log.ok("Auto-restart inteligente activado")
-      } catch (e) {
-        log.err("Error al iniciar auto-restart")
-      }
+      // 🔥 INICIAR AUTO-RESTART
+      startAutoRestart(client)
+      log.ok("Auto-restart inteligente activo")
     }
   })
 
-  // ========= MENSAJES (ANTI LAG) =========
-  client.ev.on("messages.upsert", ({ messages }) => {
-    setImmediate(async () => {
+  // ========= MENSAJES (RÁPIDO Y ESTABLE) =========
+  client.ev.on("messages.upsert", async ({ messages }) => {
+    try {
       const m = messages?.[0]
       if (!m?.message) return
       if (m.key.remoteJid === "status@broadcast") return
-      if (m.messageTimestamp < Date.now() / 1000 - 10) return
 
-      try {
-        const msg = smsg(client, m)
-        await mainHandler(client, msg)
-      } catch (e) {
-        log.err(e.message)
-      }
-    })
+      const msg = smsg(client, m)
+      await mainHandler(client, msg)
+    } catch (e) {
+      log.err(e)
+    }
   })
 
   // ========= WELCOME =========
-  client.ev.on("group-participants.update", u =>
-    welcome(client, u).catch(() => {})
-  )
+  client.ev.on("group-participants.update", async u => {
+    try {
+      await welcome(client, u)
+    } catch {}
+  })
 
-  // ========= JID =========
+  // ========= JID FIX =========
   client.decodeJid = jid => {
     if (!jid) return jid
     if (/:\d+@/gi.test(jid)) {
@@ -167,7 +168,7 @@ async function startBot(botNumber = "main") {
   client.ev.on("creds.update", saveCreds)
 }
 
-// ========= PROTECCIÓN TOTAL =========
+// ========= PROTECCIÓN GLOBAL =========
 process.on("unhandledRejection", e => log.err(e))
 process.on("uncaughtException", e => log.err(e))
 
@@ -178,3 +179,4 @@ fs.watchFile(__filename, () => {
   console.log(chalk.yellow("♻ Reiniciando bot..."))
   process.exit(0)
 })
+
