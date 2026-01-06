@@ -11,6 +11,7 @@ module.exports = {
 
 • sticker → Crear sticker
 • speed → mide velocidad de internet del bot 
+• antilink on o off → borra enlaces de grupos o canales de whsap
 
 ──────────────────────────────
 🔹 Usa los botones para navegar:
