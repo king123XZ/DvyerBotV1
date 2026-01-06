@@ -1,6 +1,5 @@
 require("./settings")
 const fs = require("fs")
-const path = require("path")
 const chalk = require("chalk")
 
 const seeCommands = require("./lib/system/commandLoader")
@@ -8,117 +7,143 @@ const initDB = require("./lib/system/initDB")
 const antilink = require("./commands/antilink")
 const { resolveLidToRealJid } = require("./lib/utils")
 
-/* ===== CARGAR COMANDOS UNA SOLA VEZ ===== */
+/* ===== LOAD COMMANDS ===== */
 seeCommands()
 
-/* ===== CACHE ===== */
-const groupCache = new Map() // jid => { admins, subject, expires }
-const GROUP_CACHE_TTL = 30 * 1000 // 30s
+/* ===== CACHE & PROTECTIONS ===== */
+const groupCache = new Map()
+const cooldown = new Map()
+const GROUP_TTL = 30 * 1000
+const COOLDOWN_MS = 3000
+
+/* ===== CLEAN MEMORY ===== */
+setInterval(() => {
+  groupCache.clear()
+  cooldown.clear()
+}, 10 * 60 * 1000)
+
+/* ===== COOLDOWN ===== */
+function inCooldown(sender, command) {
+  const key = sender + command
+  const now = Date.now()
+  if (cooldown.has(key) && now < cooldown.get(key)) return true
+  cooldown.set(key, now + COOLDOWN_MS)
+  return false
+}
 
 /* ===== MAIN HANDLER ===== */
 async function mainHandler(client, m) {
-  try {
-    if (!m?.message) return
+  setImmediate(async () => {
+    try {
+      if (!m?.message) return
 
-    const body =
-      m.message.conversation ||
-      m.message.extendedTextMessage?.text ||
-      m.message.imageMessage?.caption ||
-      m.message.videoMessage?.caption ||
-      m.message.buttonsResponseMessage?.selectedButtonId ||
-      m.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
-      m.message.templateButtonReplyMessage?.selectedId ||
-      ""
+      const body =
+        m.message.conversation ||
+        m.message.extendedTextMessage?.text ||
+        m.message.imageMessage?.caption ||
+        m.message.videoMessage?.caption ||
+        m.message.buttonsResponseMessage?.selectedButtonId ||
+        m.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
+        m.message.templateButtonReplyMessage?.selectedId ||
+        ""
 
-    if (!body) return
+      if (!body) return
 
-    // DB SAFE
-    try { initDB(m) } catch {}
+      try { initDB(m) } catch {}
 
-    // PREFIJO
-    const prefixes = [".", "!", "#", "/"]
-    const prefix = prefixes.find(p => body.startsWith(p))
-    if (!prefix) {
-      if (m.isGroup) {
+      const prefixes = [".", "!", "#", "/"]
+      const prefix = prefixes.find(p => body.startsWith(p))
+
+      // ===== ANTI LINK (solo si no es comando)
+      if (!prefix && m.isGroup) {
         try { await antilink(client, m) } catch {}
+        return
       }
-      return
-    }
 
-    const args = body.trim().split(/\s+/).slice(1)
-    const text = args.join(" ")
-    const command = body.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase()
+      if (!prefix) return
 
-    if (!global.comandos?.has(command)) return
-    const cmd = global.comandos.get(command)
+      const args = body.trim().split(/\s+/).slice(1)
+      const text = args.join(" ")
+      const command = body.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase()
 
-    const sender = m.sender || m.key?.participant
-    if (!sender) return
+      if (!global.comandos?.has(command)) return
+      const cmd = global.comandos.get(command)
 
-    const from = m.chat
-    const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
+      const sender = m.sender || m.key?.participant
+      if (!sender) return
 
-    let isAdmins = false
-    let isBotAdmins = false
-    let groupName = ""
+      if (inCooldown(sender, command))
+        return m.reply("⏳ Espera un momento...")
 
-    /* ===== GROUP CACHE ===== */
-    if (m.isGroup) {
-      let cached = groupCache.get(from)
+      const from = m.chat
+      const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
 
-      if (!cached || cached.expires < Date.now()) {
-        const metadata = await client.groupMetadata(from).catch(() => null)
-        if (metadata) {
-          const admins = metadata.participants
-            .filter(p => p.admin)
-            .map(p => p.jid)
+      let isAdmins = false
+      let isBotAdmins = false
+      let groupName = ""
 
-          const resolvedAdmins = await Promise.all(
-            admins.map(j =>
-              resolveLidToRealJid(j, client, from).catch(() => j)
+      // ===== GROUP CACHE =====
+      if (m.isGroup) {
+        let cached = groupCache.get(from)
+
+        if (!cached || cached.expires < Date.now()) {
+          const meta = await client.groupMetadata(from).catch(() => null)
+          if (meta) {
+            const admins = meta.participants
+              .filter(p => p.admin)
+              .map(p => p.jid)
+
+            const resolved = await Promise.all(
+              admins.map(j => resolveLidToRealJid(j, client, from).catch(() => j))
             )
-          )
 
-          cached = {
-            admins: resolvedAdmins,
-            subject: metadata.subject || "",
-            expires: Date.now() + GROUP_CACHE_TTL,
+            cached = {
+              admins: resolved,
+              subject: meta.subject || "",
+              expires: Date.now() + GROUP_TTL,
+            }
+
+            groupCache.set(from, cached)
           }
+        }
 
-          groupCache.set(from, cached)
+        if (cached) {
+          groupName = cached.subject
+          isAdmins = cached.admins.includes(sender)
+          isBotAdmins = cached.admins.includes(botJid)
         }
       }
 
-      if (cached) {
-        groupName = cached.subject
-        isAdmins = cached.admins.includes(sender)
-        isBotAdmins = cached.admins.includes(botJid)
+      const isOwner = global.owner
+        .map(o => o + "@s.whatsapp.net")
+        .includes(sender)
+
+      // ===== PERMISSIONS =====
+      if (cmd.isOwner && !isOwner) return m.reply("⚠️ Solo el owner.")
+      if (cmd.isGroup && !m.isGroup) return m.reply("⚠️ Solo en grupos.")
+      if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.")
+      if (cmd.isBotAdmin && !isBotAdmins) return m.reply("⚠️ Necesito admin.")
+
+      console.log(
+        chalk.green("[CMD]"),
+        chalk.cyan(command),
+        "|",
+        chalk.white(sender),
+        chalk.gray(m.isGroup ? groupName : "Privado")
+      )
+
+      // ===== SANDBOX (ANTI-CRASH)
+      try {
+        await cmd.run(client, m, args, { text, prefix, command })
+      } catch (err) {
+        console.log(chalk.red("CMD ERROR:"), command, err)
+        m.reply("⚠️ Error interno del comando.")
       }
+
+    } catch (e) {
+      console.log(chalk.red("MAIN ERROR:"), e)
     }
-
-    const isOwner = global.owner
-      .map(o => o + "@s.whatsapp.net")
-      .includes(sender)
-
-    // ===== PERMISOS =====
-    if (cmd.isOwner && !isOwner) return m.reply("⚠️ Solo el owner.")
-    if (cmd.isGroup && !m.isGroup) return m.reply("⚠️ Solo en grupos.")
-    if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.")
-    if (cmd.isBotAdmin && !isBotAdmins) return m.reply("⚠️ Necesito admin.")
-
-    console.log(
-      chalk.green("[CMD]"),
-      chalk.cyan(command),
-      "|",
-      chalk.white(sender),
-      chalk.gray(m.isGroup ? groupName : "Privado")
-    )
-
-    await cmd.run(client, m, args, { text, prefix, command })
-
-  } catch (e) {
-    console.log(chalk.red("🔥 MAIN ERROR:"), e)
-  }
+  })
 }
 
 /* ===== EXPORT ===== */
@@ -126,10 +151,10 @@ module.exports = mainHandler
 module.exports.mainHandler = mainHandler
 
 /* ===== HOT RELOAD ===== */
-const mainFile = require.resolve(__filename)
-fs.watchFile(mainFile, () => {
-  fs.unwatchFile(mainFile)
-  delete require.cache[mainFile]
-  require(mainFile)
+const file = require.resolve(__filename)
+fs.watchFile(file, () => {
+  fs.unwatchFile(file)
+  delete require.cache[file]
+  require(file)
   console.log(chalk.yellow("♻ main.js recargado"))
 })
