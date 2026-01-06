@@ -5,7 +5,7 @@
 <div align="center">
 
 <!-- BANNER -->
-<img src="https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUyaXJyNmc4N2Rja2xiMmFjOG52eGgwY202andodWd3ZmU0aWx6d3pqYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MQWzFeayg3By8/giphy.gif" width="100%" alt="Killua Banner" />
+<img src="https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUya20xeDZ6M25yeXhiaTcwdmpnaHdqajI2bWV3bHBmZWo5c3l3c2V2YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ijsYTyxaMzZh6/giphy.gif" width="100%" alt="Killua Banner" />
 
 <h1>⚡ KilluaBot Dev</h1>
 <h3>Dark Anime • Developer Mode • Hunter Style</h3>
