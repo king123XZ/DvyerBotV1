@@ -24,7 +24,7 @@
 </a>
 
 </div>
-## 🚀 [Instalación](https://media.giphy.com/media/nWGRHBnAl5Kmc/giphy.gif) en **Termux**
+## 🚀 [Instalación](
 
 > 📱 Compatible con Android usando **Termux**
 
