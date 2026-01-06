@@ -8,7 +8,7 @@ module.exports = {
     const url = args[0];
     if (!url || !url.startsWith("http")) return m.reply("❌ Enlace no válido.");
 
-    await m.reply("⏳ Procesando...");
+    await m.reply("⏳ Procesando enlace...");
 
     try {
       const response = await axios.post(
@@ -19,16 +19,16 @@ module.exports = {
 
       const data = response.data;
 
-      if (!data.status) return m.reply("❌ No se pudo descargar el contenido.");
+      if (!data.status) return m.reply("❌ No se pudo procesar el enlace.");
 
       const { title, media, type } = data.result;
 
-      // Si es video grande, enviamos el link en lugar de descargarlo
+      // Si es video grande, enviamos el link en vez de descargarlo
       if (type === "video") {
-        return m.reply(`🎬 *${title}*\nEl archivo es muy grande, descárgalo aquí:\n${media}`);
+        return m.reply(`🎬 *${title}*\nArchivo muy grande para WhatsApp.\nDescárgalo aquí:\n${media}`);
       }
 
-      // Audio siempre podemos enviar
+      // Audio siempre se puede enviar
       if (type === "audio") {
         await client.sendMessage(
           m.chat,
@@ -39,7 +39,7 @@ module.exports = {
 
     } catch (err) {
       console.error(err);
-      return m.reply("❌ Ocurrió un error al procesar el enlace.");
+      return m.reply("❌ Ocurrió un error al procesar el enlace. Puede ser un problema de red o que el archivo sea muy grande.");
     }
   }
 };
