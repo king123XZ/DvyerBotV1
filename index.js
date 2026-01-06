@@ -27,6 +27,9 @@ const { smsg } = require("./lib/message")
 const welcome = require("./lib/system/welcome")
 const mainHandler = require("./main")
 
+// 🔥 AUTO-RESTART
+const { startAutoRestart } = require("./lib/system/autoRestart")
+
 // ================= CONFIG =================
 const SESSIONS_DIR = path.join(__dirname, "sessions")
 const RECONNECT_DELAY = 3000
@@ -44,10 +47,12 @@ const log = {
 
 const question = q => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  return new Promise(res => rl.question(q, a => {
-    rl.close()
-    res(a.trim())
-  }))
+  return new Promise(res =>
+    rl.question(q, a => {
+      rl.close()
+      res(a.trim())
+    })
+  )
 }
 
 const safeMkdir = d => !fs.existsSync(d) && fs.mkdirSync(d, { recursive: true })
@@ -57,8 +62,8 @@ const clearSession = d => fs.rmSync(d, { recursive: true, force: true })
 console.log(chalk.yellow("════════════════════════════"))
 log.info(`OS: ${os.platform()} ${os.arch()}`)
 log.info(`Node: ${process.version}`)
-log.info(`RAM libre: ${(os.freemem()/1024/1024).toFixed(0)} MB`)
-log.info(`Hora: ${new Date().toLocaleString("es-PE", { hour12:false })}`)
+log.info(`RAM libre: ${(os.freemem() / 1024 / 1024).toFixed(0)} MB`)
+log.info(`Hora: ${new Date().toLocaleString("es-PE", { hour12: false })}`)
 console.log(chalk.yellow("════════════════════════════"))
 
 // ================= START BOT =================
@@ -116,6 +121,14 @@ async function startBot(botNumber = "main") {
 
     if (connection === "open") {
       log.ok("Bot conectado correctamente")
+
+      // 🔥 ACTIVAR AUTO-RESTART INTELIGENTE
+      try {
+        startAutoRestart(client)
+        log.ok("Auto-restart inteligente activado")
+      } catch (e) {
+        log.err("Error al iniciar auto-restart")
+      }
     }
   })
 
