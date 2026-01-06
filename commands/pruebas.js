@@ -2,7 +2,7 @@ const axios = require("axios");
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 module.exports = {
-  command: ["ytvideo"],
+  command: ["yt1"],
   category: "downloader",
 
   run: async (client, m, args) => {
