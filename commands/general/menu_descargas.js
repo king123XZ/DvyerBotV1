@@ -21,7 +21,8 @@ module.exports = {
 📹 tiktok → Descargar video de TikTok
 📺 facebook → Descargar video de Facebook
 💾 mediafire - mf URL → Descargar archivo de Mediafire
-📄 apk -  → Escribe nombre de la app que quieras descargar
+📄 apk → Escribe nombre de la app que quieras descargar
+🎬instagram → Descargar video /imagen enviar url
 ──────────────────────────────
 🔹 *Navega usando los botones:*
 `;
