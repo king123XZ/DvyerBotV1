@@ -2,7 +2,7 @@ const axios = require("axios");
 const yts = require("yt-search");
 
 module.exports = {
-  command: ["ytaudio", "ytmp3"],
+  command: ["ytmp3"],
   category: "downloader",
 
   run: async (client, m, args) => {
