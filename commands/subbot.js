@@ -1,16 +1,6 @@
-const fs = require("fs");
-const path = require("path");
 const { startSubBot } = require("../lib/startSubBot");
 
 if (!global.subBots) global.subBots = new Map();
-
-const SUBBOT_SESS_DIR = path.join(__dirname, "../sessions/subbots");
-
-function safeRm(dir) {
-  try {
-    if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
-  } catch {}
-}
 
 async function run(client, m, args, { text, prefix, command }) {
   const mainHandler = global.mainHandler;
@@ -24,34 +14,27 @@ async function run(client, m, args, { text, prefix, command }) {
   number = (number || "").replace(/\D/g, "");
 
   try {
-    if (typeof mainHandler !== "function") {
-      throw new Error("La función principal (mainHandler) no se cargó correctamente.");
-    }
+    if (typeof mainHandler !== "function") throw new Error("mainHandler no cargado.");
     if (!number) throw new Error("Pon un número. Ej: .subbot 519xxxxxxxx");
 
-    // ✅ Si existe un subbot previo, cerrarlo y limpiar
+    // Si ya existe subbot para ese número, cerrarlo y reemplazarlo
     const old = global.subBots.get(number);
-    if (old) {
-      try { old.end?.(); } catch {}
+    if (old?.end) {
+      try { old.end(); } catch {}
       global.subBots.delete(number);
-
-      // borra sesión anterior para evitar sesiones a medias/corruptas
-      const oldSessionPath = path.join(SUBBOT_SESS_DIR, `subbot-${number}`);
-      safeRm(oldSessionPath);
     }
 
     const sock = await startSubBot(number, mainHandler, client, m);
 
-    // ✅ guardar referencia del subbot
     global.subBots.set(number, sock);
 
     await m.reply(
-      `🚀 SubBot iniciado para *${number}*.\n` +
-      `Si existe sesión vieja, ya fue limpiada automáticamente.`
+      `🚀 SubBot iniciando para *${number}*...\n` +
+      `Te mandaré el *código* aquí (y también sale en consola).`
     );
   } catch (err) {
     console.error(err);
-    await m.reply(`❌ Error al iniciar SubBot: ${err.message}`);
+    await m.reply(`❌ Error: ${err.message}`);
   }
 }
 
