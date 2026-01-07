@@ -11,7 +11,7 @@ module.exports = {
         return m.reply("❌ Ingresa un enlace o nombre del video.");
       }
 
-      await m.reply("⏳ Descargando audio...");
+      await m.reply("⏳ Descargando audio (documento)...");
 
       let videoUrl = args.join(" ");
       let title = "audio";
@@ -28,7 +28,7 @@ module.exports = {
 
       title = title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60);
 
-      // 🎧 Obtener link MP3
+      // 🎧 API gawrgura
       const apiUrl = `https://gawrgura-api.onrender.com/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
       const { data } = await axios.get(apiUrl);
 
@@ -36,26 +36,26 @@ module.exports = {
         return m.reply("❌ Error al obtener el audio.");
       }
 
-      // ⬇️ DESCARGAR AUDIO COMO BUFFER
-      const audioBuffer = await axios.get(data.result, {
+      // ⬇️ DESCARGAR ARCHIVO
+      const file = await axios.get(data.result, {
         responseType: "arraybuffer",
         timeout: 120000
       });
 
-      // 🎧 ENVIAR AUDIO REAL
+      // 📄 ENVIAR COMO DOCUMENTO (CLAVE)
       await client.sendMessage(
         m.chat,
         {
-          audio: Buffer.from(audioBuffer.data),
-          mimetype: "audio/mpeg",
+          document: Buffer.from(file.data),
+          mimetype: "application/octet-stream",
           fileName: `${title}.mp3`
         },
         { quoted: m }
       );
 
     } catch (err) {
-      console.error("YTMP3 ERROR:", err);
-      m.reply("❌ Error al procesar el audio.");
+      console.error("YTMP3 DOCUMENT ERROR:", err);
+      m.reply("❌ Error al descargar el audio.");
     }
   }
 };
