@@ -15,9 +15,9 @@ async function run(client, m, args, { text, prefix, command }) {
 
   try {
     if (typeof mainHandler !== "function") throw new Error("mainHandler no cargado.");
-    if (!number) throw new Error("Pon un número. Ej: .subbot 519xxxxxxxx");
+    if (!number) throw new Error("Usa: .subbot 519xxxxxxxx");
 
-    // Si ya existe subbot para ese número, cerrarlo y reemplazarlo
+    // si ya había uno, lo cerramos
     const old = global.subBots.get(number);
     if (old?.end) {
       try { old.end(); } catch {}
@@ -25,16 +25,15 @@ async function run(client, m, args, { text, prefix, command }) {
     }
 
     const sock = await startSubBot(number, mainHandler, client, m);
-
     global.subBots.set(number, sock);
 
     await m.reply(
       `🚀 SubBot iniciando para *${number}*...\n` +
-      `Te mandaré el *código* aquí (y también sale en consola).`
+      `Te enviaré el *código de vinculación* aquí y también saldrá en la consola.`
     );
-  } catch (err) {
-    console.error(err);
-    await m.reply(`❌ Error: ${err.message}`);
+  } catch (e) {
+    console.error(e);
+    await m.reply(`❌ Error: ${e.message}`);
   }
 }
 
@@ -42,3 +41,4 @@ module.exports = {
   command: ["subbot", "serbot", "jadibot"],
   run,
 };
+
