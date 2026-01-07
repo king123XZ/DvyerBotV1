@@ -45,6 +45,11 @@ module.exports = {
           buttonId: ".peliculas",
           buttonText: { displayText: "PELICULAS" },
           type: 1
+        },
+        {
+          buttonId: ".series", // Nuevo botón para series
+          buttonText: { displayText: "📺 SERIES" },
+          type: 1
         }
       ],
       footer: "YerTX Bot • DVYER",
@@ -52,5 +57,3 @@ module.exports = {
     });
   }
 };
-
-
