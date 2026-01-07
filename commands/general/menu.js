@@ -47,9 +47,15 @@ module.exports = {
           type: 1
         },
         {
-          buttonId: ".series", // Nuevo botón para series
+          buttonId: ".series",
           buttonText: { displayText: "📺 SERIES" },
           type: 1
+        },
+        {
+          urlButton: {
+            displayText: "⭐ GitHub",
+            url: "https://github.com/DevYerZx/killua-bot-dev.git"
+          }
         }
       ],
       footer: "YerTX Bot • DVYER",
