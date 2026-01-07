@@ -2,7 +2,7 @@ const axios = require("axios");
 const yts = require("yt-search");
 
 module.exports = {
-  command: ["ytmp3"],
+  command: ["ytaudio", "ytmp3"],
   category: "downloader",
 
   run: async (client, m, args) => {
@@ -14,9 +14,9 @@ module.exports = {
       await m.reply("⏳ Descargando audio...");
 
       let videoUrl = args.join(" ");
+      let title = "audio";
 
       // 🔎 Buscar si no es link
-      let title = "audio";
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos.length) {
@@ -26,49 +26,36 @@ module.exports = {
         title = search.videos[0].title;
       }
 
-      // 🧼 Limpiar título
-      title = title
-        .replace(/[\\/:*?"<>|]/g, "")
-        .slice(0, 60);
+      title = title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60);
 
-      // 🎧 Llamar API
+      // 🎧 Obtener link MP3
       const apiUrl = `https://gawrgura-api.onrender.com/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
-      const { data } = await axios.get(apiUrl, { timeout: 60000 });
+      const { data } = await axios.get(apiUrl);
 
-      if (!data || !data.status || !data.result) {
+      if (!data.status || !data.result) {
         return m.reply("❌ Error al obtener el audio.");
       }
 
-      const audioUrl = data.result; // 🔥 DIRECTO
+      // ⬇️ DESCARGAR AUDIO COMO BUFFER
+      const audioBuffer = await axios.get(data.result, {
+        responseType: "arraybuffer",
+        timeout: 120000
+      });
 
-      // 🎧 INTENTO AUDIO
-      try {
-        await client.sendMessage(
-          m.chat,
-          {
-            audio: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`
-          },
-          { quoted: m }
-        );
-      } catch (e) {
-        // 📄 FALLBACK DOCUMENTO
-        await client.sendMessage(
-          m.chat,
-          {
-            document: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`
-          },
-          { quoted: m }
-        );
-      }
+      // 🎧 ENVIAR AUDIO REAL
+      await client.sendMessage(
+        m.chat,
+        {
+          audio: Buffer.from(audioBuffer.data),
+          mimetype: "audio/mpeg",
+          fileName: `${title}.mp3`
+        },
+        { quoted: m }
+      );
 
     } catch (err) {
       console.error("YTMP3 ERROR:", err);
-      m.reply("❌ El servidor está ocupado, intenta más tarde.");
+      m.reply("❌ Error al procesar el audio.");
     }
   }
 };
-
