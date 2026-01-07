@@ -1,7 +1,9 @@
 const { startSubBot } = require("../lib/startSubBot");
 
+if (!global.subBots) global.subBots = new Map();
+
 async function run(client, m, args, { text, prefix, command }) {
-  const mainHandler = global.mainHandler; // ✅ no require('../main')
+  const mainHandler = global.mainHandler;
 
   let number =
     (args && args[0] ? String(args[0]) : null) ||
@@ -16,10 +18,21 @@ async function run(client, m, args, { text, prefix, command }) {
       throw new Error("La función principal (mainHandler) no se cargó correctamente.");
     }
 
-    await startSubBot(number, mainHandler, client, m);
+    // Si ya existe un subbot con ese número, lo cerramos antes de iniciar otro
+    const old = global.subBots.get(number);
+    if (old?.end) {
+      try { old.end(); } catch {}
+      global.subBots.delete(number);
+    }
+
+    const sock = await startSubBot(number, mainHandler, client, m);
+
+    // ✅ lo guardamos para mantener referencia y poder gestionarlo
+    global.subBots.set(number, sock);
 
     await m.reply(
-      `🚀 SubBot iniciado.\n\nSi aún no está vinculado, te enviaré el *código de emparejamiento* para:\n*${number}*`
+      `🚀 SubBot iniciado para *${number}*.\n` +
+      `Si aparece QR/código, te lo enviaré aquí.`
     );
   } catch (err) {
     console.error(err);
