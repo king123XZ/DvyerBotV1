@@ -1,39 +1,51 @@
-// commands/subbots.js
+const { allStates } = require("../lib/subbotRegistry");
 
 function cleanJidToNumber(jid = "") {
   return String(jid).split("@")[0].split(":")[0];
 }
 
-async function run(client, m, args, ctx) {
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  return `${h}h ${m}m ${ss}s`;
+}
+
+async function run(client, m) {
   try {
     if (!global.subBots) global.subBots = new Map();
 
-    const mainJid = client?.user?.id || "";
-    const mainNumber = cleanJidToNumber(mainJid);
+    const mainNumber = cleanJidToNumber(client?.user?.id || "");
+    const states = allStates().sort((a, b) => (a.number > b.number ? 1 : -1));
 
-    const subs = Array.from(global.subBots.entries()); // [number, sock]
+    const connected = states.filter(s => s.status === "open").length;
 
-    if (!subs.length) {
-      return m.reply(
-        `📱 *Bot principal:* ${mainNumber || "Desconocido"}\n` +
-        `🤖 *SubBots conectados:* 0\n\n` +
-        `No hay subbots activos.`
-      );
+    let text =
+      `📱 *Bot principal:* ${mainNumber || "Desconocido"}\n` +
+      `🤖 *SubBots:* ${states.length} (conectados: ${connected})\n\n`;
+
+    if (!states.length) {
+      return m.reply(text + "No hay subbots activos.");
     }
 
-    const lines = subs.map(([num, sock], i) => {
-      const sockJid = sock?.user?.id || "";
-      const sockNumber = cleanJidToNumber(sockJid) || num;
-      const isOpen = !!sock?.ws && sock?.ws?.readyState === 1; // 1 = OPEN
-      return `${i + 1}. ${sockNumber} ${isOpen ? "✅" : "⚠️"}`;
-    });
+    const now = Date.now();
 
-    return m.reply(
-      `📱 *Bot principal:* ${mainNumber || "Desconocido"}\n` +
-      `🤖 *SubBots conectados:* ${subs.length}\n\n` +
-      `*Lista:*\n` +
-      lines.join("\n")
-    );
+    text += "*Lista:*\n";
+    text += states
+      .map((s, i) => {
+        const alive = global.subBots.has(s.number);
+        const uptime = fmtTime(now - (s.startedAt || now));
+        const last = fmtTime(now - (s.lastChange || now));
+        return (
+          `${i + 1}. *${s.number}* ${s.status === "open" ? "✅" : "⚠️"}\n` +
+          `   Estado: ${s.status} | Vivo: ${alive ? "sí" : "no"}\n` +
+          `   Uptime: ${uptime} | Último cambio: hace ${last}`
+        );
+      })
+      .join("\n\n");
+
+    return m.reply(text);
   } catch (e) {
     console.error(e);
     return m.reply("❌ Error mostrando subbots.");
