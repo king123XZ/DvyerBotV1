@@ -1,6 +1,5 @@
 /*************************************************
- * WhatsApp Bot - ULTRA OPTIMIZADO
- * Pterodactyl / Docker SAFE
+                  dvyer
  * Node.js 18.x / 20.x LTS
  *************************************************/
 
@@ -27,10 +26,8 @@ const { smsg } = require("./lib/message")
 const welcome = require("./lib/system/welcome")
 const mainHandler = require("./main")
 
-// 🔥 AUTO-RESTART INTELIGENTE
 const { startAutoRestart } = require("./lib/system/autoRestart")
 
-// ================= CONFIG =================
 const SESSIONS_DIR = path.join(__dirname, "sessions")
 const RECONNECT_DELAY = 3000
 let databaseLoaded = false
@@ -61,7 +58,6 @@ const question = q => {
 const safeMkdir = d => !fs.existsSync(d) && fs.mkdirSync(d, { recursive: true })
 const clearSession = d => fs.rmSync(d, { recursive: true, force: true })
 
-// ================= BANNER =================
 console.log(chalk.yellow("════════════════════════════"))
 log.info(`OS: ${os.platform()} ${os.arch()}`)
 log.info(`Node: ${process.version}`)
@@ -69,7 +65,6 @@ log.info(`RAM libre: ${(os.freemem() / 1024 / 1024).toFixed(0)} MB`)
 log.info(`Hora: ${new Date().toLocaleString("es-PE", { hour12: false })}`)
 console.log(chalk.yellow("════════════════════════════"))
 
-// ================= START BOT =================
 async function startBot(botNumber = "main") {
   const sessionPath = path.join(SESSIONS_DIR, botNumber)
   safeMkdir(sessionPath)
@@ -88,7 +83,6 @@ async function startBot(botNumber = "main") {
     generateHighQualityLinkPreview: false,
   })
 
-  // ========= EMPAREJAMIENTO =========
   if (!state.creds.registered) {
     const phone = await question("📱 Número WhatsApp (519xxxxxxxx): ")
     try {
@@ -101,14 +95,14 @@ async function startBot(botNumber = "main") {
     }
   }
 
-  // ========= DATABASE =========
+
   if (!databaseLoaded) {
     await global.loadDatabase()
     databaseLoaded = true
     log.ok("Base de datos cargada")
   }
 
-  // ========= CONEXIÓN =========
+
   client.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
     if (connection === "close") {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode
@@ -128,13 +122,13 @@ async function startBot(botNumber = "main") {
     if (connection === "open") {
       log.ok("Bot conectado correctamente")
 
-      // 🔥 INICIAR AUTO-RESTART
+      
       startAutoRestart(client)
       log.ok("Auto-restart inteligente activo")
     }
   })
 
-  // ========= MENSAJES (RÁPIDO Y ESTABLE) =========
+
   client.ev.on("messages.upsert", async ({ messages }) => {
     try {
       const m = messages?.[0]
@@ -148,14 +142,13 @@ async function startBot(botNumber = "main") {
     }
   })
 
-  // ========= WELCOME =========
+
   client.ev.on("group-participants.update", async u => {
     try {
       await welcome(client, u)
     } catch {}
   })
 
-  // ========= JID FIX =========
   client.decodeJid = jid => {
     if (!jid) return jid
     if (/:\d+@/gi.test(jid)) {
@@ -168,13 +161,11 @@ async function startBot(botNumber = "main") {
   client.ev.on("creds.update", saveCreds)
 }
 
-// ========= PROTECCIÓN GLOBAL =========
 process.on("unhandledRejection", e => log.err(e))
 process.on("uncaughtException", e => log.err(e))
 
 startBot()
 
-// ========= HOT RELOAD =========
 fs.watchFile(__filename, () => {
   console.log(chalk.yellow("♻ Reiniciando bot..."))
   process.exit(0)
