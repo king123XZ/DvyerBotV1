@@ -179,8 +179,9 @@ async function mainHandler(client, m) {
   }
 }
 
-
+global.mainHandler = mainHandler
 module.exports = mainHandler
+
 
 const file = require.resolve(__filename)
 fs.watchFile(file, () => {
