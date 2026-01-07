@@ -7,22 +7,19 @@ const initDB = require("./lib/system/initDB")
 const antilink = require("./commands/antilink")
 const { resolveLidToRealJid } = require("./lib/utils")
 
-/* ===== LOAD COMMANDS ===== */
 seeCommands()
 
-/* ===== CACHE & PROTECTIONS ===== */
 const groupCache = new Map()
 const cooldown = new Map()
-const GROUP_TTL = 2 * 60 * 1000 // 2 minutos
+const GROUP_TTL = 2 * 60 * 1000 
 const COOLDOWN_MS = 2000
 
-/* ===== CLEAN MEMORY ===== */
 setInterval(() => {
   groupCache.clear()
   cooldown.clear()
 }, 10 * 60 * 1000)
 
-/* ===== COOLDOWN ===== */
+
 function inCooldown(sender, command) {
   const key = sender + command
   const now = Date.now()
@@ -31,7 +28,7 @@ function inCooldown(sender, command) {
   return false
 }
 
-/* ===== MAIN HANDLER ===== */
+
 async function mainHandler(client, m) {
   try {
     if (!m?.message) return
@@ -48,13 +45,13 @@ async function mainHandler(client, m) {
 
     if (!body) return
 
-    // iniciar DB sin bloquear
+ 
     try { initDB(m) } catch {}
 
     const prefixes = [".", "!", "#", "/"]
     const prefix = prefixes.find(p => body.startsWith(p))
 
-    /* ========= 🔒 ANTILINK REAL (IGNORAR DUEÑO/ADM/BOT) ========= */
+
     if (
       !prefix &&
       m.isGroup &&
@@ -67,7 +64,7 @@ async function mainHandler(client, m) {
       const sender = m.sender || m.key?.participant
       const botJid = client.user.id.split(":")[0] + "@s.whatsapp.net"
 
-      // Obtener metadata del grupo
+
       let cached = groupCache.get(from)
       if (!cached || cached.expires < Date.now()) {
         const meta = await client.groupMetadata(from).catch(() => null)
@@ -78,12 +75,12 @@ async function mainHandler(client, m) {
         }
       }
 
-      // ⚠️ Condiciones para ignorar el mensaje
+      
       const isOwner = global.owner.map(o => o + "@s.whatsapp.net").includes(sender)
       const isAdmin = cached?.admins.includes(sender)
       const isBot = sender === botJid
 
-      // Solo eliminar si NO es dueño, admin ni bot
+ 
       if (!isOwner && !isAdmin && !isBot) {
         await antilink.execute(client, m)
       }
@@ -93,7 +90,7 @@ async function mainHandler(client, m) {
 
     if (!prefix) return
 
-    /* ========= COMMAND PARSER ========= */
+
     const args = body.trim().split(/\s+/).slice(1)
     const text = args.join(" ")
     const command = body
@@ -118,7 +115,7 @@ async function mainHandler(client, m) {
     let isBotAdmins = false
     let groupName = ""
 
-    /* ========= GROUP METADATA CACHE ========= */
+    
     if (m.isGroup) {
       let cached = groupCache.get(from)
 
@@ -156,7 +153,6 @@ async function mainHandler(client, m) {
       .map(o => o + "@s.whatsapp.net")
       .includes(sender)
 
-    /* ========= PERMISSIONS ========= */
     if (cmd.isOwner && !isOwner) return m.reply("⚠️ Solo el owner.")
     if (cmd.isGroup && !m.isGroup) return m.reply("⚠️ Solo en grupos.")
     if (cmd.isAdmin && !isAdmins) return m.reply("⚠️ Debes ser admin.")
@@ -170,7 +166,7 @@ async function mainHandler(client, m) {
       chalk.gray(m.isGroup ? groupName : "Privado")
     )
 
-    /* ========= RUN COMMAND ========= */
+
     try {
       await cmd.run(client, m, args, { text, prefix, command })
     } catch (err) {
@@ -183,10 +179,9 @@ async function mainHandler(client, m) {
   }
 }
 
-/* ===== EXPORT ===== */
+
 module.exports = mainHandler
 
-/* ===== HOT RELOAD ===== */
 const file = require.resolve(__filename)
 fs.watchFile(file, () => {
   fs.unwatchFile(file)
