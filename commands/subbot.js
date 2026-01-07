@@ -1,6 +1,16 @@
+const fs = require("fs");
+const path = require("path");
 const { startSubBot } = require("../lib/startSubBot");
 
 if (!global.subBots) global.subBots = new Map();
+
+const SUBBOT_SESS_DIR = path.join(__dirname, "../sessions/subbots");
+
+function safeRm(dir) {
+  try {
+    if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+  } catch {}
+}
 
 async function run(client, m, args, { text, prefix, command }) {
   const mainHandler = global.mainHandler;
@@ -17,22 +27,27 @@ async function run(client, m, args, { text, prefix, command }) {
     if (typeof mainHandler !== "function") {
       throw new Error("La función principal (mainHandler) no se cargó correctamente.");
     }
+    if (!number) throw new Error("Pon un número. Ej: .subbot 519xxxxxxxx");
 
-    // Si ya existe un subbot con ese número, lo cerramos antes de iniciar otro
+    // ✅ Si existe un subbot previo, cerrarlo y limpiar
     const old = global.subBots.get(number);
-    if (old?.end) {
-      try { old.end(); } catch {}
+    if (old) {
+      try { old.end?.(); } catch {}
       global.subBots.delete(number);
+
+      // borra sesión anterior para evitar sesiones a medias/corruptas
+      const oldSessionPath = path.join(SUBBOT_SESS_DIR, `subbot-${number}`);
+      safeRm(oldSessionPath);
     }
 
     const sock = await startSubBot(number, mainHandler, client, m);
 
-    // ✅ lo guardamos para mantener referencia y poder gestionarlo
+    // ✅ guardar referencia del subbot
     global.subBots.set(number, sock);
 
     await m.reply(
       `🚀 SubBot iniciado para *${number}*.\n` +
-      `Si aparece QR/código, te lo enviaré aquí.`
+      `Si existe sesión vieja, ya fue limpiada automáticamente.`
     );
   } catch (err) {
     console.error(err);
