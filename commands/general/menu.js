@@ -20,8 +20,14 @@ module.exports = {
       caption: `⧼KILLUA DV V1.00⧽
 
 👤 Usuario: ${m.pushName}
-🏴 Modo: Activo
-🕶️ Versión: v2.0
+🏴 Estado: Activo
+🕶️ Versión: v1.00
+
+✨ ¡Gracias por usar Killua Bot DV! ✨
+Si te gusta el bot, puedes visitar mi GitHub, seguirme y darle ⭐ a tu proyecto favorito.
+Cada estrella ayuda a mejorar y mantener el bot actualizado.  
+
+🔗 [Visita mi GitHub](https://github.com/DevYerZx/killua-bot-dev.git)
 
 ━━━━━━━━━━━━━━━━━━
 👑 *CREADOR: DVYER*`,
@@ -47,15 +53,9 @@ module.exports = {
           type: 1
         },
         {
-          buttonId: ".series",
+          buttonId: ".series", // Nuevo botón para series
           buttonText: { displayText: "📺 SERIES" },
           type: 1
-        },
-        {
-          urlButton: {
-            displayText: "⭐ GitHub",
-            url: "https://github.com/DevYerZx/killua-bot-dev.git"
-          }
         }
       ],
       footer: "YerTX Bot • DVYER",
