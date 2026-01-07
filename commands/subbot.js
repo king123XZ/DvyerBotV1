@@ -1,23 +1,29 @@
 const { startSubBot } = require('../lib/startSubBot');
-// Importamos el objeto que contiene la función
-const { mainHandler } = require('../main'); 
+
+// main.js exporta la función directamente (module.exports = mainHandler)
+const mainHandler = require('../main');
 
 async function run(conn, m, { args }) {
-  let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender;
-  let number = who.split('@')[0];
+  // Permite: .subbot 519xxxxxxxx
+  let number =
+    (args && args[0] ? String(args[0]) : null) ||
+    (m.quoted ? m.quoted.sender.split('@')[0] : null) ||
+    (m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0].split('@')[0] : null) ||
+    m.sender.split('@')[0];
+
+  // Solo dígitos
+  number = number.replace(/\D/g, '');
 
   try {
-    // Verificamos que mainHandler exista antes de iniciar
     if (typeof mainHandler !== 'function') {
-      throw new Error("La función principal no se cargó correctamente.");
+      throw new Error('La función principal (mainHandler) no se cargó correctamente.');
     }
 
-    await startSubBot(number, mainHandler);
-    m.reply(`🚀 Iniciando subbot para: ${number}`);
-
+    await startSubBot(number, mainHandler, conn, m);
+    await m.reply(`🚀 SubBot listo. Si aún no está vinculado, te mandé un *código de emparejamiento* para: ${number}`);
   } catch (err) {
     console.error(err);
-    m.reply(`❌ Error: ${err.message}`);
+    await m.reply(`❌ Error al iniciar SubBot: ${err.message}`);
   }
 }
 
