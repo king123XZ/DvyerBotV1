@@ -35,6 +35,6 @@ async function run(client, m, args, { text, prefix, command }) {
 }
 
 module.exports = {
-  command: ["subbot", "serbot", "jadibot"],
+  //command: ["subbot", "serbot", "jadibot"],
   run,
 };
