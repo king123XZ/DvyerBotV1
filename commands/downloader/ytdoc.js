@@ -1,7 +1,8 @@
 const axios = require("axios");
 
 // 🔵 SKY
-const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
+const SKY_REGISTER = "https://api-sky.ultraplus.click/youtube-mp4";
+const SKY_RESOLVE  = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 // 🟢 ADONIX
@@ -11,10 +12,9 @@ const ADONIX_KEY = "dvyer";
 // 🤖 Bot
 const BOT_NAME = "KILLUA-BOT v1.00";
 
-// Calidades SKY
+// SKY qualities
 const SKY_QUALITIES = ["360", "240", "144"];
 
-// Cache simple
 if (!global.ytdocCache) global.ytdocCache = {};
 
 module.exports = {
@@ -24,14 +24,13 @@ module.exports = {
   run: async (client, m, args) => {
     try {
       // ======================
-      // BOTÓN PRESIONADO
+      // CLICK BOTÓN SKY
       // ======================
       if (args.length === 2 && SKY_QUALITIES.includes(args[1])) {
         const quality = args[1];
         const cache = global.ytdocCache[m.sender];
         if (!cache?.url) return m.reply("❌ El enlace expiró. Usa .ytdoc otra vez.");
 
-        // ⏳ aviso inmediato
         await m.reply(
           `⏳ *Descargando video...*\n` +
           `📺 Calidad: ${quality}p\n` +
@@ -39,10 +38,21 @@ module.exports = {
           `🤖 ${BOT_NAME}`
         );
 
+        // 1️⃣ REGISTRAR
+        await axios.post(
+          SKY_REGISTER,
+          { url: cache.url },
+          { headers: { apikey: SKY_KEY }, timeout: 30000 }
+        );
+
+        // pequeña espera
+        await new Promise(r => setTimeout(r, 2000));
+
+        // 2️⃣ RESOLVER
         const res = await axios.post(
-          SKY_API,
+          SKY_RESOLVE,
           { url: cache.url, type: "video", quality },
-          { headers: { apikey: SKY_KEY }, timeout: 60000 }
+          { headers: { apikey: SKY_KEY }, timeout: 30000 }
         );
 
         const data = res.data?.result;
@@ -81,7 +91,7 @@ module.exports = {
       }
 
       // ======================
-      // ☁️ SKY (con botones)
+      // ☁️ SKY (BOTONES)
       // ======================
       if (global.hosting === "sky") {
         global.ytdocCache[m.sender] = { url };
@@ -105,7 +115,7 @@ module.exports = {
       }
 
       // ======================
-      // 🌍 ADONIX (directo)
+      // 🌍 ADONIX
       // ======================
       await m.reply(
         `⏳ *Descargando video...*\n` +
