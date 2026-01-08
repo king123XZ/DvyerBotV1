@@ -15,7 +15,7 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 const QUALITY_ORDER = ["360", "240", "144"];
 
 module.exports = {
-  command: ["ytdoc"],
+  //command: ["ytdoc"],
   category: "downloader",
 
   run: async (client, m, args) => {
