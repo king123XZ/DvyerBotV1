@@ -9,6 +9,9 @@ const ADONIX_API_KEY = "dvyer";
 const SKY_API_URL = "https://api-sky.ultraplus.click/youtube-mp3";
 const ADONIX_API_URL = "https://api-adonix.ultraplus.click/download/ytaudio";
 
+// 📛 Nombre del bot
+const BOT_NAME = "KILLUA-BOT v1.00";
+
 module.exports = {
   command: ["ytaudio"],
   category: "downloader",
@@ -21,7 +24,7 @@ module.exports = {
 
       await m.reply(
         "⏳ Descargando...\n" +
-        "📢 Sigue el canal KILLUA-BOT:\n" +
+        `📢 Sigue el canal ${BOT_NAME}:\n` +
         "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
       );
 
@@ -38,39 +41,50 @@ module.exports = {
 
       let audioUrl;
       let title = "audio";
+      let apiUsed = "desconocida";
 
       // 🌐 SELECCIÓN DE API SEGÚN HOSTING
       if (global.hosting === "sky") {
         // ☁️ SKY API
-        const { data } = await axios.post(
-          SKY_API_URL,
-          { url: videoUrl },
-          {
-            headers: { apikey: SKY_API_KEY },
+        try {
+          const { data } = await axios.get(SKY_API_URL, {
+            params: { url: videoUrl, apikey: SKY_API_KEY },
             timeout: 60000
+          });
+
+          if (!data || !data.status) {
+            return m.reply("❌ Error con la API SKY.");
           }
-        );
 
-        if (!data || !data.status) {
-          return m.reply("❌ Error con la API SKY.");
+          audioUrl = data.result?.audio || data.result?.media?.audio;
+          title = data.result?.title || title;
+          apiUsed = "SKY";
+
+        } catch (err) {
+          console.error("SKY API ERROR:", err.response?.data || err.message);
+          return m.reply("❌ No se pudo descargar desde SKY.");
         }
-
-        audioUrl = data.result?.media?.audio;
-        title = data.result?.title || title;
 
       } else {
-        // 🌍 API NORMAL (ADONIX)
-        const { data } = await axios.get(
-          `${ADONIX_API_URL}?url=${encodeURIComponent(videoUrl)}&apikey=${ADONIX_API_KEY}`,
-          { timeout: 60000 }
-        );
+        // 🌍 ADONIX API
+        try {
+          const { data } = await axios.get(ADONIX_API_URL, {
+            params: { url: videoUrl, apikey: ADONIX_API_KEY },
+            timeout: 60000
+          });
 
-        if (!data || !data.status || !data.data?.url) {
-          return m.reply("❌ Error con la API normal.");
+          if (!data || !data.status || !data.data?.url) {
+            return m.reply("❌ Error con la API ADONIX.");
+          }
+
+          audioUrl = data.data.url;
+          title = data.data.title || title;
+          apiUsed = "ADONIX";
+
+        } catch (err) {
+          console.error("ADONIX API ERROR:", err.response?.data || err.message);
+          return m.reply("❌ No se pudo descargar desde ADONIX.");
         }
-
-        audioUrl = data.data.url;
-        title = data.data.title || title;
       }
 
       if (!audioUrl) {
@@ -78,30 +92,30 @@ module.exports = {
       }
 
       // 🧼 Limpiar título
-      title = title
-        .replace(/[\\/:*?"<>|]/g, "")
-        .trim()
-        .slice(0, 60);
+      title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
 
-      // 🎧 INTENTO 1: AUDIO NORMAL
+      // 🎧 Mensaje final mostrando la API usada y nombre del bot
+      const caption = `🎵 *${title}*\n✅ Enviado por: *${apiUsed}*\n🤖 Bot: *${BOT_NAME}*`;
+
       try {
         await client.sendMessage(
           m.chat,
           {
             audio: { url: audioUrl },
             mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`
+            fileName: `${title}.mp3`,
+            caption
           },
           { quoted: m }
         );
       } catch (err) {
-        // 📄 FALLBACK: DOCUMENTO
         await client.sendMessage(
           m.chat,
           {
             document: { url: audioUrl },
             mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`
+            fileName: `${title}.mp3`,
+            caption
           },
           { quoted: m }
         );
@@ -113,3 +127,4 @@ module.exports = {
     }
   }
 };
+
