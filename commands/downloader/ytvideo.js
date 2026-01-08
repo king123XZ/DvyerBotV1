@@ -61,10 +61,12 @@ module.exports = {
       try {
         await m.reply(`⬇️ Descargando video en ${quality}p usando api-sky.ultraplus...`);
 
+        // Registrar video
         await axios.post(SKY_API_REGISTER, { url: cache.url }, {
           headers: { apikey: SKY_KEY, "Content-Type": "application/json" }
         });
 
+        // Generar link
         const res = await axios.post(SKY_API_RESOLVE, { url: cache.url, type: "video", quality }, {
           headers: { apikey: SKY_KEY, "Content-Type": "application/json" },
           timeout: 60000
@@ -73,7 +75,7 @@ module.exports = {
         const videoUrl = res.data?.result?.media?.direct;
         if (!videoUrl) throw new Error("No se pudo generar el enlace de descarga.");
 
-        // 1️⃣ Enviar video normal
+        // Enviar video como forwarded newsletter (tipo canal)
         await client.sendMessage(
           m.chat,
           {
@@ -81,11 +83,20 @@ module.exports = {
             mimetype: "video/mp4",
             fileName: res.data.result?.title || `video-${quality}p.mp4`,
             caption: `✅ Video descargado usando api-sky.ultraplus\n📺 Calidad: ${quality}p`,
+            contextInfo: {
+              forwardingScore: 999,
+              isForwarded: true,
+              forwardedNewsletterMessageInfo: {
+                isForwarded: true,
+                isHighPriority: true,
+                sourceUrl: MY_CHANNEL
+              }
+            }
           },
           { quoted: m }
         );
 
-        // 2️⃣ Enviar botón para ver canal
+        // Botón separado para ver canal
         await client.sendMessage(
           m.chat,
           {
@@ -132,19 +143,28 @@ module.exports = {
       const res = await axios.get(`${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`, { timeout: 60000 });
       if (!res.data?.status || !res.data?.data?.url) throw new Error("API inválida");
 
-      // 1️⃣ Enviar video
+      // Video como forwarded newsletter
       await client.sendMessage(
         m.chat,
         {
           video: { url: res.data.data.url },
           mimetype: "video/mp4",
           fileName: res.data.data.title || "video.mp4",
-          caption: `✅ Video descargado usando API de Adonix`
+          caption: `✅ Video descargado usando API de Adonix`,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              isForwarded: true,
+              isHighPriority: true,
+              sourceUrl: MY_CHANNEL
+            }
+          }
         },
         { quoted: m }
       );
 
-      // 2️⃣ Enviar botón de canal
+      // Botón separado
       await client.sendMessage(
         m.chat,
         {
@@ -164,5 +184,3 @@ module.exports = {
     }
   }
 };
-
-
