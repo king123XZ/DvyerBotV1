@@ -12,12 +12,9 @@ const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 // Nombre del bot
 const BOT_NAME = "KILLUA-BOT v1.00";
 
-// Canal de WhatsApp
-const MY_CHANNEL = "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c";
-
-// Límite de tamaño para enviar video normal
-const MAX_VIDEO_SIZE = 110 * 1024 * 1024; // 110 MB
-const UPLOAD_SPEED = 1 * 1024 * 1024; // 1 MB/s
+// Límite de tamaño para video normal
+const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200 MB
+const UPLOAD_SPEED = 2 * 1024 * 1024; // estimación de 2 MB/s para tiempo
 
 // SKY calidades
 const SKY_QUALITIES = ["720", "360"];
@@ -98,7 +95,7 @@ module.exports = {
       // Limpiar título
       title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
 
-      // Tamaño final
+      // Tamaño del archivo
       let fileSize = 0;
       try {
         const head = await axios.head(videoUrl);
@@ -116,18 +113,13 @@ module.exports = {
 
       await client.sendMessage(m.chat, { text: infoMessage }, { quoted: m });
 
-      // Validar límite de 110 MB
+      // Validar límite de 200 MB
       if (fileSize > MAX_VIDEO_SIZE) {
-        // Botón para descargar como documento MP4
-        const buttonMsg = {
-          text: `⚠️ El archivo supera el límite de ${MAX_VIDEO_SIZE / (1024*1024)} MB y no se puede enviar como video normal.`,
-          footer: BOT_NAME,
-          templateButtons: [
-            { buttonId: `.download_doc ${videoUrl}`, displayText: "📄 Descargar como MP4", type: 1 }
-          ],
-          headerType: 1
-        };
-        return client.sendMessage(m.chat, buttonMsg, { quoted: m });
+        return client.sendMessage(
+          m.chat,
+          { text: `❌ El video supera el límite de ${MAX_VIDEO_SIZE / (1024*1024)} MB y no se puede enviar.` },
+          { quoted: m }
+        );
       }
 
       // Enviar video normal
