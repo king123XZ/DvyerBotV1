@@ -3,7 +3,7 @@ const axios = require("axios");
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 const ADONIX_KEY = "dvyer";
 
-const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
+const SKY_API_RESOLVE = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 module.exports = {
@@ -41,32 +41,39 @@ module.exports = {
         );
       }
 
-      // Si ya se seleccionó calidad → descargar desde Sky
+      // Descargar video desde Sky con POST
       try {
         await m.reply(`⬇️ Descargando video en ${qualityArg}p usando API de Sky...`);
 
-        const res = await axios.get(
-          `${SKY_API}?url=${encodeURIComponent(url)}&quality=${qualityArg}&apikey=${SKY_KEY}`,
-          { timeout: 60000 }
+        const res = await axios.post(
+          SKY_API_RESOLVE,
+          { url: url, type: "video", quality: qualityArg },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": SKY_KEY
+            },
+            timeout: 60000
+          }
         );
 
-        if (!res.data?.status || !res.data?.data?.url) {
-          throw new Error("API de Sky inválida");
-        }
+        // Sky devuelve media.dl_download
+        const videoUrl = res.data?.media?.dl_download;
+        if (!videoUrl) throw new Error("No se pudo generar el enlace de descarga.");
 
         await client.sendMessage(
           m.chat,
           {
-            video: { url: res.data.data.url },
+            video: { url: videoUrl },
             mimetype: "video/mp4",
-            fileName: res.data.data.title || `video-${qualityArg}p.mp4`,
+            fileName: res.data.title || `video-${qualityArg}p.mp4`,
             caption: `✅ Video descargado usando API de Sky`
           },
           { quoted: m }
         );
 
       } catch (err) {
-        console.error("YTVIDEO SKY ERROR:", err);
+        console.error("YTVIDEO SKY ERROR:", err.response?.data || err.message);
         return m.reply("❌ Error al descargar el video desde Sky.");
       }
 
