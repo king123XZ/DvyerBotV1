@@ -6,7 +6,7 @@ const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 // 🟢 ADONIX
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-const ADONIX_KEY = "dvyer";
+const ADONIX_KEY = "AdonixKeythtnjs6661";
 
 // 🤖 Bot
 const BOT_NAME = "KILLUA-BOT v1.00";
@@ -23,7 +23,7 @@ module.exports = {
 
   run: async (client, m) => {
     try {
-      // ⏳ Cooldown anti-spam
+      // ⏳ Cooldown
       const now = Date.now();
       if (global.ytCooldown[m.sender] && now - global.ytCooldown[m.sender] < 15000) {
         return m.reply("⏳ Espera unos segundos antes de otra descarga.");
@@ -36,10 +36,11 @@ module.exports = {
       }
 
       // ======================
-      // SKY
+      // ☁️ SKY (set-host)
       // ======================
-      if (global.botHost === "sky") {
-        // ⚡ AVISO INMEDIATO
+      if (global.hosting === "sky") {
+
+        // ⚡ MENSAJE INMEDIATO
         await client.sendMessage(
           m.chat,
           {
@@ -101,9 +102,8 @@ module.exports = {
       }
 
       // ======================
-      // ADONIX
+      // 🌍 ADONIX
       // ======================
-      // ⚡ AVISO INMEDIATO
       await client.sendMessage(
         m.chat,
         {
@@ -152,3 +152,4 @@ module.exports = {
     }
   }
 };
+
