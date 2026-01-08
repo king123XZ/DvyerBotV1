@@ -3,7 +3,7 @@ const yts = require("yt-search");
 
 // 🔑 KEYS
 const SKY_API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const ADONIX_API_KEY = "AdonixKeythtnjs6661";
+const ADONIX_API_KEY = "dvyer";
 
 // 🌐 ENDPOINTS
 const SKY_API_URL = "https://api-sky.ultraplus.click/youtube-mp3";
