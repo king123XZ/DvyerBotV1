@@ -1,17 +1,10 @@
 const axios = require("axios");
 
 /* ================= APIS ================= */
-
-// SKY
-const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
-const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-
-// ADONIX
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 const ADONIX_KEY = "AdonixKeythtnjs6661";
 
 /* ================ CONFIG ================= */
-
 const MAX_VIDEO_MB = 80; // WhatsApp seguro para video
 
 module.exports = {
@@ -25,35 +18,6 @@ module.exports = {
       return m.reply("❌ Enlace de YouTube no válido.");
     }
 
-    /* ==================================================
-       🏠 SKY HOST → BOTONES DE CALIDAD
-    ================================================== */
-    if (global.botHost === "sky") {
-      global.ytCache = global.ytCache || {};
-      global.ytCache[m.sender] = {
-        url,
-        time: Date.now()
-      };
-
-      return client.sendMessage(
-        m.chat,
-        {
-          text: "📥 *Selecciona la calidad del video:*",
-          footer: "Killua-Bot • SkyHosting",
-          buttons: [
-            { buttonId: ".ytq 144", buttonText: { displayText: "📱 144p" }, type: 1 },
-            { buttonId: ".ytq 240", buttonText: { displayText: "📱 240p" }, type: 1 },
-            { buttonId: ".ytq 360", buttonText: { displayText: "🎬 360p" }, type: 1 }
-          ],
-          headerType: 1
-        },
-        { quoted: m }
-      );
-    }
-
-    /* ==================================================
-       🌍 OTRO HOST → ADONIX AUTOMÁTICO
-    ================================================== */
     try {
       await m.reply(
         "⬇️ Descargando video...\n" +
@@ -61,6 +25,7 @@ module.exports = {
         "⏳ Verificando compatibilidad."
       );
 
+      // 🔗 Llamada a API Adonix
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
         { timeout: 60000 }
@@ -71,7 +36,7 @@ module.exports = {
         throw new Error("ADONIX_INVALID_RESPONSE");
       }
 
-      // 🔍 Verificar tamaño real
+      // 🔍 Verificar tamaño real del video
       const head = await axios.head(data.url, { timeout: 15000 });
       const sizeBytes = Number(head.headers["content-length"] || 0);
       const sizeMB = sizeBytes / (1024 * 1024);
@@ -80,7 +45,7 @@ module.exports = {
         .replace(/[\\/:*?"<>|]/g, "")
         .slice(0, 60);
 
-      // 🎬 VIDEO (solo si es seguro)
+      // 🎬 Enviar como video si está dentro del límite
       if (sizeMB > 0 && sizeMB <= MAX_VIDEO_MB) {
         return client.sendMessage(
           m.chat,
@@ -94,7 +59,7 @@ module.exports = {
         );
       }
 
-      // 📄 DOCUMENTO (fallback)
+      // 📄 Enviar como documento si supera el límite
       await client.sendMessage(
         m.chat,
         {
@@ -109,7 +74,7 @@ module.exports = {
       );
 
     } catch (err) {
-      console.error("YTVIDEO ERROR:", err.message);
+      console.error("YTVIDEO ADONIX ERROR:", err.message);
       m.reply(
         "❌ No se pudo descargar el video.\n" +
         "⚠️ El video puede estar bloqueado o no disponible."
