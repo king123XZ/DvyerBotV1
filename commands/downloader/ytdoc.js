@@ -1,4 +1,4 @@
-onst axios = require("axios");
+const axios = require("axios");
 
 // 🔵 SKY
 const SKY_REGISTER = "https://api-sky.ultraplus.click/youtube-mp4";
