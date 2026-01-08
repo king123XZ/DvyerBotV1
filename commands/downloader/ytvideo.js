@@ -80,7 +80,7 @@ module.exports = {
         delete global.ytCache[m.sender];
       } else {
         // ----------------------
-        // ADONIX → usar la calidad que devuelve la API
+        // ADONIX → usar la calidad predeterminada de la API
         // ----------------------
         const res = await axios.get(`${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`, {
           timeout: 60000
@@ -108,7 +108,7 @@ module.exports = {
       const seconds = estimatedSeconds % 60;
       const estimatedTime = `${minutes}m ${seconds}s`;
 
-      // Mensaje de descarga (solo cuando inicia el envío)
+      // Mensaje de descarga (solo al iniciar el envío)
       const infoMessage = `⏳ Descargando...\n🎬 *${title}*\n✅ API: *${hosting.toUpperCase()}*\n📺 Calidad: ${finalQuality}\n🤖 Bot: *${BOT_NAME}*\n📦 Tamaño aproximado: ${(fileSize / (1024*1024)).toFixed(2)} MB\n⏱ Tiempo estimado: ${estimatedTime}`;
 
       await client.sendMessage(m.chat, { text: infoMessage }, { quoted: m });
