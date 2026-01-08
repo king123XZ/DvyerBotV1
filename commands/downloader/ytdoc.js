@@ -18,20 +18,20 @@ module.exports = {
         return m.reply("❌ Usa:\n.ytdoc <link de YouTube>");
       }
 
-      // ⚡ MENSAJE INMEDIATO (NO ESPERA)
+      // ⚡ MENSAJE INMEDIATO
       await client.sendMessage(
         m.chat,
         {
           text:
             `⏳ *Descargando video...*\n` +
-            `📺 Calidad predeterminada\n` +
+            `📄 Se enviará como documento\n` +
             `✅ API: ADONIX\n` +
             `🤖 ${BOT_NAME}`
         },
         { quoted: m }
       );
 
-      // 🚀 LLAMADA A ADONIX
+      // 🚀 PETICIÓN A ADONIX
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
         { timeout: 30000 }
@@ -46,15 +46,16 @@ module.exports = {
         .replace(/[\\/:*?"<>|]/g, "")
         .trim();
 
-      // 📤 ENVÍO DEL VIDEO
+      // 📤 ENVÍO COMO DOCUMENTO
       await client.sendMessage(
         m.chat,
         {
-          video: { url: fileUrl },
+          document: { url: fileUrl },
           mimetype: "video/mp4",
+          fileName: `${title}.mp4`,
           caption:
             `🎬 ${title}\n` +
-            `✅ API: ADONIX\n` +
+            `📄 Enviado como documento\n` +
             `🤖 ${BOT_NAME}`
         },
         { quoted: m }
@@ -64,7 +65,7 @@ module.exports = {
       console.error("YTDOC ADONIX ERROR:", err.response?.data || err.message);
       m.reply(
         "❌ No se pudo descargar el video.\n" +
-        "⚠️ Puede estar muy largo o la API no respondió."
+        "⚠️ El video puede ser muy largo o la API no respondió."
       );
     }
   }
