@@ -11,17 +11,20 @@ module.exports = {
   category: "downloader",
 
   run: async (client, m, args) => {
-    const url = args[0];
-    const qualityArg = args[1]; // 144, 240, 360 si se selecciona botón
+    let url = args[0];
+    let qualityArg = args[1]; // 144, 240, 360 si se selecciona botón
 
     if (!url || !url.startsWith("http")) {
       return m.reply("❌ Enlace de YouTube no válido.");
     }
 
-    // 🏠 SKY HOST → MOSTRAR BOTONES
-    if (global.botHost === "sky") {
+    // 🏠 Detectar hosting (Sky o Adonix)
+    const hosting = global.hosting || "otro";
 
-      // Si no se seleccionó calidad, mostrar botones
+    // 🌐 SI ES SKY → mostrar botones y descargar con POST
+    if (hosting === "sky") {
+
+      // Si no hay calidad seleccionada, mostrar botones
       if (!qualityArg) {
         const buttons = [
           { buttonId: `.ytvideo ${url} 144`, buttonText: { displayText: "📱 144p" }, type: 1 },
@@ -33,7 +36,7 @@ module.exports = {
           m.chat,
           {
             text: "📥 *Selecciona la calidad del video:*",
-            footer: "Killua-Bot • SkyHosting",
+            footer: "dvyer - Kali • SkyHosting",
             buttons: buttons,
             headerType: 1
           },
@@ -41,7 +44,7 @@ module.exports = {
         );
       }
 
-      // Descargar video desde Sky con POST
+      // Si ya se seleccionó calidad → descargar desde Sky
       try {
         await m.reply(`⬇️ Descargando video en ${qualityArg}p usando API de Sky...`);
 
@@ -57,7 +60,6 @@ module.exports = {
           }
         );
 
-        // Sky devuelve media.dl_download
         const videoUrl = res.data?.media?.dl_download;
         if (!videoUrl) throw new Error("No se pudo generar el enlace de descarga.");
 
@@ -80,7 +82,7 @@ module.exports = {
       return;
     }
 
-    // 🌍 OTRO HOST → DESCARGA DIRECTA con Adonix
+    // 🌍 OTRO HOST → Descarga directa con Adonix
     try {
       await m.reply("⬇️ Descargando video usando API de Adonix...");
 
@@ -105,8 +107,9 @@ module.exports = {
       );
 
     } catch (err) {
-      console.error("YTVIDEO ADONIX ERROR:", err);
+      console.error("YTVIDEO ADONIX ERROR:", err.response?.data || err.message);
       m.reply("❌ Error al descargar el video.");
     }
   }
 };
+
