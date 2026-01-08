@@ -1,7 +1,12 @@
 const axios = require("axios");
 
-const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
+// 🔵 SKY
+const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
+const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+
+// 🟢 ADONIX
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
+const ADONIX_KEY = "AdonixKeythtnjs6661";
 
 // 🔒 Máximo permitido
 const QUALITY_ORDER = ["360", "240", "144"];
@@ -10,7 +15,7 @@ if (!global.ytDocCache) global.ytDocCache = {};
 if (!global.ytCooldown) global.ytCooldown = {};
 
 module.exports = {
- // command: ["ytdocq"],
+  command: ["ytdocq"],
   category: "downloader",
 
   run: async (client, m) => {
@@ -27,56 +32,78 @@ module.exports = {
         return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
       }
 
-      await m.reply(
-        "🎥 Preparando video...\n" +
-        "📺 Calidad automática: hasta *360p*\n" +
-        "⏱️ Tiempo estimado: *15–30 segundos*"
-      );
+      // 🏠 SKY HOST → CALIDAD AUTOMÁTICA
+      if (global.botHost === "sky") {
+        await m.reply(
+          "🎥 Preparando video...\n" +
+          "📺 Calidad automática hasta *360p*\n" +
+          "⏱️ Tiempo estimado: *15–30 segundos*"
+        );
 
-      let data, link, usedQuality;
+        let data, link, usedQuality;
 
-      // 🔁 Selección automática y segura
-      for (const quality of QUALITY_ORDER) {
-        try {
-          const res = await axios.post(
-            API_URL,
-            {
-              url: cache.url,
-              type: "video",
-              quality
-            },
-            {
-              headers: { apikey: API_KEY },
-              timeout: 60000
+        for (const quality of QUALITY_ORDER) {
+          try {
+            const res = await axios.post(
+              SKY_API,
+              { url: cache.url, type: "video", quality },
+              { headers: { apikey: SKY_KEY }, timeout: 60000 }
+            );
+
+            data = res.data?.result;
+            link = data?.media?.direct;
+
+            if (link) {
+              usedQuality = quality;
+              break;
             }
-          );
+          } catch {}
+        }
 
-          data = res.data?.result;
-          link = data?.media?.direct;
+        if (!link) throw "NO_QUALITY_AVAILABLE";
 
-          if (link) {
-            usedQuality = quality;
-            break;
-          }
-        } catch (_) {}
+        const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
+        const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
+
+        await client.sendMessage(
+          m.chat,
+          {
+            document: { url: link },
+            mimetype: "video/mp4",
+            fileName,
+            caption:
+              `📄 *${data.title}*\n` +
+              `📺 Calidad usada: *${usedQuality}p*\n` +
+              `✅ Envío seguro`
+          },
+          { quoted: m }
+        );
+
+        delete global.ytDocCache[m.sender];
+        return;
       }
 
-      if (!link) throw "NO_QUALITY_AVAILABLE";
+      // 🌍 OTRO HOST → ADONIX (SIN CALIDAD)
+      await m.reply("⬇️ Descargando video (calidad disponible)...");
 
-      // 🧼 Nombre seguro
-      const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
-      const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
+      const res = await axios.get(
+        `${ADONIX_API}?url=${encodeURIComponent(cache.url)}&apikey=${ADONIX_KEY}`,
+        { timeout: 60000 }
+      );
+
+      if (!res.data?.status || !res.data?.data?.url) {
+        throw "ADONIX_FAIL";
+      }
+
+      const title = (res.data.data.title || "video").replace(/[\\/:*?"<>|]/g, "");
 
       await client.sendMessage(
         m.chat,
         {
-          document: { url: link },
+          document: { url: res.data.data.url },
           mimetype: "video/mp4",
-          fileName,
-          caption:
-            `📄 *${data.title}*\n` +
-            `📺 Calidad usada: *${usedQuality}p*\n` +
-            `✅ Envío seguro`
+          fileName: `${title}.mp4`,
+          caption: "📄 Video descargado\nKILLUA-BOT"
         },
         { quoted: m }
       );
