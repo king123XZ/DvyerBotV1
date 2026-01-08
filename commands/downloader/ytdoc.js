@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 
 // 🔵 SKY
@@ -16,7 +15,7 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 const QUALITY_ORDER = ["360", "240", "144"];
 
 module.exports = {
-  //command: ["ytdoc"],
+  command: ["ytdoc"],
   category: "downloader",
 
   run: async (client, m, args) => {
@@ -27,9 +26,10 @@ module.exports = {
       }
 
       // ======================
-      // SKY
+      // ☁️ SKY (set-host)
       // ======================
-      if (global.botHost === "sky") {
+      if (global.hosting === "sky") {
+
         // ⚡ MENSAJE INMEDIATO
         await client.sendMessage(
           m.chat,
@@ -38,7 +38,7 @@ module.exports = {
               `⏳ *Descargando video...*\n` +
               `📺 Calidad automática (hasta 360p)\n` +
               `✅ API: SKY\n` +
-              `🤖 Bot: ${BOT_NAME}`
+              `🤖 ${BOT_NAME}`
           },
           { quoted: m }
         );
@@ -88,9 +88,8 @@ module.exports = {
       }
 
       // ======================
-      // ADONIX
+      // 🌍 ADONIX
       // ======================
-      // ⚡ MENSAJE INMEDIATO
       await client.sendMessage(
         m.chat,
         {
@@ -98,7 +97,7 @@ module.exports = {
             `⏳ *Descargando video...*\n` +
             `📺 Calidad predeterminada\n` +
             `✅ API: ADONIX\n` +
-            `🤖 Bot: ${BOT_NAME}`
+            `🤖 ${BOT_NAME}`
         },
         { quoted: m }
       );
