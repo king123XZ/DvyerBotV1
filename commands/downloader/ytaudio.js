@@ -116,17 +116,18 @@ module.exports = {
 
       // 🔹 Enviar audio o documento según tamaño
       if (fileSize > MAX_AUDIO_SIZE) {
+        // Solo documento, sin repetir info
         await client.sendMessage(
           m.chat,
           {
             document: { url: audioUrl },
             mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`,
-            caption: infoMessage
+            fileName: `${title}.mp3`
           },
           { quoted: m }
         );
       } else {
+        // Audio normal
         await client.sendMessage(
           m.chat,
           {
@@ -144,5 +145,3 @@ module.exports = {
     }
   }
 };
-
-
