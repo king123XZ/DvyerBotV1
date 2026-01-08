@@ -1,47 +1,21 @@
-const axios = require("axios");
+onst axios = require("axios");
 
-// ☁️ SKY
-const SKY_RESOLVE = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
+// 🔵 SKY
+const SKY_REGISTER = "https://api-sky.ultraplus.click/youtube-mp4";
+const SKY_RESOLVE  = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
-// 🌍 ADONIX
+// 🟢 ADONIX
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 const ADONIX_KEY = "dvyer";
 
 // 🤖 Bot
 const BOT_NAME = "KILLUA-BOT v1.00";
 
-// SKY calidad fija para documentos
-const SKY_QUALITY = "360";
+// SKY qualities
+const SKY_QUALITIES = ["360", "240", "144"];
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-async function getSkyVideo(url) {
-  let link, data;
-
-  for (let i = 0; i < 20; i++) { // ~60s máx
-    try {
-      const res = await axios.post(
-        SKY_RESOLVE,
-        { url, type: "video", quality: SKY_QUALITY },
-        { headers: { apikey: SKY_KEY }, timeout: 30000 }
-      );
-
-      data = res.data?.result;
-      link = data?.media?.direct;
-      if (link) break;
-    } catch {}
-
-    await sleep(3000);
-  }
-
-  if (!link) throw new Error("SKY_NOT_READY");
-
-  return {
-    title: data.title,
-    url: link
-  };
-}
+if (!global.ytdocCache) global.ytdocCache = {};
 
 module.exports = {
   command: ["ytdoc"],
@@ -49,53 +23,109 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
+      // ======================
+      // CLICK BOTÓN SKY
+      // ======================
+      if (args.length === 2 && SKY_QUALITIES.includes(args[1])) {
+        const quality = args[1];
+        const cache = global.ytdocCache[m.sender];
+        if (!cache?.url) return m.reply("❌ El enlace expiró. Usa .ytdoc otra vez.");
+
+        await m.reply(
+          ⏳ *Descargando video...*\n +
+          📺 Calidad: ${quality}p\n +
+          ✅ API: SKY\n +
+          🤖 ${BOT_NAME}
+        );
+
+        // 1️⃣ REGISTRAR
+        await axios.post(
+          SKY_REGISTER,
+          { url: cache.url },
+          { headers: { apikey: SKY_KEY }, timeout: 30000 }
+        );
+
+        // pequeña espera
+        await new Promise(r => setTimeout(r, 2000));
+
+        // 2️⃣ RESOLVER
+        const res = await axios.post(
+          SKY_RESOLVE,
+          { url: cache.url, type: "video", quality },
+          { headers: { apikey: SKY_KEY }, timeout: 30000 }
+        );
+
+        const data = res.data?.result;
+        const link = data?.media?.direct;
+        if (!link) throw new Error("NO_LINK");
+
+        const safeTitle = (data.title || "video")
+          .replace(/[\\/:*?"<>|]/g, "")
+          .trim();
+
+        await client.sendMessage(
+          m.chat,
+          {
+            document: { url: link },
+            mimetype: "video/mp4",
+            fileName: ${safeTitle} - ${quality}p.mp4,
+            caption:
+              🎬 ${data.title}\n +
+              📺 Calidad: ${quality}p\n +
+              ✅ API: SKY\n +
+              🤖 ${BOT_NAME}
+          },
+          { quoted: m }
+        );
+
+        delete global.ytdocCache[m.sender];
+        return;
+      }
+
+      // ======================
+      // COMANDO NORMAL
+      // ======================
       const url = args[0];
       if (!url || !url.startsWith("http")) {
         return m.reply("❌ Usa:\n.ytdoc <link de YouTube>");
       }
 
       // ======================
-      // ☁️ SKY (set-host sky)
+      // ☁️ SKY (BOTONES)
       // ======================
       if (global.hosting === "sky") {
-        await m.reply(
-          `⏳ *Descargando video...*\n` +
-          `📺 Calidad: 360p\n` +
-          `☁️ API: SKY\n` +
-          `🤖 ${BOT_NAME}`
-        );
+        global.ytdocCache[m.sender] = { url };
 
-        const video = await getSkyVideo(url);
-        const safeTitle = video.title.replace(/[\\/:*?"<>|]/g, "");
+        const buttons = SKY_QUALITIES.map(q => ({
+          buttonId: .ytdoc ${url} ${q},
+          buttonText: { displayText: 🎬 ${q}p },
+          type: 1
+        }));
 
         return client.sendMessage(
           m.chat,
           {
-            document: { url: video.url },
-            mimetype: "video/mp4",
-            fileName: `${safeTitle} - 360p.mp4`,
-            caption:
-              `🎬 ${video.title}\n` +
-              `📄 Documento MP4\n` +
-              `☁️ SKY\n` +
-              `🤖 ${BOT_NAME}`
+            text: "📥 *Selecciona la calidad del video:*",
+            footer: BOT_NAME,
+            buttons,
+            headerType: 1
           },
           { quoted: m }
         );
       }
 
       // ======================
-      // 🌍 ADONIX (otro host)
+      // 🌍 ADONIX
       // ======================
       await m.reply(
-        `⏳ *Descargando video...*\n` +
-        `📺 Calidad predeterminada\n` +
-        `🌍 API: ADONIX\n` +
-        `🤖 ${BOT_NAME}`
+        ⏳ *Descargando video...*\n +
+        📺 Calidad predeterminada\n +
+        ✅ API: ADONIX\n +
+        🤖 ${BOT_NAME}
       );
 
       const res = await axios.get(
-        `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
+        ${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY},
         { timeout: 60000 }
       );
 
@@ -104,30 +134,27 @@ module.exports = {
       }
 
       const title = (res.data.data.title || "video")
-        .replace(/[\\/:*?"<>|]/g, "");
+        .replace(/[\\/:*?"<>|]/g, "")
+        .trim();
 
       await client.sendMessage(
         m.chat,
         {
           document: { url: res.data.data.url },
           mimetype: "video/mp4",
-          fileName: `${title}.mp4`,
+          fileName: ${title}.mp4,
           caption:
-            `🎬 ${res.data.data.title}\n` +
-            `📄 Documento MP4\n` +
-            `🌍 ADONIX\n` +
-            `🤖 ${BOT_NAME}`
+            🎬 ${res.data.data.title}\n +
+            ✅ API: ADONIX\n +
+            🤖 ${BOT_NAME}
         },
         { quoted: m }
       );
 
     } catch (err) {
-      console.error("YTDOC ERROR:", err.message);
-      m.reply(
-        "❌ No se pudo descargar el video.\n" +
-        "⏳ Intenta nuevamente más tarde."
-      );
+      console.error("YTDOC ERROR:", err.response?.data || err.message);
+      m.reply("❌ No se pudo descargar el video.");
+      delete global.ytdocCache[m.sender];
     }
   }
-};
-
+};  me sale error en sky cuando quiero videos largos y tiene que enviarme en documento pero en el panel de la  sky tarda unos 15 secundos en estar disponible el video para descargar
