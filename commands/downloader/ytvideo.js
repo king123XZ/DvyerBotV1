@@ -2,7 +2,7 @@ const axios = require("axios");
 
 /* ================= APIS ================= */
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-const ADONIX_KEY = "AdonixKeythtnjs6661";
+const ADONIX_KEY = "dvyer";
 
 /* ================ CONFIG ================= */
 const MAX_VIDEO_MB = 80; // WhatsApp seguro para video
