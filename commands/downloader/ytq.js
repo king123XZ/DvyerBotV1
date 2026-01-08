@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-const ADONIX_KEY = "AdonixKeythtnjs6661";
+const ADONIX_KEY = "dvyer";
 
 module.exports = {
   command: ["ytvideo"],
