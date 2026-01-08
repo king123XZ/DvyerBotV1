@@ -23,11 +23,8 @@ module.exports = {
     const url = args[0];
     const hosting = global.hosting || "otro";
 
-    if (!url || !url.startsWith("http")) {
-      return m.reply("❌ Enlace de YouTube no válido.");
-    }
+    if (!url || !url.startsWith("http")) return m.reply("❌ Enlace de YouTube no válido.");
 
-    // Inicializar cache
     global.ytCache = global.ytCache || {};
 
     // ----------------------
@@ -35,23 +32,14 @@ module.exports = {
     // ----------------------
     if (hosting === "sky") {
 
-      // Mostrar botones si no se eligió calidad
       if (!args[1]) {
         global.ytCache[m.sender] = { url: url, time: Date.now() };
 
-        // Botones de calidad + botón "Ver canal"
         const buttons = SKY_QUALITIES.map(q => ({
           buttonId: `.ytvideo ${url} ${q}`,
           buttonText: { displayText: `🎬 ${q}p` },
           type: 1
         }));
-
-        const buttonUrl = [
-          {
-            url: MY_CHANNEL,
-            displayText: "📢 Ver canal"
-          }
-        ];
 
         return client.sendMessage(
           m.chat,
@@ -59,16 +47,12 @@ module.exports = {
             text: "📥 *Selecciona la calidad del video:*",
             footer: "Killua-Bot-Dev • api-sky.ultraplus",
             buttons: buttons,
-            headerType: 1,
-            templateButtons: buttonUrl
+            headerType: 1
           },
           { quoted: m }
         );
       }
 
-      // ----------------------
-      // Descargar video según calidad
-      // ----------------------
       const quality = args[1];
       const cache = global.ytCache[m.sender];
       if (!cache) return m.reply("❌ Cache no encontrada. Usa `.ytvideo <url>` primero.");
@@ -77,28 +61,19 @@ module.exports = {
       try {
         await m.reply(`⬇️ Descargando video en ${quality}p usando api-sky.ultraplus...`);
 
-        // Registrar video
-        await axios.post(
-          SKY_API_REGISTER,
-          { url: cache.url },
-          { headers: { apikey: SKY_KEY, "Content-Type": "application/json" } }
-        );
+        await axios.post(SKY_API_REGISTER, { url: cache.url }, {
+          headers: { apikey: SKY_KEY, "Content-Type": "application/json" }
+        });
 
-        // Generar link
-        const res = await axios.post(
-          SKY_API_RESOLVE,
-          { url: cache.url, type: "video", quality },
-          { headers: { apikey: SKY_KEY, "Content-Type": "application/json" }, timeout: 60000 }
-        );
+        const res = await axios.post(SKY_API_RESOLVE, { url: cache.url, type: "video", quality }, {
+          headers: { apikey: SKY_KEY, "Content-Type": "application/json" },
+          timeout: 60000
+        });
 
         const videoUrl = res.data?.result?.media?.direct;
         if (!videoUrl) throw new Error("No se pudo generar el enlace de descarga.");
 
-        // Enviar video con botón real "Ver canal"
-        const templateButton = [
-          { url: MY_CHANNEL, displayText: "📢 Ver canal" }
-        ];
-
+        // 1️⃣ Enviar video normal
         await client.sendMessage(
           m.chat,
           {
@@ -106,9 +81,20 @@ module.exports = {
             mimetype: "video/mp4",
             fileName: res.data.result?.title || `video-${quality}p.mp4`,
             caption: `✅ Video descargado usando api-sky.ultraplus\n📺 Calidad: ${quality}p`,
+          },
+          { quoted: m }
+        );
+
+        // 2️⃣ Enviar botón para ver canal
+        await client.sendMessage(
+          m.chat,
+          {
+            text: "📢 Sígueme en mi canal de WhatsApp",
             footer: "Killua-Bot-Dev",
-            templateButtons: templateButton,
-            headerType: 5
+            templateButtons: [
+              { url: MY_CHANNEL, displayText: "📢 Ver canal" }
+            ],
+            headerType: 1
           },
           { quoted: m }
         );
@@ -116,7 +102,6 @@ module.exports = {
       } catch (err) {
         console.error("YTVIDEO SKY ERROR:", err.response?.data || err.message);
 
-        // fallback automático
         const nextQuality = SKY_QUALITIES.find(q => q !== quality);
         if (nextQuality) {
           return client.sendMessage(m.chat, {
@@ -144,27 +129,31 @@ module.exports = {
     try {
       await m.reply("⬇️ Descargando video usando API de Adonix...");
 
-      const res = await axios.get(
-        `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
-        { timeout: 60000 }
-      );
+      const res = await axios.get(`${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`, { timeout: 60000 });
+      if (!res.data?.status || !res.data?.data?.url) throw new Error("API inválida");
 
-      if (!res.data?.status || !res.data?.data?.url) {
-        throw new Error("API inválida");
-      }
-
+      // 1️⃣ Enviar video
       await client.sendMessage(
         m.chat,
         {
           video: { url: res.data.data.url },
           mimetype: "video/mp4",
           fileName: res.data.data.title || "video.mp4",
-          caption: `✅ Video descargado usando API de Adonix`,
+          caption: `✅ Video descargado usando API de Adonix`
+        },
+        { quoted: m }
+      );
+
+      // 2️⃣ Enviar botón de canal
+      await client.sendMessage(
+        m.chat,
+        {
+          text: "📢 Sígueme en mi canal de WhatsApp",
           footer: "Killua-Bot-Dev",
           templateButtons: [
             { url: MY_CHANNEL, displayText: "📢 Ver canal" }
           ],
-          headerType: 5
+          headerType: 1
         },
         { quoted: m }
       );
@@ -175,4 +164,5 @@ module.exports = {
     }
   }
 };
+
 
