@@ -1,9 +1,11 @@
 const axios = require("axios");
 
 const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const API_URL = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 
-// calidades permitidas en orden
+const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
+const BACKUP_API = "https://api-adonix.ultraplus.click/download/ytvideo";
+
+// calidades permitidas
 const QUALITIES = ["144", "240", "360"];
 
 module.exports = {
@@ -14,28 +16,37 @@ module.exports = {
     try {
       const quality = args[0];
       const cache = global.ytCache?.[m.sender];
+      const hosting = global.hosting || "otro";
 
-      // 🔐 Validaciones
       if (!cache) return;
       if (!quality || !QUALITIES.includes(quality)) return;
 
-      await m.reply(`⬇️ Descargando *${quality}p*...`);
+      const API_URL = hosting === "sky" ? SKY_API : BACKUP_API;
 
-      // ⏱️ timeout alto (45s)
+      await m.reply(`⬇️ Descargando *${quality}p*...\n🌐 Hosting: *${hosting.toUpperCase()}*`);
+
       const res = await axios.post(
         API_URL,
         {
           url: cache.url,
-          type: "video",
-          quality
+          quality,
+          type: "video"
         },
         {
           headers: { apikey: API_KEY },
-          timeout: 45000 // 🔥 CLAVE
+          timeout: 45000
         }
       );
 
-      const link = res.data?.result?.media?.direct;
+      // compatibilidad entre APIs
+      const link =
+        res.data?.result?.media?.direct ||
+        res.data?.data?.url;
+
+      const title =
+        res.data?.result?.title ||
+        res.data?.data?.title ||
+        "YouTube Video";
 
       if (!link) throw new Error("NO_LINK");
 
@@ -44,33 +55,35 @@ module.exports = {
         {
           video: { url: link },
           mimetype: "video/mp4",
-          caption: `🎬 ${res.data.result.title}\n📺 Calidad: ${quality}p`
+          caption: `🎬 ${title}\n📺 Calidad: ${quality}p`
         },
         { quoted: m }
       );
 
-      // limpiar cache
       delete global.ytCache[m.sender];
 
     } catch (err) {
       console.error("YTQ ERROR:", err.message);
 
-      // ⚠️ fallback automático
       const nextQuality = getFallback(args[0]);
 
       if (nextQuality) {
-        return client.sendMessage(m.chat, {
-          text: `⚠️ *${args[0]}p falló*\n🔁 Probando automáticamente *${nextQuality}p*...`
-        }, { quoted: m }).then(() => {
-          client.emit("message", {
-            key: m.key,
-            message: { conversation: `.ytq ${nextQuality}` },
-            sender: m.sender
-          });
+        await client.sendMessage(
+          m.chat,
+          {
+            text: `⚠️ *${args[0]}p falló*\n🔁 Probando automáticamente *${nextQuality}p*...`
+          },
+          { quoted: m }
+        );
+
+        return client.emit("message", {
+          key: m.key,
+          message: { conversation: `.ytq ${nextQuality}` },
+          sender: m.sender
         });
       }
 
-      m.reply("❌ No se pudo descargar el video en ninguna calidad.");
+      m.reply("❌ No se pudo descargar el video.");
       delete global.ytCache[m.sender];
     }
   }
@@ -78,7 +91,7 @@ module.exports = {
 
 // 🔁 fallback automático
 function getFallback(q) {
-  const order = ["1080", "720", "480", "360", "240", "144"];
+  const order = ["360", "240", "144"];
   const i = order.indexOf(q);
   return i >= 0 ? order[i + 1] : null;
 }
