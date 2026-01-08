@@ -1,10 +1,14 @@
 const axios = require("axios");
 
+// ================= APIS =================
 const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
-const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-
 const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 const ADONIX_KEY = "AdonixKeythtnjs6661";
+
+// ================= CONFIG =================
+const MAX_VIDEO_MB = 80;
 
 module.exports = {
   command: ["ytvideo"],
@@ -12,62 +16,93 @@ module.exports = {
 
   run: async (client, m, args) => {
     const url = args[0];
+
     if (!url || !url.startsWith("http")) {
       return m.reply("❌ Enlace de YouTube no válido.");
     }
 
-    // 🏠 SI ESTÁ EN SKY → selector de calidad
+    // ================= SKY HOST =================
     if (global.botHost === "sky") {
       global.ytCache = global.ytCache || {};
-      global.ytCache[m.sender] = {
-        url,
-        time: Date.now()
-      };
-
-      const buttons = [
-        { buttonId: ".ytq 144", buttonText: { displayText: "📱 144p" }, type: 1 },
-        { buttonId: ".ytq 240", buttonText: { displayText: "📱 240p" }, type: 1 },
-        { buttonId: ".ytq 360", buttonText: { displayText: "🎬 360p" }, type: 1 }
-      ];
+      global.ytCache[m.sender] = { url, time: Date.now() };
 
       return client.sendMessage(
         m.chat,
         {
           text: "📥 *Selecciona la calidad del video:*",
           footer: "Killua-Bot • SkyHosting",
-          buttons,
+          buttons: [
+            { buttonId: ".ytq 144", buttonText: { displayText: "📱 144p" }, type: 1 },
+            { buttonId: ".ytq 240", buttonText: { displayText: "📱 240p" }, type: 1 },
+            { buttonId: ".ytq 360", buttonText: { displayText: "🎬 360p" }, type: 1 }
+          ],
           headerType: 1
         },
         { quoted: m }
       );
     }
 
-    // 🌍 NO ES SKY → descarga directa (calidad automática)
+    // ================= ADONIX (SEGURO) =================
     try {
-      await m.reply("⬇️ Descargando video (calidad disponible)...");
+      await m.reply(
+        "⬇️ Descargando video...\n" +
+        "🎥 Calidad automática\n" +
+        "⏳ Verificando archivo."
+      );
 
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
         { timeout: 60000 }
       );
 
-      if (!res.data?.status || !res.data?.data?.url) {
-        throw new Error("API sin respuesta válida");
+      const data = res.data?.data;
+      if (!res.data?.status || !data?.url) {
+        throw new Error("ADONIX_INVALID");
       }
 
+      // 🔍 Verificar tamaño
+      const head = await axios.head(data.url, { timeout: 15000 });
+      const sizeBytes = Number(head.headers["content-length"] || 0);
+      const sizeMB = sizeBytes / (1024 * 1024);
+
+      const safeTitle = (data.title || "video")
+        .replace(/[\\/:*?"<>|]/g, "")
+        .slice(0, 60);
+
+      // 🎬 VIDEO SI ES SEGURO
+      if (sizeMB > 0 && sizeMB <= MAX_VIDEO_MB) {
+        return client.sendMessage(
+          m.chat,
+          {
+            video: { url: data.url },
+            mimetype: "video/mp4",
+            fileName: `${safeTitle}.mp4`,
+            caption: `🎬 ${data.title || "Video"}`
+          },
+          { quoted: m }
+        );
+      }
+
+      // 📄 DOCUMENTO (fallback)
       await client.sendMessage(
         m.chat,
         {
-          video: { url: res.data.data.url },
+          document: { url: data.url },
           mimetype: "video/mp4",
-          fileName: res.data.data.title || "video.mp4"
+          fileName: `${safeTitle}.mp4`,
+          caption:
+            `📄 *Video enviado como documento*\n` +
+            `📦 Tamaño: ${sizeMB.toFixed(2)} MB`
         },
         { quoted: m }
       );
 
-    } catch (e) {
-      console.error("YTVIDEO ADONIX ERROR:", e);
-      m.reply("❌ Error al descargar el video.");
+    } catch (err) {
+      console.error("YTVIDEO ERROR:", err.message);
+      m.reply(
+        "❌ No se pudo descargar el video.\n" +
+        "⚠️ El video puede estar bloqueado o no disponible."
+      );
     }
   }
 };
