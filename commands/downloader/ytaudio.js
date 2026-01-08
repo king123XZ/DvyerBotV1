@@ -15,6 +15,9 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 // 🔹 Tamaño máximo de audio para enviar como audio normal (50 MB)
 const MAX_AUDIO_SIZE = 50 * 1024 * 1024; // 50 MB en bytes
 
+// 🔹 Velocidad estimada de envío en bytes/segundo (ej. 1 MB/s)
+const UPLOAD_SPEED = 1 * 1024 * 1024; // 1 MB/s
+
 module.exports = {
   command: ["ytaudio"],
   category: "downloader",
@@ -24,12 +27,6 @@ module.exports = {
       if (!args.length) {
         return m.reply("❌ Ingresa un enlace o nombre del video.");
       }
-
-      await m.reply(
-        "⏳ Descargando...\n" +
-        `📢 Sigue el canal ${BOT_NAME}:\n` +
-        "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
-      );
 
       let videoUrl = args.join(" ");
 
@@ -103,29 +100,39 @@ module.exports = {
         console.warn("No se pudo obtener el tamaño del archivo, se enviará como audio normal.");
       }
 
-      // 🔹 Mensaje final con nombre del bot y API
-      const captionText = `🎵 ${title}\n✅ Enviado por: ${apiUsed}\n🤖 Bot: ${BOT_NAME}`;
+      // 🔹 Estimación de tiempo en segundos
+      const estimatedSeconds = Math.ceil(fileSize / UPLOAD_SPEED);
+      const minutes = Math.floor(estimatedSeconds / 60);
+      const seconds = estimatedSeconds % 60;
+      const estimatedTime = `${minutes}m ${seconds}s`;
 
+      // 🔹 Preparar mensaje informativo
+      let infoMessage = `⏳ Descargando...\n🎵 *${title}*\n✅ Enviado por: *${apiUsed}*\n🤖 Bot: *${BOT_NAME}*\n`;
       if (fileSize > MAX_AUDIO_SIZE) {
-        // Enviar como documento con caption
+        infoMessage += `⚠️ El archivo pesa más de 50 MB, se enviará como documento.\n`;
+      }
+      infoMessage += `📦 Tamaño aproximado: ${(fileSize / (1024 * 1024)).toFixed(2)} MB\n⏱ Tiempo estimado: ${estimatedTime}`;
+
+      // 🔹 Enviar mensaje informativo primero
+      await client.sendMessage(
+        m.chat,
+        { text: infoMessage },
+        { quoted: m }
+      );
+
+      // 🔹 Enviar audio o documento según tamaño
+      if (fileSize > MAX_AUDIO_SIZE) {
         await client.sendMessage(
           m.chat,
           {
             document: { url: audioUrl },
             mimetype: "audio/mpeg",
             fileName: `${title}.mp3`,
-            caption: captionText
+            caption: infoMessage
           },
           { quoted: m }
         );
       } else {
-        // Opción 2: mensaje de texto + audio normal
-        await client.sendMessage(
-          m.chat,
-          { text: captionText },
-          { quoted: m }
-        );
-
         await client.sendMessage(
           m.chat,
           {
@@ -143,4 +150,5 @@ module.exports = {
     }
   }
 };
+
 
