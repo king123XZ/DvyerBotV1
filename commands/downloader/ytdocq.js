@@ -6,9 +6,12 @@ const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 // 🟢 ADONIX
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-const ADONIX_KEY = "AdonixKeythtnjs6661";
+const ADONIX_KEY = "dvyer";
 
-// 🔒 Máximo permitido
+// 🤖 Bot
+const BOT_NAME = "KILLUA-BOT v1.00";
+
+// SKY → orden automático
 const QUALITY_ORDER = ["360", "240", "144"];
 
 if (!global.ytDocCache) global.ytDocCache = {};
@@ -32,12 +35,21 @@ module.exports = {
         return m.reply("❌ El enlace expiró. Usa *ytdoc* otra vez.");
       }
 
-      // 🏠 SKY HOST → CALIDAD AUTOMÁTICA
+      // ======================
+      // SKY
+      // ======================
       if (global.botHost === "sky") {
-        await m.reply(
-          "🎥 Preparando video...\n" +
-          "📺 Calidad automática hasta *360p*\n" +
-          "⏱️ Tiempo estimado: *15–30 segundos*"
+        // ⚡ AVISO INMEDIATO
+        await client.sendMessage(
+          m.chat,
+          {
+            text:
+              `⏳ *Descargando video...*\n` +
+              `📺 Calidad automática (hasta 360p)\n` +
+              `✅ API: SKY\n` +
+              `🤖 ${BOT_NAME}`
+          },
+          { quoted: m }
         );
 
         let data, link, usedQuality;
@@ -60,21 +72,26 @@ module.exports = {
           } catch {}
         }
 
-        if (!link) throw "NO_QUALITY_AVAILABLE";
+        if (!link) {
+          delete global.ytDocCache[m.sender];
+          return m.reply("❌ No se pudo generar el video.");
+        }
 
-        const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
-        const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
+        const safeTitle = (data.title || "video")
+          .replace(/[\\/:*?"<>|]/g, "")
+          .trim();
 
         await client.sendMessage(
           m.chat,
           {
             document: { url: link },
             mimetype: "video/mp4",
-            fileName,
+            fileName: `${safeTitle} - ${usedQuality}p.mp4`,
             caption:
-              `📄 *${data.title}*\n` +
-              `📺 Calidad usada: *${usedQuality}p*\n` +
-              `✅ Envío seguro`
+              `📄 ${data.title}\n` +
+              `📺 Calidad: ${usedQuality}p\n` +
+              `✅ API: SKY\n` +
+              `🤖 ${BOT_NAME}`
           },
           { quoted: m }
         );
@@ -83,8 +100,21 @@ module.exports = {
         return;
       }
 
-      // 🌍 OTRO HOST → ADONIX (SIN CALIDAD)
-      await m.reply("⬇️ Descargando video (calidad disponible)...");
+      // ======================
+      // ADONIX
+      // ======================
+      // ⚡ AVISO INMEDIATO
+      await client.sendMessage(
+        m.chat,
+        {
+          text:
+            `⏳ *Descargando video...*\n` +
+            `📺 Calidad predeterminada\n` +
+            `✅ API: ADONIX\n` +
+            `🤖 ${BOT_NAME}`
+        },
+        { quoted: m }
+      );
 
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(cache.url)}&apikey=${ADONIX_KEY}`,
@@ -92,10 +122,12 @@ module.exports = {
       );
 
       if (!res.data?.status || !res.data?.data?.url) {
-        throw "ADONIX_FAIL";
+        throw new Error("ADONIX_FAIL");
       }
 
-      const title = (res.data.data.title || "video").replace(/[\\/:*?"<>|]/g, "");
+      const title = (res.data.data.title || "video")
+        .replace(/[\\/:*?"<>|]/g, "")
+        .trim();
 
       await client.sendMessage(
         m.chat,
@@ -103,7 +135,10 @@ module.exports = {
           document: { url: res.data.data.url },
           mimetype: "video/mp4",
           fileName: `${title}.mp4`,
-          caption: "📄 Video descargado\nKILLUA-BOT"
+          caption:
+            `📄 ${res.data.data.title}\n` +
+            `✅ API: ADONIX\n` +
+            `🤖 ${BOT_NAME}`
         },
         { quoted: m }
       );
@@ -111,9 +146,9 @@ module.exports = {
       delete global.ytDocCache[m.sender];
 
     } catch (err) {
-      console.error("YTDOCQ ERROR:", err);
-      m.reply("❌ No se pudo descargar el video. Intenta más tarde.");
+      console.error("YTDOCQ ERROR:", err.response?.data || err.message);
       delete global.ytDocCache[m.sender];
+      m.reply("❌ No se pudo descargar el video.");
     }
   }
 };
