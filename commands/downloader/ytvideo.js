@@ -12,6 +12,9 @@ const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 // Calidades permitidas para Sky
 const SKY_QUALITIES = ["360", "720"];
 
+// Tu canal de WhatsApp
+const MY_CHANNEL = "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c";
+
 module.exports = {
   command: ["ytvideo"],
   category: "downloader",
@@ -29,15 +32,12 @@ module.exports = {
     // ----------------------
     if (hosting === "sky") {
 
-      // Inicializar cache
       global.ytCache = global.ytCache || {};
 
       // Si no hay calidad seleccionada, mostrar botones
       if (!args[1]) {
-        // Guardar URL en cache
         global.ytCache[m.sender] = { url: url, time: Date.now() };
 
-        // Crear botones de calidad
         const buttons = SKY_QUALITIES.map(q => ({
           buttonId: `.ytvideo ${url} ${q}`,
           buttonText: { displayText: `🎬 ${q}p` },
@@ -47,8 +47,8 @@ module.exports = {
         return client.sendMessage(
           m.chat,
           {
-            text: "📥 *Selecciona la calidad del video:*",
-            footer: "dvyer • api-sky.ultraplus",
+            text: `📥 *Selecciona la calidad del video:*\n\n💬 Sígueme en WhatsApp: ${MY_CHANNEL}`,
+            footer: "Killua-Bot-Dev • api-sky.ultraplus",
             buttons: buttons,
             headerType: 1
           },
@@ -84,14 +84,23 @@ module.exports = {
         const videoUrl = res.data?.result?.media?.direct;
         if (!videoUrl) throw new Error("No se pudo generar el enlace de descarga.");
 
-        // Enviar video
+        // Enviar video como "Killua-Bot-Dev" y con forwardedNewsletterMessageInfo
         await client.sendMessage(
           m.chat,
           {
             video: { url: videoUrl },
             mimetype: "video/mp4",
             fileName: res.data.result?.title || `video-${quality}p.mp4`,
-            caption: `✅ Video descargado usando api-sky.ultraplus\n📺 Calidad: ${quality}p`
+            caption: `✅ Video descargado usando api-sky.ultraplus\n📺 Calidad: ${quality}p\n\n💬 Sígueme en WhatsApp: ${MY_CHANNEL}`,
+            contextInfo: {
+              forwardingScore: 999,
+              isForwarded: true,
+              forwardedNewsletterMessageInfo: {
+                isForwarded: true,
+                isHighPriority: true,
+                sourceUrl: MY_CHANNEL
+              }
+            }
           },
           { quoted: m }
         );
@@ -99,7 +108,7 @@ module.exports = {
       } catch (err) {
         console.error("YTVIDEO SKY ERROR:", err.response?.data || err.message);
 
-        // Fallback automático a otra calidad
+        // Fallback automático
         const nextQuality = SKY_QUALITIES.find(q => q !== quality);
         if (nextQuality) {
           return client.sendMessage(m.chat, {
@@ -115,7 +124,6 @@ module.exports = {
 
         m.reply("❌ No se pudo descargar el video en ninguna calidad.");
       } finally {
-        // Limpiar cache
         delete global.ytCache[m.sender];
       }
 
@@ -143,7 +151,16 @@ module.exports = {
           video: { url: res.data.data.url },
           mimetype: "video/mp4",
           fileName: res.data.data.title || "video.mp4",
-          caption: `✅ Video descargado usando API de Adonix`
+          caption: `✅ Video descargado usando API de Adonix\n💬 Sígueme en WhatsApp: ${MY_CHANNEL}`,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              isForwarded: true,
+              isHighPriority: true,
+              sourceUrl: MY_CHANNEL
+            }
+          }
         },
         { quoted: m }
       );
@@ -154,4 +171,3 @@ module.exports = {
     }
   }
 };
-
