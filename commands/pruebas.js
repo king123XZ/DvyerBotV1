@@ -1,6 +1,8 @@
 const axios = require("axios");
 const yts = require("yt-search");
 
+const API_KEY = "AdonixKeythtnjs6661";
+
 module.exports = {
   command: ["ytmp3"],
   category: "downloader",
@@ -11,10 +13,9 @@ module.exports = {
         return m.reply("❌ Ingresa un enlace o nombre del video.");
       }
 
-      await m.reply("⏳ Descargando audio (documento)...");
+      await m.reply("⏳ Descargando audio MP3...");
 
       let videoUrl = args.join(" ");
-      let title = "audio";
 
       // 🔎 Buscar si no es link
       if (!videoUrl.startsWith("http")) {
@@ -23,39 +24,45 @@ module.exports = {
           return m.reply("❌ No se encontraron resultados.");
         }
         videoUrl = search.videos[0].url;
-        title = search.videos[0].title;
       }
 
-      title = title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60);
+      // 🎧 API ADONIX + KEY
+      const apiUrl =
+        `https://api-adonix.ultraplus.click/download/ytaudio` +
+        `?url=${encodeURIComponent(videoUrl)}` +
+        `&apikey=${API_KEY}`;
 
-      // 🎧 API gawrgura
-      const apiUrl = `https://gawrgura-api.onrender.com/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
       const { data } = await axios.get(apiUrl);
 
-      if (!data.status || !data.result) {
+      if (!data.status || !data.data?.url) {
         return m.reply("❌ Error al obtener el audio.");
       }
 
-      // ⬇️ DESCARGAR ARCHIVO
-      const file = await axios.get(data.result, {
+      const title = data.data.title
+        .replace(/[\\/:*?"<>|]/g, "")
+        .slice(0, 70);
+
+      // ⬇️ Descargar MP3
+      const audio = await axios.get(data.data.url, {
         responseType: "arraybuffer",
         timeout: 120000
       });
 
-      // 📄 ENVIAR COMO DOCUMENTO (CLAVE)
+      // 🎵 Enviar como AUDIO NORMAL
       await client.sendMessage(
         m.chat,
         {
-          document: Buffer.from(file.data),
-          mimetype: "application/octet-stream",
-          fileName: `${title}.mp3`
+          audio: Buffer.from(audio.data),
+          mimetype: "audio/mpeg",
+          fileName: title.endsWith(".mp3") ? title : `${title}.mp3`
         },
         { quoted: m }
       );
 
     } catch (err) {
-      console.error("YTMP3 DOCUMENT ERROR:", err);
+      console.error("YTMP3 AUDIO ERROR:", err);
       m.reply("❌ Error al descargar el audio.");
     }
   }
 };
+
