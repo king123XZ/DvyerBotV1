@@ -1,11 +1,11 @@
 const axios = require("axios");
 
-const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+const ADONIX_KEY = "AdonixKeythtnjs6661";
 
 const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
-const BACKUP_API = "https://api-adonix.ultraplus.click/download/ytvideo";
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 
-// calidades permitidas
 const QUALITIES = ["144", "240", "360"];
 
 module.exports = {
@@ -21,7 +21,12 @@ module.exports = {
       if (!cache) return;
       if (!quality || !QUALITIES.includes(quality)) return;
 
-      const API_URL = hosting === "sky" ? SKY_API : BACKUP_API;
+      const isSky = hosting === "sky";
+
+      const API_URL = isSky ? SKY_API : ADONIX_API;
+      const headers = isSky
+        ? { apikey: SKY_KEY }
+        : { key: ADONIX_KEY };
 
       await m.reply(`⬇️ Descargando *${quality}p*...\n🌐 Hosting: *${hosting.toUpperCase()}*`);
 
@@ -33,12 +38,12 @@ module.exports = {
           type: "video"
         },
         {
-          headers: { apikey: API_KEY },
+          headers,
           timeout: 45000
         }
       );
 
-      // compatibilidad entre APIs
+      // 🔄 compatibilidad entre APIs
       const link =
         res.data?.result?.media?.direct ||
         res.data?.data?.url;
@@ -63,7 +68,7 @@ module.exports = {
       delete global.ytCache[m.sender];
 
     } catch (err) {
-      console.error("YTQ ERROR:", err.message);
+      console.error("YTQ ERROR:", err.response?.data || err.message);
 
       const nextQuality = getFallback(args[0]);
 
@@ -89,7 +94,6 @@ module.exports = {
   }
 };
 
-// 🔁 fallback automático
 function getFallback(q) {
   const order = ["360", "240", "144"];
   const i = order.indexOf(q);
