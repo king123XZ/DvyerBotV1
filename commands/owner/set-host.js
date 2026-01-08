@@ -25,7 +25,7 @@ function menuButtons() {
 }
 
 module.exports = {
-  command: ["host"],
+  command: ["set-host"],
   category: "owner",
 
   run: async (client, m, args) => {
