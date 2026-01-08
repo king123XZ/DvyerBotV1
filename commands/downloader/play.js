@@ -67,8 +67,8 @@ module.exports = {
 
       const buttons = [
         { buttonId: `.ytaudio ${video.url}`, buttonText: { displayText: "🎵 Audio" }, type: 1 },
-        //{ buttonId: `.ytvideo ${video.url}`, buttonText: { displayText: "🎬 Video" }, type: 1 },
-        { buttonId: `.ytdoc ${video.url}`, buttonText: { displayText: "🎬 video mp4" }, type: 1 }
+        { buttonId: `.ytvideo ${video.url}`, buttonText: { displayText: "🎬 Video" }, type: 1 },
+        { buttonId: `.ytdoc ${video.url}`, buttonText: { displayText: "🎬doc mp4 videos largos" }, type: 1 }
       ];
 
       await client.sendMessage(
