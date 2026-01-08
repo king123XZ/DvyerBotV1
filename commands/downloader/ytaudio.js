@@ -12,6 +12,9 @@ const ADONIX_API_URL = "https://api-adonix.ultraplus.click/download/ytaudio";
 // 📛 Nombre del bot
 const BOT_NAME = "KILLUA-BOT v1.00";
 
+// 🔹 Tamaño máximo de audio para enviar como audio normal (50 MB)
+const MAX_AUDIO_SIZE = 50 * 1024 * 1024; // 50 MB en bytes
+
 module.exports = {
   command: ["ytaudio"],
   category: "downloader",
@@ -45,7 +48,6 @@ module.exports = {
 
       // 🌐 SELECCIÓN DE API SEGÚN HOSTING
       if (global.hosting === "sky") {
-        // ☁️ SKY API
         try {
           const { data } = await axios.get(SKY_API_URL, {
             params: { url: videoUrl, apikey: SKY_API_KEY },
@@ -64,9 +66,7 @@ module.exports = {
           console.error("SKY API ERROR:", err.response?.data || err.message);
           return m.reply("❌ No se pudo descargar desde SKY.");
         }
-
       } else {
-        // 🌍 ADONIX API
         try {
           const { data } = await axios.get(ADONIX_API_URL, {
             params: { url: videoUrl, apikey: ADONIX_API_KEY },
@@ -94,28 +94,44 @@ module.exports = {
       // 🧼 Limpiar título
       title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
 
-      // 🎧 Mensaje final mostrando la API usada y nombre del bot
-      const caption = `🎵 *${title}*\n✅ Enviado por: *${apiUsed}*\n🤖 Bot: *${BOT_NAME}*`;
-
+      // 🔹 Obtener tamaño del archivo remoto
+      let fileSize = 0;
       try {
-        await client.sendMessage(
-          m.chat,
-          {
-            audio: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`,
-            caption
-          },
-          { quoted: m }
-        );
+        const head = await axios.head(audioUrl);
+        fileSize = parseInt(head.headers["content-length"]) || 0;
       } catch (err) {
+        console.warn("No se pudo obtener el tamaño del archivo, se enviará como audio normal.");
+      }
+
+      // 🔹 Mensaje final con nombre del bot y API
+      const captionText = `🎵 ${title}\n✅ Enviado por: ${apiUsed}\n🤖 Bot: ${BOT_NAME}`;
+
+      if (fileSize > MAX_AUDIO_SIZE) {
+        // Enviar como documento con caption
         await client.sendMessage(
           m.chat,
           {
             document: { url: audioUrl },
             mimetype: "audio/mpeg",
             fileName: `${title}.mp3`,
-            caption
+            caption: captionText
+          },
+          { quoted: m }
+        );
+      } else {
+        // Opción 2: mensaje de texto + audio normal
+        await client.sendMessage(
+          m.chat,
+          { text: captionText },
+          { quoted: m }
+        );
+
+        await client.sendMessage(
+          m.chat,
+          {
+            audio: { url: audioUrl },
+            mimetype: "audio/mpeg",
+            fileName: `${title}.mp3`
           },
           { quoted: m }
         );
