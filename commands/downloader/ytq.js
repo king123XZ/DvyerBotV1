@@ -1,102 +1,74 @@
 const axios = require("axios");
 
-const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const ADONIX_KEY = "AdonixKeythtnjs6661";
-
 const SKY_API = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 
-const QUALITIES = ["144", "240", "360"];
+const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+const ADONIX_KEY = "AdonixKeythtnjs6661";
 
 module.exports = {
-  command: ["ytq"],
+  command: ["ytvideo"],
   category: "downloader",
 
   run: async (client, m, args) => {
-    try {
-      const quality = args[0];
-      const cache = global.ytCache?.[m.sender];
-      const hosting = global.hosting || "otro";
+    const url = args[0];
+    if (!url || !url.startsWith("http")) {
+      return m.reply("❌ Enlace de YouTube no válido.");
+    }
 
-      if (!cache) return;
-      if (!quality || !QUALITIES.includes(quality)) return;
+    // 🏠 SI ESTÁ EN SKY → selector de calidad
+    if (global.botHost === "sky") {
+      global.ytCache = global.ytCache || {};
+      global.ytCache[m.sender] = {
+        url,
+        time: Date.now()
+      };
 
-      const isSky = hosting === "sky";
+      const buttons = [
+        { buttonId: ".ytq 144", buttonText: { displayText: "📱 144p" }, type: 1 },
+        { buttonId: ".ytq 240", buttonText: { displayText: "📱 240p" }, type: 1 },
+        { buttonId: ".ytq 360", buttonText: { displayText: "🎬 360p" }, type: 1 }
+      ];
 
-      const API_URL = isSky ? SKY_API : ADONIX_API;
-      const headers = isSky
-        ? { apikey: SKY_KEY }
-        : { key: ADONIX_KEY };
-
-      await m.reply(`⬇️ Descargando *${quality}p*...\n🌐 Hosting: *${hosting.toUpperCase()}*`);
-
-      const res = await axios.post(
-        API_URL,
+      return client.sendMessage(
+        m.chat,
         {
-          url: cache.url,
-          quality,
-          type: "video"
+          text: "📥 *Selecciona la calidad del video:*",
+          footer: "Killua-Bot • SkyHosting",
+          buttons,
+          headerType: 1
         },
-        {
-          headers,
-          timeout: 45000
-        }
+        { quoted: m }
+      );
+    }
+
+    // 🌍 NO ES SKY → descarga directa (calidad automática)
+    try {
+      await m.reply("⬇️ Descargando video (calidad disponible)...");
+
+      const res = await axios.get(
+        `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
+        { timeout: 60000 }
       );
 
-      // 🔄 compatibilidad entre APIs
-      const link =
-        res.data?.result?.media?.direct ||
-        res.data?.data?.url;
-
-      const title =
-        res.data?.result?.title ||
-        res.data?.data?.title ||
-        "YouTube Video";
-
-      if (!link) throw new Error("NO_LINK");
+      if (!res.data?.status || !res.data?.data?.url) {
+        throw new Error("API sin respuesta válida");
+      }
 
       await client.sendMessage(
         m.chat,
         {
-          video: { url: link },
+          video: { url: res.data.data.url },
           mimetype: "video/mp4",
-          caption: `🎬 ${title}\n📺 Calidad: ${quality}p`
+          fileName: res.data.data.title || "video.mp4"
         },
         { quoted: m }
       );
 
-      delete global.ytCache[m.sender];
-
-    } catch (err) {
-      console.error("YTQ ERROR:", err.response?.data || err.message);
-
-      const nextQuality = getFallback(args[0]);
-
-      if (nextQuality) {
-        await client.sendMessage(
-          m.chat,
-          {
-            text: `⚠️ *${args[0]}p falló*\n🔁 Probando automáticamente *${nextQuality}p*...`
-          },
-          { quoted: m }
-        );
-
-        return client.emit("message", {
-          key: m.key,
-          message: { conversation: `.ytq ${nextQuality}` },
-          sender: m.sender
-        });
-      }
-
-      m.reply("❌ No se pudo descargar el video.");
-      delete global.ytCache[m.sender];
+    } catch (e) {
+      console.error("YTVIDEO ADONIX ERROR:", e);
+      m.reply("❌ Error al descargar el video.");
     }
   }
 };
-
-function getFallback(q) {
-  const order = ["360", "240", "144"];
-  const i = order.indexOf(q);
-  return i >= 0 ? order[i + 1] : null;
-}
 
