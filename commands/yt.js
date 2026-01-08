@@ -1,54 +1,28 @@
 
-const { ytdl } = require('../lib/ytdl');
+const api = require("../../lib/api")
+const queue = require("../../lib/queue")
 
 module.exports = {
-  command: ['ytdl', 'yt'],
-  category: 'downloader',
+  name: "yt",
+  async run(client, m, args) {
+    if (!args[0]) return m.reply("❌ Ingresa un link de YouTube")
 
-  run: async (client, m, args) => {
-    try {
-      if (args.length < 2) {
-        return m.reply(
-          `❌ Uso incorrecto\n\n` +
-          `Ejemplo:\n` +
-          `!ytdl https://youtu.be/xxxx 360\n` +
-          `!ytdl https://youtu.be/xxxx mp3`
-        );
-      }
+    await m.reply("⏳ En cola de descarga...")
 
-      const url = args[0];
-      const format = args[1].toLowerCase();
+    await queue.add(async () => {
+      const res = await api.post(
+        "https://api-adonix.ultraplus.click/download/ytvideo",
+        { url: args[0], quality: "360p" },
+        { headers: { apikey: process.env.ADONIX_KEY } }
+      )
 
-      await m.reply('⏳ Procesando descarga, espera...');
+      const url = res.data?.result?.url
+      if (!url) throw "Error descarga"
 
-      const res = await ytdl(url, format);
-
-      if (res.error) {
-        return m.reply(`❌ Error: ${res.error}`);
-      }
-
-      const caption =
-        `🎬 *${res.title || 'Sin título'}*\n` +
-        `📦 Formato: *${format}*`;
-
-      // AUDIO
-      if (['mp3','m4a','webm','aac','flac','ogg','wav','apus'].includes(format)) {
-        await client.sendMessage(m.chat, {
-          audio: { url: res.link },
-          mimetype: 'audio/mpeg'
-        }, { quoted: m });
-
-      // VIDEO
-      } else {
-        await client.sendMessage(m.chat, {
-          video: { url: res.link },
-          caption
-        }, { quoted: m });
-      }
-
-    } catch (err) {
-      console.error(err);
-      m.reply('❌ Error inesperado');
-    }
+      await client.sendMessage(
+        m.chat,
+        { video: { url }, caption: "✅ Descarga completa" }
+      )
+    })
   }
-};
+}
