@@ -29,15 +29,17 @@ module.exports = {
     // ----------------------
     if (hosting === "sky") {
 
-      // Iniciar cache para este usuario si no existe
+      // Inicializar cache
       global.ytCache = global.ytCache || {};
+
+      // Si no hay calidad seleccionada, mostrar botones
       if (!args[1]) {
-        // guardar URL en cache
+        // Guardar URL en cache
         global.ytCache[m.sender] = { url: url, time: Date.now() };
 
-        // mostrar botones de calidad
+        // Crear botones de calidad
         const buttons = SKY_QUALITIES.map(q => ({
-          buttonId: `.ytq ${q}`,
+          buttonId: `.ytvideo ${url} ${q}`,
           buttonText: { displayText: `🎬 ${q}p` },
           type: 1
         }));
@@ -82,7 +84,7 @@ module.exports = {
         const videoUrl = res.data?.result?.media?.direct;
         if (!videoUrl) throw new Error("No se pudo generar el enlace de descarga.");
 
-        // enviar video
+        // Enviar video
         await client.sendMessage(
           m.chat,
           {
@@ -97,7 +99,7 @@ module.exports = {
       } catch (err) {
         console.error("YTVIDEO SKY ERROR:", err.response?.data || err.message);
 
-        // fallback automático a otra calidad
+        // Fallback automático a otra calidad
         const nextQuality = SKY_QUALITIES.find(q => q !== quality);
         if (nextQuality) {
           return client.sendMessage(m.chat, {
@@ -105,7 +107,7 @@ module.exports = {
           }, { quoted: m }).then(() => {
             client.emit("message", {
               key: m.key,
-              message: { conversation: `.ytq ${nextQuality}` },
+              message: { conversation: `.ytvideo ${cache.url} ${nextQuality}` },
               sender: m.sender
             });
           });
@@ -113,7 +115,7 @@ module.exports = {
 
         m.reply("❌ No se pudo descargar el video en ninguna calidad.");
       } finally {
-        // limpiar cache
+        // Limpiar cache
         delete global.ytCache[m.sender];
       }
 
@@ -152,3 +154,4 @@ module.exports = {
     }
   }
 };
+
