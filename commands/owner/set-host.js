@@ -1,37 +1,31 @@
 const { setHosting, getHosting } = require("../../lib/host");
 
 module.exports = {
-  name: "host",
+  command: ["set-host", "sethosting"],
   category: "owner",
   owner: true,
 
-  async execute(client, m, args) {
+  run: async (client, m, args) => {
     if (!args[0]) {
       return m.reply(
-        "❌ Uso incorrecto\n\n" +
-        "Ejemplo:\n" +
+        "❌ Usa el comando así:\n\n" +
         ".set-host sky\n" +
         ".set-host otro"
       );
     }
 
-    const value = args[0].toLowerCase();
+    const newHost = args[0].toLowerCase();
+    const before = getHosting().toUpperCase();
 
-    if (!["sky", "otro"].includes(value)) {
-      return m.reply("❌ Opción inválida. Usa: sky | otro");
-    }
-
-    const old = getHosting();
-    const success = setHosting(value);
-
+    const success = setHosting(newHost);
     if (!success) {
-      return m.reply("❌ No se pudo cambiar el hosting.");
+      return m.reply("❌ Error al guardar el hosting.");
     }
 
     m.reply(
-      `✅ Hosting actualizado correctamente\n\n` +
-      `🔁 Antes: *${old.toUpperCase()}*\n` +
-      `🌐 Ahora: *${value.toUpperCase()}*`
+      `✅ Hosting actualizado correctamente\n` +
+      `🔁 Antes: ${before}\n` +
+      `🌐 Ahora: ${newHost.toUpperCase()}`
     );
   }
 };
