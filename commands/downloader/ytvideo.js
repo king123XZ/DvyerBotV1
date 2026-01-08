@@ -3,6 +3,7 @@ const axios = require("axios");
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
 const ADONIX_KEY = "dvyer";
 
+const SKY_API_REGISTER = "https://api-sky.ultraplus.click/youtube-mp4";
 const SKY_API_RESOLVE = "https://api-sky.ultraplus.click/youtube-mp4/resolve";
 const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
@@ -12,31 +13,30 @@ module.exports = {
 
   run: async (client, m, args) => {
     let url = args[0];
-    let qualityArg = args[1]; // 144, 240, 360 si se selecciona botón
+    let qualityArg = args[1]; // 360 o 720 si se selecciona botón
 
     if (!url || !url.startsWith("http")) {
       return m.reply("❌ Enlace de YouTube no válido.");
     }
 
-    // 🏠 Detectar hosting (Sky o Adonix)
+    // 🌐 Detectar hosting (Sky o Adonix)
     const hosting = global.hosting || "otro";
 
-    // 🌐 SI ES SKY → mostrar botones y descargar con POST
+    // 🏠 SKY HOST → mostrar botones y descargar con flujo de dos pasos
     if (hosting === "sky") {
 
       // Si no hay calidad seleccionada, mostrar botones
       if (!qualityArg) {
         const buttons = [
-          { buttonId: `.ytvideo ${url} 144`, buttonText: { displayText: "📱 144p" }, type: 1 },
-          { buttonId: `.ytvideo ${url} 240`, buttonText: { displayText: "📱 240p" }, type: 1 },
-          { buttonId: `.ytvideo ${url} 360`, buttonText: { displayText: "🎬 360p" }, type: 1 }
+          { buttonId: `.ytvideo ${url} 360`, buttonText: { displayText: "🎬 360p" }, type: 1 },
+          { buttonId: `.ytvideo ${url} 720`, buttonText: { displayText: "🎥 720p" }, type: 1 }
         ];
 
         return client.sendMessage(
           m.chat,
           {
             text: "📥 *Selecciona la calidad del video:*",
-            footer: "dvyer - Kali • SkyHosting",
+            footer: "dvyer - api-sky.ultraplus",
             buttons: buttons,
             headerType: 1
           },
@@ -44,20 +44,22 @@ module.exports = {
         );
       }
 
-      // Si ya se seleccionó calidad → descargar desde Sky
+      // Descargar video desde Sky
       try {
-        await m.reply(`⬇️ Descargando video en ${qualityArg}p usando API de Sky...`);
+        await m.reply(`⬇️ Descargando video en ${qualityArg}p usando api-sky.ultraplus...`);
 
+        // 1️⃣ Registrar video
+        await axios.post(
+          SKY_API_REGISTER,
+          { url: url },
+          { headers: { "Content-Type": "application/json", apikey: SKY_KEY } }
+        );
+
+        // 2️⃣ Generar link de descarga
         const res = await axios.post(
           SKY_API_RESOLVE,
           { url: url, type: "video", quality: qualityArg },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": SKY_KEY
-            },
-            timeout: 60000
-          }
+          { headers: { "Content-Type": "application/json", apikey: SKY_KEY }, timeout: 60000 }
         );
 
         const videoUrl = res.data?.media?.dl_download;
@@ -69,14 +71,14 @@ module.exports = {
             video: { url: videoUrl },
             mimetype: "video/mp4",
             fileName: res.data.title || `video-${qualityArg}p.mp4`,
-            caption: `✅ Video descargado usando API de Sky`
+            caption: `✅ Video descargado usando api-sky.ultraplus`
           },
           { quoted: m }
         );
 
       } catch (err) {
         console.error("YTVIDEO SKY ERROR:", err.response?.data || err.message);
-        return m.reply("❌ Error al descargar el video desde Sky.");
+        return m.reply("❌ Error al descargar el video desde api-sky.ultraplus.");
       }
 
       return;
@@ -112,4 +114,5 @@ module.exports = {
     }
   }
 };
+
 
