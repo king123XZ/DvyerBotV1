@@ -12,7 +12,7 @@ module.exports = {
 
   run: async (client, m, args) => {
     const url = args[0];
-    const qualityArg = args[1]; // calidad seleccionada si se usa Sky
+    const qualityArg = args[1]; // 144, 240, 360 si se selecciona botón
 
     if (!url || !url.startsWith("http")) {
       return m.reply("❌ Enlace de YouTube no válido.");
@@ -21,11 +21,8 @@ module.exports = {
     // 🏠 SKY HOST → MOSTRAR BOTONES
     if (global.botHost === "sky") {
 
-      // Si no hay calidad seleccionada, mostrar botones
+      // Si no se seleccionó calidad, mostrar botones
       if (!qualityArg) {
-        global.ytCache = global.ytCache || {};
-        global.ytCache[m.sender] = { url, owner: m.sender, time: Date.now() };
-
         const buttons = [
           { buttonId: `.ytvideo ${url} 144`, buttonText: { displayText: "📱 144p" }, type: 1 },
           { buttonId: `.ytvideo ${url} 240`, buttonText: { displayText: "📱 240p" }, type: 1 },
@@ -37,16 +34,16 @@ module.exports = {
           {
             text: "📥 *Selecciona la calidad del video:*",
             footer: "Killua-Bot • SkyHosting",
-            buttons,
+            buttons: buttons,
             headerType: 1
           },
           { quoted: m }
         );
       }
 
-      // Si ya se seleccionó la calidad → descargar desde Sky
+      // Si ya se seleccionó calidad → descargar desde Sky
       try {
-        await m.reply(`⬇️ Descargando video en ${qualityArg}p...`);
+        await m.reply(`⬇️ Descargando video en ${qualityArg}p usando API de Sky...`);
 
         const res = await axios.get(
           `${SKY_API}?url=${encodeURIComponent(url)}&quality=${qualityArg}&apikey=${SKY_KEY}`,
@@ -62,7 +59,8 @@ module.exports = {
           {
             video: { url: res.data.data.url },
             mimetype: "video/mp4",
-            fileName: res.data.data.title || `video-${qualityArg}p.mp4`
+            fileName: res.data.data.title || `video-${qualityArg}p.mp4`,
+            caption: `✅ Video descargado usando API de Sky`
           },
           { quoted: m }
         );
@@ -77,7 +75,7 @@ module.exports = {
 
     // 🌍 OTRO HOST → DESCARGA DIRECTA con Adonix
     try {
-      await m.reply("⬇️ Descargando video (calidad disponible)...");
+      await m.reply("⬇️ Descargando video usando API de Adonix...");
 
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
@@ -93,7 +91,8 @@ module.exports = {
         {
           video: { url: res.data.data.url },
           mimetype: "video/mp4",
-          fileName: res.data.data.title || "video.mp4"
+          fileName: res.data.data.title || "video.mp4",
+          caption: `✅ Video descargado usando API de Adonix`
         },
         { quoted: m }
       );
