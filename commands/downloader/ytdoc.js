@@ -6,10 +6,13 @@ const SKY_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
 
 // 🟢 ADONIX
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-const ADONIX_KEY = "AdonixKeythtnjs6661";
+const ADONIX_KEY = "dvyer";
 
+// 🤖 Bot
+const BOT_NAME = "KILLUA-BOT v1.00";
+
+// SKY → orden automático de calidad
 const QUALITY_ORDER = ["360", "240", "144"];
-const MAX_SIZE_MB = 1700;
 
 module.exports = {
   command: ["ytdoc"],
@@ -22,12 +25,21 @@ module.exports = {
         return m.reply("❌ Usa:\n.ytdoc <link de YouTube>");
       }
 
-      // 🏠 SKY HOST → CALIDAD AUTOMÁTICA
+      // ======================
+      // SKY
+      // ======================
       if (global.botHost === "sky") {
-        await m.reply(
-          "⬇️ Descargando video...\n" +
-          "🎥 Calidad automática (hasta 360p)\n" +
-          "⏳ Esto puede tardar unos segundos."
+        // ⚡ MENSAJE INMEDIATO
+        await client.sendMessage(
+          m.chat,
+          {
+            text:
+              `⏳ *Descargando video...*\n` +
+              `📺 Calidad automática (hasta 360p)\n` +
+              `✅ API: SKY\n` +
+              `🤖 Bot: ${BOT_NAME}`
+          },
+          { quoted: m }
         );
 
         let data, link, usedQuality;
@@ -54,37 +66,41 @@ module.exports = {
           return m.reply("❌ No se pudo generar el video.");
         }
 
-        // 🔍 tamaño
-        const head = await axios.head(link);
-        const sizeMB = Number(head.headers["content-length"] || 0) / (1024 * 1024);
-
-        if (sizeMB > MAX_SIZE_MB) {
-          return m.reply(
-            `⚠️ Archivo muy pesado\n\n📦 ${sizeMB.toFixed(2)} MB\n📛 Límite: ${MAX_SIZE_MB} MB`
-          );
-        }
-
-        const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, "");
-        const fileName = `${safeTitle} - ${usedQuality}p.mp4`;
+        const safeTitle = (data.title || "video")
+          .replace(/[\\/:*?"<>|]/g, "")
+          .trim();
 
         return client.sendMessage(
           m.chat,
           {
             document: { url: link },
             mimetype: "video/mp4",
-            fileName,
+            fileName: `${safeTitle} - ${usedQuality}p.mp4`,
             caption:
               `🎬 ${data.title}\n` +
               `📺 Calidad: ${usedQuality}p\n` +
-              `📦 Tamaño: ${sizeMB.toFixed(2)} MB\n\n` +
-              "KILLUA-BOT V1.00"
+              `✅ API: SKY\n` +
+              `🤖 ${BOT_NAME}`
           },
           { quoted: m }
         );
       }
 
-      // 🌍 OTRO HOST → ADONIX (SIN CALIDAD)
-      await m.reply("⬇️ Descargando video (calidad disponible)...");
+      // ======================
+      // ADONIX
+      // ======================
+      // ⚡ MENSAJE INMEDIATO
+      await client.sendMessage(
+        m.chat,
+        {
+          text:
+            `⏳ *Descargando video...*\n` +
+            `📺 Calidad predeterminada\n` +
+            `✅ API: ADONIX\n` +
+            `🤖 Bot: ${BOT_NAME}`
+        },
+        { quoted: m }
+      );
 
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
@@ -97,7 +113,8 @@ module.exports = {
 
       const fileUrl = res.data.data.url;
       const title = (res.data.data.title || "video")
-        .replace(/[\\/:*?"<>|]/g, "");
+        .replace(/[\\/:*?"<>|]/g, "")
+        .trim();
 
       await client.sendMessage(
         m.chat,
@@ -105,14 +122,17 @@ module.exports = {
           document: { url: fileUrl },
           mimetype: "video/mp4",
           fileName: `${title}.mp4`,
-          caption: "🎬 Video descargado\nKILLUA-BOT V1.00"
+          caption:
+            `🎬 ${res.data.data.title}\n` +
+            `✅ API: ADONIX\n` +
+            `🤖 ${BOT_NAME}`
         },
         { quoted: m }
       );
 
     } catch (err) {
-      console.error("YTDOC ERROR:", err);
-      m.reply("❌ Ocurrió un error al descargar el video.");
+      console.error("YTDOC ERROR:", err.response?.data || err.message);
+      m.reply("❌ Error al descargar el video.");
     }
   }
 };
