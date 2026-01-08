@@ -1,7 +1,7 @@
 const { setHosting, getHosting } = require("../../lib/host");
 
 module.exports = {
-  name: "set-host",
+  name: "host",
   category: "owner",
   owner: true,
 
