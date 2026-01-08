@@ -24,18 +24,14 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      if (!args.length) {
-        return m.reply("❌ Ingresa un enlace o nombre del video.");
-      }
+      if (!args.length) return m.reply("❌ Ingresa un enlace o nombre del video.");
 
       let videoUrl = args.join(" ");
 
       // 🔎 Buscar si no es enlace
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
-        if (!search.videos || !search.videos.length) {
-          return m.reply("❌ No se encontraron resultados.");
-        }
+        if (!search.videos || !search.videos.length) return m.reply("❌ No se encontraron resultados.");
         videoUrl = search.videos[0].url;
       }
 
@@ -45,17 +41,19 @@ module.exports = {
 
       // 🌐 SELECCIÓN DE API SEGÚN HOSTING
       if (global.hosting === "sky") {
+        // ☁️ SKY API POST
         try {
-          const { data } = await axios.get(SKY_API_URL, {
-            params: { url: videoUrl, apikey: SKY_API_KEY },
-            timeout: 60000
-          });
+          const { data } = await axios.post(
+            SKY_API_URL,
+            { url: videoUrl },
+            { headers: { apikey: SKY_API_KEY }, timeout: 60000 }
+          );
 
-          if (!data || !data.status) {
-            return m.reply("❌ Error con la API SKY.");
-          }
+          console.log("SKY API DATA:", data); // para depuración
 
-          audioUrl = data.result?.audio || data.result?.media?.audio;
+          if (!data || !data.status) return m.reply("❌ Error con la API SKY.");
+
+          audioUrl = data.result?.media?.audio;
           title = data.result?.title || title;
           apiUsed = "SKY";
 
@@ -63,16 +61,16 @@ module.exports = {
           console.error("SKY API ERROR:", err.response?.data || err.message);
           return m.reply("❌ No se pudo descargar desde SKY.");
         }
+
       } else {
+        // 🌍 ADONIX API GET
         try {
           const { data } = await axios.get(ADONIX_API_URL, {
             params: { url: videoUrl, apikey: ADONIX_API_KEY },
             timeout: 60000
           });
 
-          if (!data || !data.status || !data.data?.url) {
-            return m.reply("❌ Error con la API ADONIX.");
-          }
+          if (!data || !data.status || !data.data?.url) return m.reply("❌ Error con la API ADONIX.");
 
           audioUrl = data.data.url;
           title = data.data.title || title;
@@ -84,9 +82,7 @@ module.exports = {
         }
       }
 
-      if (!audioUrl) {
-        return m.reply("❌ Audio no disponible.");
-      }
+      if (!audioUrl) return m.reply("❌ Audio no disponible.");
 
       // 🧼 Limpiar título
       title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
@@ -108,12 +104,10 @@ module.exports = {
 
       // 🔹 Preparar mensaje informativo
       let infoMessage = `⏳ Descargando...\n🎵 *${title}*\n✅ Enviado por: *${apiUsed}*\n🤖 Bot: *${BOT_NAME}*\n`;
-      if (fileSize > MAX_AUDIO_SIZE) {
-        infoMessage += `⚠️ El archivo pesa más de 50 MB, se enviará como documento.\n`;
-      }
+      if (fileSize > MAX_AUDIO_SIZE) infoMessage += `⚠️ El archivo pesa más de 50 MB, se enviará como documento.\n`;
       infoMessage += `📦 Tamaño aproximado: ${(fileSize / (1024 * 1024)).toFixed(2)} MB\n⏱ Tiempo estimado: ${estimatedTime}`;
 
-      // 🔹 Enviar mensaje informativo primero
+      // 🔹 Enviar mensaje inicial
       await client.sendMessage(
         m.chat,
         { text: infoMessage },
