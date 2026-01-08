@@ -7,6 +7,11 @@ global.version = "v2.0.0 | devYer";
 global.namebot = "dvyer - kali";
 global.author = "dvyer | kali";
 
+// 🌐 CONFIGURACIÓN DE ALOJAMIENTO DEL BOT
+// sky  = usa API exclusiva de SkyUltraPlus
+// otro = usa API global
+global.hosting = "otro"; // sky | otro
+
 global.mess = {
   admin: "→ Esta función está reservada para los administradores del grupo",
   botAdmin: "→ Para ejecutar esta función debo ser administrador",
@@ -16,13 +21,12 @@ global.mess = {
   wait: "→ Espera un momento...",
 };
 
-global.thumbnailUrl = "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png"; //Cambia esta imagen     
+global.thumbnailUrl = "https://i.ibb.co/JR8Qz9j6/20251204-0617-Retrato-Misterioso-Mejorado-remix-01kbmh4newf9k8r1r0bafmxr46.png";
 
 global.my = {
   ch: "https://whatsapp.com/channel/0029VaH4xpUBPzjendcoBI2c"
 };
 
-             
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
   fs.unwatchFile(file);
@@ -30,3 +34,4 @@ fs.watchFile(file, () => {
   delete require.cache[file];
   require(file);
 });
+
