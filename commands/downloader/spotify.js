@@ -17,19 +17,16 @@ module.exports = {
 
       const query = args.join(" ");
 
-      // ⚡ Aviso rápido
       await m.reply("⏳ Buscando y descargando en Spotify...");
 
-      // ✅ BÚSQUEDA + DESCARGA (ADONIX)
       const res = await axios.get(API_URL, {
         params: {
-          query,
+          q: query,          // ✅ CLAVE CORRECTA
           apikey: API_KEY
         },
         timeout: 60000
       });
 
-      // ✅ Validación REAL
       if (!res.data?.status || !res.data?.downloadUrl || !res.data?.song) {
         console.log("RESPUESTA ADONIX:", res.data);
         return m.reply("❌ No se pudo obtener la canción.");
@@ -48,7 +45,6 @@ module.exports = {
         `👤 ${artist}\n` +
         `⏱️ ${duration}`;
 
-      // 🎧 ENVIAR AUDIO (FORMA CORRECTA)
       await client.sendMessage(
         m.chat,
         {
@@ -62,8 +58,7 @@ module.exports = {
 
     } catch (err) {
       console.error("SPOTIFY ERROR:", err.response?.data || err.message);
-      await m.reply("❌ Error al descargar la canción.");
+      m.reply("❌ Error al descargar la canción.");
     }
   }
 };
-
