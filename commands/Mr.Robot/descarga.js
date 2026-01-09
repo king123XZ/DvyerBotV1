@@ -1,5 +1,5 @@
 const axios = require("axios");
-const series = require("../../lib/series");
+const series = require("../../../lib/series"); // <-- ruta corregida
 
 const API_KEY = "dvyer";
 
@@ -16,8 +16,8 @@ module.exports = {
       global.channelInfo
     );
 
-    const serieId = args[0];       // ej: mr_robot
-    const capArg = args[1];        // ej: t1-1
+    const serieId = args[0];
+    const capArg = args[1];
     const [seasonPart, epPart] = capArg.replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
@@ -54,7 +54,6 @@ module.exports = {
     );
 
     try {
-      // Llamada a MediaFire vía ADONIX
       const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
         params: { apikey: API_KEY, url: ep.url },
         timeout: 0
@@ -93,3 +92,4 @@ module.exports = {
     }
   }
 };
+
