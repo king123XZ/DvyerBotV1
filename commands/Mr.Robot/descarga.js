@@ -4,7 +4,7 @@ const axios = require("axios");
 module.exports = {
   command: ["mr_robot", "descargar_cap"],
   category: "media",
-  description: "Descarga capítulos de la temporada 1",
+  description: "Descarga capítulos de Mr. Robot temporada 1",
 
   run: async (client, m, args) => {
     if (!args[0]) return m.reply("❌ Debes indicar el capítulo. Ejemplo: .mr_robot t1-1");
