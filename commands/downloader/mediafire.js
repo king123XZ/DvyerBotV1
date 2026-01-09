@@ -15,11 +15,10 @@ module.exports = {
     await m.reply("⏳ Obteniendo información del archivo...");
 
     try {
-      // Obtener info del archivo (sin timeout)
-      const res = await axios.get(
-        "https://api-adonix.ultraplus.click/download/mediafire",
-        { params: { apikey: API_KEY, url: args[0] }, timeout: 0 }
-      );
+      const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
+        params: { apikey: API_KEY, url: args[0] },
+        timeout: 0 // espera indefinida
+      });
 
       const files = res.data?.result || [];
       if (!files.length) return m.reply("❌ No se pudo obtener el archivo.");
@@ -33,7 +32,7 @@ module.exports = {
 
       await m.reply(`📥 Preparando descarga...\n📄 ${file.nama}\n📏 ${file.size}`);
 
-      // Descargar archivo como stream directo
+      // Descargar archivo como stream
       const stream = await axios({
         method: "get",
         url: file.link,
@@ -41,7 +40,7 @@ module.exports = {
         timeout: 0
       });
 
-      // Enviar stream directamente al chat
+      // Enviar directamente el stream
       await client.sendMessage(
         m.chat,
         {
@@ -58,4 +57,6 @@ module.exports = {
       m.reply("❌ Error al descargar el archivo de MediaFire.");
     }
   }
+};
+
 };
