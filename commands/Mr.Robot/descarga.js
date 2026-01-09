@@ -15,7 +15,7 @@ module.exports = {
     const s = series.find(x => x.id === "mr_robot");
     if (!s) return m.reply("❌ Serie no encontrada.");
 
-    const season = s.seasons.find(t => t.season === 1);
+    const season = s.seasons.find(t => t.season === parseInt(seasonPart));
     if (!season) return m.reply("❌ Temporada no encontrada.");
 
     const ep = season.episodes.find(e => e.ep === epNum);
