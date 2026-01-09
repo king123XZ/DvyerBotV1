@@ -1,94 +1,50 @@
+const series = require("../../lib/series");
 const axios = require("axios");
-const series = require("../../lib/series"); // <-- ruta corregida
-
-const API_KEY = "dvyer";
 
 module.exports = {
-  command: ["descargar", "descarga_cap"],
+  command: ["mr_robot", "descargar_cap"],
   category: "media",
-  description: "Descarga capítulos de series desde MediaFire",
+  description: "Descarga capítulos de la temporada 1",
 
   run: async (client, m, args) => {
-    if (!args[0] || !args[1]) return client.reply(
-      m.chat,
-      "❌ Debes indicar el capítulo. Ejemplo: .descargar mr_robot t1-1",
-      m,
-      global.channelInfo
-    );
+    if (!args[0]) return m.reply("❌ Debes indicar el capítulo. Ejemplo: .mr_robot t1-1");
 
-    const serieId = args[0];
-    const capArg = args[1];
-    const [seasonPart, epPart] = capArg.replace("t", "").split("-");
+    const [seasonPart, epPart] = args[0].replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
-    const s = series.find(x => x.id === serieId);
-    if (!s) return client.reply(
-      m.chat,
-      "❌ Serie no encontrada.",
-      m,
-      global.channelInfo
-    );
+    const s = series.find(x => x.id === "mr_robot");
+    if (!s) return m.reply("❌ Serie no encontrada.");
 
-    const season = s.seasons.find(t => t.season === parseInt(seasonPart));
-    if (!season) return client.reply(
-      m.chat,
-      "❌ Temporada no encontrada.",
-      m,
-      global.channelInfo
-    );
+    const season = s.seasons.find(t => t.season === 1);
+    if (!season) return m.reply("❌ Temporada no encontrada.");
 
     const ep = season.episodes.find(e => e.ep === epNum);
-    if (!ep || !ep.url || ep.url.includes("xxxx")) return client.reply(
-      m.chat,
-      "❌ Este capítulo aún no está disponible.",
-      m,
-      global.channelInfo
-    );
+    if (!ep) return m.reply("❌ Capítulo no encontrado.");
 
-    // Mensaje discreto de descarga
-    await client.reply(
-      m.chat,
-      `⏳ Se está descargando: ${s.title} - ${ep.title}\nSe enviará automáticamente cuando esté listo.`,
-      m,
-      global.channelInfo
-    );
+    // ✅ Si el enlace aún está vacío
+    if (!ep.url || ep.url === "") {
+      return m.reply(`⚠️ Capítulo ${ep.title} aún no disponible.`);
+    }
+
+    await m.reply(`⏳ Descargando: ${ep.title}`);
 
     try {
-      const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
-        params: { apikey: API_KEY, url: ep.url },
-        timeout: 0
-      });
-
-      const file = res.data.result[0];
-      if (!file) return client.reply(
-        m.chat,
-        "❌ No se pudo obtener el archivo desde MediaFire.",
-        m,
-        global.channelInfo
-      );
-
-      const download = await axios.get(file.link, { responseType: "arraybuffer", timeout: 0 });
+      const download = await axios.get(ep.url, { responseType: "arraybuffer", timeout: 0 });
       const buffer = Buffer.from(download.data);
 
       await client.sendMessage(
         m.chat,
         {
           document: buffer,
-          mimetype: `application/${file.mime}`,
-          fileName: decodeURIComponent(file.nama),
-          caption: `📥 ${s.title} - ${ep.title}`
+          fileName: `${s.title} - ${ep.title}.mp4`,
+          mimetype: "video/mp4",
+          caption: `📥 ${ep.title} - Audio Latino`
         },
-        { quoted: m, ...global.channelInfo }
+        { quoted: m }
       );
-
     } catch (err) {
-      console.error("DESCARGA CAP ERROR:", err.message);
-      await client.reply(
-        m.chat,
-        "❌ Error al descargar el capítulo desde MediaFire.",
-        m,
-        global.channelInfo
-      );
+      console.error("DESCARGA ERROR:", err.message);
+      m.reply("❌ Error al descargar el capítulo.");
     }
   }
 };
