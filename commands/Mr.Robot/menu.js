@@ -9,10 +9,16 @@ module.exports = {
 
     const season = s.seasons.find(t => t.season === 1);
 
-    // Enviar primero la portada de la temporada
-    await client.sendMessage(m.chat, { image: { url: s.image }, caption: `📺 ${s.title} - Temporada 1` });
+    // 1️⃣ Opcional: enviar imagen de portada
+    await client.sendMessage(
+      m.chat,
+      {
+        image: { url: s.image },
+        caption: `📺 ${s.title} - Temporada 1`
+      }
+    );
 
-    // Construimos la lista con los capítulos
+    // 2️⃣ Construimos la lista de capítulos
     const sections = [
       {
         title: `Capítulos de ${s.title} - Temporada 1`,
@@ -32,6 +38,7 @@ module.exports = {
       sections
     };
 
-    await client.sendMessage(m.chat, listMessage); // ⚠️ sin quoted
+    // 3️⃣ Enviar solo el ListMessage, sin quoted
+    await client.sendMessage(m.chat, listMessage);
   }
 };
