@@ -3,12 +3,14 @@ const series = require("../../lib/series");
 module.exports = {
   command: ["menu_serie"],
   category: "media",
-  run: async (client, m, args) => {
+
+  run: async (client, m) => {
     const s = series.find(x => x.id === "mr_robot");
     if (!s) return m.reply("❌ Serie no encontrada.");
 
     const season = s.seasons.find(t => t.season === 1);
 
+    // Construimos la lista con 1 solo botón que abre todos los capítulos
     const sections = [
       {
         title: `Capítulos de ${s.title} - Temporada 1`,
