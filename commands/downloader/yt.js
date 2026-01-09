@@ -1,40 +1,62 @@
-const api = require("../../lib/api")
-const queue = require("../../lib/queue")
+const axios = require("axios");
+
+// ADONIX API
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
+const ADONIX_KEY = "dvyer";
+
+// BOT
+const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
-  name: "yt",
-  async run(client, m, args) {
-    if (!args[0]) {
-      return m.reply("❌ Ingresa un link de YouTube")
-    }
+  command: ["yt2"],
+  category: "downloader",
 
-    await m.reply("⏳ En cola de descarga...")
+  run: async (client, m, args) => {
+    try {
+      const url = args[0];
 
-    await queue.add(async () => {
-      const res = await api.post(
-        "https://api-adonix.ultraplus.click/download/ytvideo",
-        {
-          url: args[0],
-          quality: "360p"
-        },
-        {
-          headers: {
-            apikey: process.env.ADONIX_KEY
-          }
-        }
-      )
+      if (!url || !url.startsWith("http")) {
+        return m.reply("❌ Enlace de YouTube no válido.");
+      }
 
-      const videoUrl = res.data?.result?.url
-      if (!videoUrl) throw new Error("No se pudo descargar")
+      // Mensaje inmediato (UX)
+      await m.reply(
+        `⏳ *Descargando video...*\n` +
+        `✅ API: ADONIX\n` +
+        `🤖 ${BOT_NAME}`
+      );
 
+      // Llamada a la API
+      const res = await axios.get(
+        `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
+        { timeout: 60000 }
+      );
+
+      if (!res.data || !res.data.data || !res.data.data.url) {
+        throw new Error("Respuesta inválida de Adonix");
+      }
+
+      let videoUrl = res.data.data.url;
+      let title = res.data.data.title || "video";
+
+      // Limpiar nombre
+      title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
+
+      // Enviar video (FORMA CORRECTA)
       await client.sendMessage(
         m.chat,
         {
           video: { url: videoUrl },
-          caption: "✅ Descarga completa"
-        }
-      )
-    })
+          mimetype: "video/mp4",
+          fileName: `${title}.mp4`
+        },
+        { quoted: m }
+      );
+
+    } catch (err) {
+      console.error("YTVIDEO ADONIX ERROR:", err.response?.data || err.message);
+      await m.reply("❌ Error al descargar el video.");
+    }
   }
-}
+};
 
