@@ -15,7 +15,7 @@ module.exports = {
         type: 1
       },
       {
-        buttonId: ".comprarcredito",
+        buttonId: ".anime",
         buttonText: { displayText: "ANIME" },
         type: 1
       }
