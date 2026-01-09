@@ -90,4 +90,6 @@ module.exports = {
         global.channelInfo
       );
     }
-  }
+  } // fin de run
+}; // fin de module.exports
+
