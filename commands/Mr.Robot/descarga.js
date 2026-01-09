@@ -1,5 +1,5 @@
-//hola soy dvyer creador del codigo y tengo todo el derecho de este codigo.
-//solo es de uso exclusivo para bott killua-bot-dv
+// Comando exclusivo de Killua-BOT DV
+// Creador: DVYER
 
 const series = require("../../lib/series");
 const axios = require("axios");
@@ -44,6 +44,16 @@ module.exports = {
       global.channelInfo
     );
 
+    // ⚠ Verificar si el capítulo está disponible
+    if (!ep.url || ep.url.includes("xxxx")) {
+      return client.reply(
+        m.chat,
+        "❌ Este capítulo aún no está disponible.",
+        m,
+        global.channelInfo
+      );
+    }
+
     await client.reply(
       m.chat,
       `⏳ Descargando: ${ep.title}`,
@@ -52,6 +62,18 @@ module.exports = {
     );
 
     try {
+      // Verificar que la URL existe antes de descargar
+      const head = await axios.head(ep.url).catch(() => null);
+      if (!head || head.status !== 200) {
+        return client.reply(
+          m.chat,
+          "❌ El capítulo no está disponible en este momento.",
+          m,
+          global.channelInfo
+        );
+      }
+
+      // Descargar capítulo
       const download = await axios.get(ep.url, { responseType: "arraybuffer", timeout: 0 });
       const buffer = Buffer.from(download.data);
 
@@ -63,13 +85,14 @@ module.exports = {
           mimetype: "video/mp4",
           caption: `📥 ${ep.title} - Audio Latino`
         },
-        { quoted: m, ...global.channelInfo } // ✅ Aquí aplicamos channelInfo
+        { quoted: m, ...global.channelInfo }
       );
+
     } catch (err) {
       console.error("DESCARGA ERROR:", err.message);
       await client.reply(
         m.chat,
-        "❌ Error al descargar el capítulo.",
+        "❌ Error al descargar el capítulo. Puede que la URL esté caída.",
         m,
         global.channelInfo
       );
