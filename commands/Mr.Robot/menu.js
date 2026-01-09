@@ -3,14 +3,16 @@ const series = require("../../lib/series");
 module.exports = {
   command: ["menu_serie"],
   category: "media",
+  description: "Muestra el menú de capítulos de la temporada 1",
 
   run: async (client, m) => {
     const s = series.find(x => x.id === "mr_robot");
     if (!s) return m.reply("❌ Serie no encontrada.");
 
     const season = s.seasons.find(t => t.season === 1);
+    if (!season) return m.reply("❌ Temporada no encontrada.");
 
-    // Construimos la lista con 1 solo botón que abre todos los capítulos
+    // Construimos la lista (ListMessage)
     const sections = [
       {
         title: `Capítulos de ${s.title} - Temporada 1`,
@@ -30,6 +32,7 @@ module.exports = {
       sections
     };
 
-    await client.sendMessage(m.chat, listMessage, { quoted: m });
+    // Enviar mensaje sin citar, para que funcione en grupos y privados
+    await client.sendMessage(m.chat, listMessage);
   }
 };
