@@ -29,10 +29,9 @@ module.exports = {
       global.channelInfo
     );
 
-    // Crear botones de capítulos
     const buttons = season.episodes.map(ep => ({
-      buttonId: `.descargar ${s.id} t1-${ep.ep}`,
-      buttonText: { displayText: ep.title },
+      buttonId: `.descargar ${s.id} t1-${ep.ep}`, // formato .descargar mr_robot t1-1
+      buttonText: { displayText: ep.title },       // muestra Eps 1.1, 1.2, 1.3
       type: 1
     }));
 
