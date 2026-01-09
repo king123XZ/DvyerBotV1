@@ -11,7 +11,7 @@ module.exports = {
 
     // Solo primeros 4 capítulos como botones
     const buttons = season.episodes.slice(0, 4).map(ep => ({
-      buttonId: `.descarga mr_robot t1-${ep.ep}`,
+      buttonId: `.mr_robot ${ep.ep}`, // cuando presionen, enviará .mr_robot <ep>
       buttonText: { displayText: ep.title },
       type: 1,
     }));
@@ -20,7 +20,7 @@ module.exports = {
       m.chat,
       {
         image: { url: s.image },
-        caption: `🎬 *${s.title} - Temporada 1*\n\n📌 Selecciona un capítulo (solo 4 botones visibles):\nSi tu capítulo no está en botones, escribe el comando: .descarga mr_robot t1-5`,
+        caption: `🎬 *${s.title} - Temporada 1*\n\n📌 Selecciona un capítulo (solo 4 botones visibles):\nSi tu capítulo no está en botones, escribe el comando: .mr_robot t1-5`,
         footer: "Killua Bot • DevYer",
         buttons,
         headerType: 4,
