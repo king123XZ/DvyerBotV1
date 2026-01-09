@@ -10,10 +10,20 @@ module.exports = {
 
   run: async (client, m, args) => {
     if (!args[0] || !args[0].includes("mediafire.com")) {
-      return m.reply("❌ Enlace inválido\nEjemplo: .mf https://www.mediafire.com/file/xxxx");
+      return client.reply(
+        m.chat,
+        "❌ Enlace inválido\nEjemplo: .mf https://www.mediafire.com/file/xxxx",
+        m,
+        global.channelInfo
+      );
     }
 
-    await m.reply("⏳ Obteniendo información del archivo...");
+    await client.reply(
+      m.chat,
+      "⏳ Obteniendo información del archivo...",
+      m,
+      global.channelInfo
+    );
 
     try {
       // 1️⃣ Obtener info del archivo
@@ -23,7 +33,12 @@ module.exports = {
       );
 
       const files = res.data?.result || [];
-      if (!files.length) return m.reply("❌ No se pudo obtener el archivo.");
+      if (!files.length) return client.reply(
+        m.chat,
+        "❌ No se pudo obtener el archivo.",
+        m,
+        global.channelInfo
+      );
 
       const file = files[0];
 
@@ -34,16 +49,25 @@ module.exports = {
       else if (file.size.toUpperCase().includes("GB")) sizeMB = parseFloat(file.size) * 1024;
 
       if (sizeMB > MAX_MB)
-        return m.reply(`❌ Archivo demasiado grande (${sizeMB.toFixed(2)} MB). Límite: ${MAX_MB} MB`);
+        return client.reply(
+          m.chat,
+          `❌ Archivo demasiado grande (${sizeMB.toFixed(2)} MB). Límite: ${MAX_MB} MB`,
+          m,
+          global.channelInfo
+        );
 
-      await m.reply(`📥 Descargando archivo completo...\n📄 ${decodeURIComponent(file.nama)}\n📏 ${file.size}`);
+      await client.reply(
+        m.chat,
+        `📥 Descargando archivo completo...\n📄 ${decodeURIComponent(file.nama)}\n📏 ${file.size}`,
+        m,
+        global.channelInfo
+      );
 
       // 3️⃣ Descargar el archivo completo en memoria
       const download = await axios.get(file.link, { responseType: "arraybuffer", timeout: 0 });
-
       const buffer = Buffer.from(download.data);
 
-      // 4️⃣ Enviar al chat
+      // 4️⃣ Enviar al chat usando channelInfo
       await client.sendMessage(
         m.chat,
         {
@@ -52,13 +76,17 @@ module.exports = {
           fileName: decodeURIComponent(file.nama),
           caption: `📦 MediaFire`
         },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
       console.error("MEDIAFIRE ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar el archivo de MediaFire.");
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar el archivo de MediaFire.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
-
