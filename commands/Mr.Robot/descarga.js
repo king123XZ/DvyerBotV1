@@ -25,9 +25,10 @@ module.exports = {
       return m.reply(`⚠️ Capítulo ${ep.title} aún no disponible.`);
     }
 
-    await m.reply(`⏳ Descargando: ${ep.title}`);
+    await m.reply(`⏳ Descargando: ${ep.title}\n⚠️ Esto puede tardar un poco dependiendo del tamaño.`);
 
     try {
+      // Descargar el archivo completo en RAM
       const download = await axios.get(ep.url, { responseType: "arraybuffer", timeout: 0 });
       const buffer = Buffer.from(download.data);
 
