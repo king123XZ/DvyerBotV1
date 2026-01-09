@@ -8,7 +8,7 @@ const ADONIX_KEY = "dvyer";
 const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
-  command: ["yt2"],
+  command: ["ytvideo"],
   category: "downloader",
 
   run: async (client, m, args) => {
