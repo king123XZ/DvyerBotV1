@@ -1,30 +1,25 @@
 const axios = require("axios");
 
-const API_KEY = "dvyer";        // Tu API key de Donix
-const MAX_MB = 1800;            // Límite máximo de tamaño en MB
+const API_KEY = "dvyer";
+const MAX_MB = 1800; // límite en MB
 
 module.exports = {
   command: ["mediafire", "mf"],
   category: "downloader",
-  description: "Descarga archivos de MediaFire usando la API de Donix",
+  description: "Descarga archivos de MediaFire sin usar stream",
 
   run: async (client, m, args) => {
     if (!args[0] || !args[0].includes("mediafire.com")) {
-      return m.reply(
-        "❌ Enlace inválido\nEjemplo:\n.mf https://www.mediafire.com/file/xxxx"
-      );
+      return m.reply("❌ Enlace inválido\nEjemplo: .mf https://www.mediafire.com/file/xxxx");
     }
 
     await m.reply("⏳ Obteniendo información del archivo...");
 
     try {
-      // 1️⃣ Obtener información del archivo
+      // 1️⃣ Obtener info del archivo
       const res = await axios.get(
         "https://api-adonix.ultraplus.click/download/mediafire",
-        {
-          params: { apikey: API_KEY, url: args[0] },
-          timeout: 0 // espera indefinida
-        }
+        { params: { apikey: API_KEY, url: args[0] }, timeout: 0 }
       );
 
       const files = res.data?.result || [];
@@ -41,21 +36,18 @@ module.exports = {
       if (sizeMB > MAX_MB)
         return m.reply(`❌ Archivo demasiado grande (${sizeMB.toFixed(2)} MB). Límite: ${MAX_MB} MB`);
 
-      await m.reply(`📥 Preparando descarga...\n📄 ${decodeURIComponent(file.nama)}\n📏 ${file.size}`);
+      await m.reply(`📥 Descargando archivo completo...\n📄 ${decodeURIComponent(file.nama)}\n📏 ${file.size}`);
 
-      // 3️⃣ Descargar archivo como stream directo
-      const stream = await axios({
-        method: "get",
-        url: file.link,
-        responseType: "stream",
-        timeout: 0 // sin límite de tiempo
-      });
+      // 3️⃣ Descargar el archivo completo en memoria
+      const download = await axios.get(file.link, { responseType: "arraybuffer", timeout: 0 });
 
-      // 4️⃣ Enviar stream directamente al chat
+      const buffer = Buffer.from(download.data);
+
+      // 4️⃣ Enviar al chat
       await client.sendMessage(
         m.chat,
         {
-          document: stream.data, // ✅ stream directo
+          document: buffer,
           mimetype: `application/${file.mime}`,
           fileName: decodeURIComponent(file.nama),
           caption: `📦 MediaFire`
