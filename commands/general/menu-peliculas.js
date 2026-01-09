@@ -10,13 +10,13 @@ module.exports = {
         type: 1
       },
       {
-        buttonId: ".credito",
-        buttonText: { displayText: "💳 Ver Créditos" },
+        buttonId: ".series",
+        buttonText: { displayText: "SERIES" },
         type: 1
       },
       {
         buttonId: ".comprarcredito",
-        buttonText: { displayText: "🛒 Comprar Créditos" },
+        buttonText: { displayText: "ANIME" },
         type: 1
       }
     ];
@@ -28,10 +28,12 @@ module.exports = {
           url: "https://i.ibb.co/r2HCv5s9/killu-peliculas.png"
         },
         caption:
-          "👋 *Bienvenido a Killua Bot*\n\n" +
-          "🎬 Películas en alta calidad\n" +
-          "⚡ Descargas directas\n" +
-          "💳 Sistema de créditos\n\n" +
+          "👋 *hola soy dvyer creador del codigo solo echo para killua bot*\n\n" +
+           "REQUISITOS PARA PEDIR\n" +
+          "Recuerda apoyar mi git para subir mas contenido (https://github.com/DevYerZx/killua-bot-dev)\n" +
+          "🎬 Películas en alta calidad(2GB a 3GB de ram)\n" +
+          "⚡ Series(1GB A 2GB de ram)\n" +
+          "💳 Anime(1GB a 2GB de ram)\n\n" +
           "👇 *Selecciona una opción:*",
         footer: "Killua Bot • DevYer",
         buttons,
