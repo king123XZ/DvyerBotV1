@@ -89,7 +89,7 @@ module.exports = {
 
       const buttons = [
         { buttonId: `.ytaudio ${video.url}`, buttonText: { displayText: "🎵 Audio" }, type: 1 },
-        { buttonId: `.yt2 ${video.url}`, buttonText: { displayText: "🎬 Video" }, type: 1 },
+        { buttonId: `.ytvideo ${video.url}`, buttonText: { displayText: "🎬 Video" }, type: 1 },
         { buttonId: `.ytdoc ${video.url}`, buttonText: { displayText: "📂DOC(Videos largos)" }, type: 1 }
       ];
 
