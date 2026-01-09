@@ -15,7 +15,12 @@ module.exports = {
   run: async (client, m, args) => {
     try {
       if (!args.length) {
-        return m.reply("❌ Ingresa un enlace o nombre del video.");
+        return client.reply(
+          m.chat,
+          "❌ Ingresa un enlace o nombre del video.",
+          m,
+          global.channelInfo
+        );
       }
 
       let videoUrl = args.join(" ");
@@ -24,16 +29,24 @@ module.exports = {
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos || !search.videos.length) {
-          return m.reply("❌ No se encontraron resultados.");
+          return client.reply(
+            m.chat,
+            "❌ No se encontraron resultados.",
+            m,
+            global.channelInfo
+          );
         }
         videoUrl = search.videos[0].url;
       }
 
       // ⚡ Mensaje inmediato
-      await m.reply(
+      await client.reply(
+        m.chat,
         `⏳ *Descargando audio...*\n` +
         `✅ API: ADONIX\n` +
-        `🤖 ${BOT_NAME}`
+        `🤖 ${BOT_NAME}`,
+        m,
+        global.channelInfo
       );
 
       // 📡 Llamada a ADONIX
@@ -52,7 +65,7 @@ module.exports = {
       // 🧼 Limpiar título
       title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
 
-      // 🎧 Enviar audio (FORMA CORRECTA)
+      // 🎧 Enviar audio usando channelInfo
       await client.sendMessage(
         m.chat,
         {
@@ -60,12 +73,20 @@ module.exports = {
           mimetype: "audio/mpeg",
           fileName: `${title}.mp3`
         },
-        { quoted: m }
+        {
+          quoted: m,
+          ...global.channelInfo
+        }
       );
 
     } catch (err) {
       console.error("YTAUDIO ADONIX ERROR:", err.response?.data || err.message);
-      await m.reply("❌ Error al descargar el audio.");
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar el audio.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
