@@ -1,10 +1,8 @@
 const axios = require("axios");
 
-// ADONIX API
-const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytvideo";
-const ADONIX_KEY = "dvyer";
+// API GawrGura
+const GAWRGURA_API = "https://gawrgura-api.onrender.com/download/ytdl";
 
-// BOT
 const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
@@ -27,30 +25,27 @@ module.exports = {
       // ⏳ Mensaje inmediato (UX)
       await client.reply(
         m.chat,
-        `⏳ *Descargando video...*\n` +
-        `✅ API: ADONIX\n` +
-        `🤖 ${BOT_NAME}`,
+        `⏳ *Descargando video...*\n✅ API: GawrGura\n🤖 ${BOT_NAME}`,
         m,
         global.channelInfo
       );
 
       // 📡 Llamada a la API
-      const res = await axios.get(
-        `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
-        { timeout: 60000 }
-      );
+      const res = await axios.get(`${GAWRGURA_API}?url=${encodeURIComponent(url)}`, { timeout: 120000 });
 
-      if (!res.data || !res.data.data || !res.data.data.url) {
-        throw new Error("Respuesta inválida de Adonix");
+      const videoData = res.data?.result;
+      if (!res.data?.status || !videoData?.mp4) {
+        throw new Error("Respuesta inválida de GawrGura API");
       }
 
-      let videoUrl = res.data.data.url;
-      let title = res.data.data.title || "video";
+      let videoUrl = videoData.mp4;
+      let title = videoData.title || "video";
 
-      // 🧼 Limpiar nombre
-      title = title.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60);
+      // 🧼 Limpiar nombre del archivo
+      title = title.replace(/[\\/:*?"<>|]/g, "").trim();
+      if (title.length > 60) title = title.slice(0, 60);
 
-      // 🎥 Enviar video usando channelInfo
+      // 🎥 Enviar video
       await client.sendMessage(
         m.chat,
         {
@@ -62,7 +57,7 @@ module.exports = {
       );
 
     } catch (err) {
-      console.error("YTVIDEO ADONIX ERROR:", err.response?.data || err.message);
+      console.error("YTVIDEO GAWRGURA ERROR:", err.response?.data || err.message);
       await client.reply(
         m.chat,
         "❌ Error al descargar el video.",
