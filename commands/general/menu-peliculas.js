@@ -30,7 +30,7 @@ module.exports = {
         caption:
           "👋 *hola soy dvyer creador del codigo solo echo para killua bot*\n\n" +
            "REQUISITOS PARA PEDIR\n" +
-          "Recuerda apoyar mi git para subir mas contenido (https://github.com/DevYerZx/killua-bot-dev)\n" +
+          "Recuerda apoyar mi git para subir mas contenido (https://github.com/DevYerZx/killua-bot-dev.git)\n" +
           "🎬 Películas en alta calidad(2GB a 3GB de ram)\n" +
           "⚡ Series(1GB A 2GB de ram)\n" +
           "💳 Anime(1GB a 2GB de ram)\n\n" +
