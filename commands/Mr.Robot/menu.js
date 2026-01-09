@@ -1,48 +1,51 @@
-const series = require("../../lib/series");
-const downloadMF = require("../../commands/downloader/mediafire");
+const series = require("../../lib/series"); // <-- ruta corregida
 
 module.exports = {
-  command: ["mr_robot_menu"],
-  run: async (client, m) => {
-    const s = series.find(x => x.id === "mr_robot");
-    if (!s) return m.reply("❌ Serie no encontrada.");
+  command: ["menu_serie"],
+  category: "media",
+  description: "Muestra los capítulos de la serie con botones de descarga",
 
-    const season = s.seasons[0];
+  run: async (client, m, args) => {
+    if (!args[0]) return client.reply(
+      m.chat,
+      "❌ Debes indicar el ID de la serie.\nEjemplo: .menu_serie mr_robot",
+      m,
+      global.channelInfo
+    );
 
-    // Solo primeros 4 botones (WhatsApp limita)
-    const buttons = season.episodes.slice(0, 4).map(ep => ({
-      buttonId: `mf_${ep.ep}`, 
+    const s = series.find(x => x.id === args[0]);
+    if (!s) return client.reply(
+      m.chat,
+      "❌ Serie no encontrada.",
+      m,
+      global.channelInfo
+    );
+
+    const season = s.seasons.find(t => t.season === 1);
+    if (!season) return client.reply(
+      m.chat,
+      "❌ Temporada no encontrada.",
+      m,
+      global.channelInfo
+    );
+
+    const buttons = season.episodes.map(ep => ({
+      buttonId: `.descargar ${s.id} t1-${ep.ep}`,
       buttonText: { displayText: ep.title },
-      type: 1,
+      type: 1
     }));
+
+    const caption = `📺 *${s.title}* - Temporada 1\nElige un capítulo para descargar:\n\n⚠️ Se enviará un mensaje indicando que se está descargando y luego se enviará el capítulo.`;
 
     await client.sendMessage(
       m.chat,
       {
         image: { url: s.image },
-        caption: `🎬 *${s.title} - Temporada 1*\n\nPresiona un capítulo para descargar automáticamente.`,
+        caption,
         footer: "Killua Bot • DevYer",
         buttons,
-        headerType: 4,
+        headerType: 4
       },
       { quoted: m }
     );
-  },
-};
-
-// Manejo de botones
-client.ev.on("messages.upsert", async ({ messages }) => {
-  const m = messages[0];
-  if (!m.message?.buttonsResponseMessage) return;
-
-  const buttonId = m.message.buttonsResponseMessage.selectedButtonId;
-  if (!buttonId.startsWith("mf_")) return;
-
-  const epNum = parseInt(buttonId.replace("mf_", ""));
-  const s = series.find(x => x.id === "mr_robot");
-  const season = s.seasons[0];
-  const ep = season.episodes.find(e => e.ep === epNum);
-  if (!ep?.url) return;
-
-  downloadMF(client, m, ep.url);
-});
+  }
