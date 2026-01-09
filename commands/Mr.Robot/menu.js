@@ -48,4 +48,6 @@ module.exports = {
       },
       { quoted: m }
     );
-  }
+  } // fin de run
+}; // fin de module.exports
+
