@@ -1,8 +1,8 @@
 const axios = require("axios");
-const fetch = require("node-fetch");
 
-const API_KEY = "dvyer";
-const API_URL = "https://api-adonix.ultraplus.click/download/tiktok";
+// ADONIX API
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/tiktok";
+const ADONIX_KEY = "dvyer";
 
 module.exports = {
   command: ["tiktok", "tt"],
@@ -10,46 +10,44 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      if (!args[0]) {
+      const url = args[0];
+
+      if (!url || !url.startsWith("http")) {
         return m.reply(
-          "📌 Ingresa un enlace de TikTok\n\nEjemplo:\n!tiktok https://www.tiktok.com/@user/video/123"
+          "📌 Ingresa un enlace de TikTok\n\nEjemplo:\n.tiktok https://www.tiktok.com/@user/video/123"
         );
       }
 
-      let url = args[0];
-
-      // 🔁 Resolver links cortos
-      if (url.includes("vm.tiktok.com") || url.includes("vt.tiktok.com")) {
-        const r = await fetch(url, { redirect: "follow" });
-        url = r.url;
-      }
-
+      // ⚡ Aviso rápido
       await m.reply("⏳ Descargando video...");
 
-      const { data } = await axios.post(
-        API_URL,
+      // 📡 Llamada a ADONIX
+      const res = await axios.post(
+        ADONIX_API,
         { url },
         {
           headers: {
             "Content-Type": "application/json",
-            apikey: API_KEY
-          }
+            apikey: ADONIX_KEY
+          },
+          timeout: 60000
         }
       );
 
-      // 🔴 VALIDACIÓN REAL
-      if (!data.status || !data.result?.media?.video) {
-        console.log("RESPUESTA API:", data);
-        return m.reply("❌ No se pudo obtener el video.");
+      if (!res.data || !res.data.status || !res.data.result?.media?.video) {
+        throw new Error("Respuesta inválida de ADONIX");
       }
 
-      const videoUrl = data.result.media.video;
+      const videoUrl = res.data.result.media.video;
+      const author = res.data.result.author?.name || "Desconocido";
+      const title = res.data.result.title || "TikTok Video";
 
-      const caption = `🎬 *TikTok Video*
-👤 Autor: ${data.result.author?.name || "Desconocido"}
-📝 Título: ${data.result.title || "Sin título"}
-❤️ Likes: ${data.result.stats?.likes || 0}`;
+      const caption =
+        `🎬 *TikTok*\n` +
+        `👤 Autor: ${author}\n` +
+        `📝 ${title}`;
 
+      // 🎬 Enviar video (FORMA CORRECTA)
       await client.sendMessage(
         m.chat,
         {
@@ -61,8 +59,8 @@ module.exports = {
       );
 
     } catch (err) {
-      console.error("TIKTOK ERROR:", err.response?.data || err);
-      m.reply("❌ Error al descargar el video.");
+      console.error("TIKTOK ADONIX ERROR:", err.response?.data || err.message);
+      await m.reply("❌ Error al descargar el video.");
     }
   }
 };
