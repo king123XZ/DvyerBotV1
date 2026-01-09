@@ -37,7 +37,7 @@ global.channelInfo = {
     forwardingScore: 999,
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
-      newsletterJid: '120363368618055639@newsletter', // Cambia por tu ID de canal
+      newsletterJid: '120363207586611704@newsletter', // Cambia por tu ID de canal
       newsletterName: 'dvyer - kali | 🧪KennyBot',
       serverMessageId: -1
     }
