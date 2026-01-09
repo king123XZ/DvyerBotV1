@@ -9,7 +9,7 @@ module.exports = {
     for (const s of series) {
       const buttons = [
         {
-          buttonId: `.mr_robot_menu ${s.id}`,
+          buttonId: `.menu_serie ${s.id}`,
           buttonText: { displayText: "📺 Ver Capítulos" },
           type: 1
         }
@@ -35,4 +35,3 @@ module.exports = {
       );
     }
   }
-};
