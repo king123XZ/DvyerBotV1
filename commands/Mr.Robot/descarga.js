@@ -10,21 +10,46 @@ module.exports = {
   description: "Descarga capítulos de la temporada 1",
 
   run: async (client, m, args) => {
-    if (!args[0]) return m.reply("❌ Debes indicar el capítulo. Ejemplo: .mr_robot t1-1");
+    if (!args[0]) return client.reply(
+      m.chat,
+      "❌ Debes indicar el capítulo. Ejemplo: .mr_robot t1-1",
+      m,
+      global.channelInfo
+    );
 
     const [seasonPart, epPart] = args[0].replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
     const s = series.find(x => x.id === "mr_robot");
-    if (!s) return m.reply("❌ Serie no encontrada.");
+    if (!s) return client.reply(
+      m.chat,
+      "❌ Serie no encontrada.",
+      m,
+      global.channelInfo
+    );
 
     const season = s.seasons.find(t => t.season === 1);
-    if (!season) return m.reply("❌ Temporada no encontrada.");
+    if (!season) return client.reply(
+      m.chat,
+      "❌ Temporada no encontrada.",
+      m,
+      global.channelInfo
+    );
 
     const ep = season.episodes.find(e => e.ep === epNum);
-    if (!ep) return m.reply("❌ Capítulo no encontrado.");
+    if (!ep) return client.reply(
+      m.chat,
+      "❌ Capítulo no encontrado.",
+      m,
+      global.channelInfo
+    );
 
-    await m.reply(`⏳ Descargando: ${ep.title}`);
+    await client.reply(
+      m.chat,
+      `⏳ Descargando: ${ep.title}`,
+      m,
+      global.channelInfo
+    );
 
     try {
       const download = await axios.get(ep.url, { responseType: "arraybuffer", timeout: 0 });
@@ -38,11 +63,16 @@ module.exports = {
           mimetype: "video/mp4",
           caption: `📥 ${ep.title} - Audio Latino`
         },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo } // ✅ Aquí aplicamos channelInfo
       );
     } catch (err) {
       console.error("DESCARGA ERROR:", err.message);
-      m.reply("❌ Error al descargar el capítulo.");
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar el capítulo.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
