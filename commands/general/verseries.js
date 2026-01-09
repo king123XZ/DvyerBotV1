@@ -9,7 +9,7 @@ module.exports = {
     for (const s of series) {
       const buttons = [
         {
-          buttonId: `.menu_serie ${s.id}`,
+          buttonId: `.mr_robot_menu ${s.id}`,
           buttonText: { displayText: "📺 Ver Capítulos" },
           type: 1
         }
