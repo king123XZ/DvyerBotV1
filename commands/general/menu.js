@@ -11,13 +11,20 @@ module.exports = {
 
     // Comprobar si el archivo existe antes de enviar
     if (!fs.existsSync(imagePath)) {
-      return m.reply("❌ La imagen del menú no se encontró. Verifica la ruta y el nombre del archivo.");
+      return client.reply(
+        m.chat,
+        "❌ La imagen del menú no se encontró. Verifica la ruta y el nombre del archivo.",
+        m,
+        global.channelInfo
+      );
     }
 
-    // 📸 Enviar imagen con botones
-    await client.sendMessage(m.chat, {
-      image: fs.readFileSync(imagePath),
-      caption: `⧼KILLUA DV V1.00⧽
+    // 📸 Enviar imagen con botones usando channelInfo
+    await client.sendMessage(
+      m.chat,
+      {
+        image: fs.readFileSync(imagePath),
+        caption: `⧼KILLUA DV V1.00⧽
 
 👤 Usuario: ${m.pushName}
 🏴 Estado: Activo
@@ -31,35 +38,37 @@ Cada estrella ayuda a mejorar y mantener el bot actualizado.
 
 ━━━━━━━━━━━━━━━━━━
 👑 *CREADOR: DVYER*`,
-      buttons: [
-        {
-          buttonId: ".menu_descargas",
-          buttonText: { displayText: "📥 Descargas" },
-          type: 1
-        },
-        {
-          buttonId: ".menu_utilidades",
-          buttonText: { displayText: "🛠 Utilidades/grupos" },
-          type: 1
-        },
-        {
-          buttonId: ".menu_infobot",
-          buttonText: { displayText: "🤖 InfoBot" },
-          type: 1
-        },
-        {
-          buttonId: ".peliculas",
-          buttonText: { displayText: "PELICULAS" },
-          type: 1
-        },
-        {
-          buttonId: ".series", // Nuevo botón para series
-          buttonText: { displayText: "📺 SERIES" },
-          type: 1
-        }
-      ],
-      footer: "YerTX Bot • DVYER",
-      headerType: 4
-    });
+        buttons: [
+          {
+            buttonId: ".menu_descargas",
+            buttonText: { displayText: "📥 Descargas" },
+            type: 1
+          },
+          {
+            buttonId: ".menu_utilidades",
+            buttonText: { displayText: "🛠 Utilidades/grupos" },
+            type: 1
+          },
+          {
+            buttonId: ".menu_infobot",
+            buttonText: { displayText: "🤖 InfoBot" },
+            type: 1
+          },
+          {
+            buttonId: ".peliculas",
+            buttonText: { displayText: "PELICULAS" },
+            type: 1
+          },
+          {
+            buttonId: ".series",
+            buttonText: { displayText: "📺 SERIES" },
+            type: 1
+          }
+        ],
+        footer: "YerTX Bot • DVYER",
+        headerType: 4
+      },
+      { quoted: m, ...global.channelInfo } // ✅ Aquí aplicamos channelInfo
+    );
   }
 };
