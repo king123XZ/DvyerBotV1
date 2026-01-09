@@ -29,12 +29,11 @@ module.exports = {
       global.channelInfo
     );
 
-    // Crear botón para cada capítulo
-    const buttons = season.episodes.map(ep => ({
-      buttonId: `.descargar ${s.id} t1-${ep.ep}`,
-      buttonText: { displayText: ep.title },
-      type: 1
-    }));
+    // Botones creados manualmente
+    const buttons = [
+      { buttonId: `.descargar ${s.id} t1-1`, buttonText: { displayText: "Eps 1.1" }, type: 1 },
+      { buttonId: `.descargar ${s.id} t1-2`, buttonText: { displayText: "Eps 1.2" }, type: 1 }
+    ];
 
     const caption = `📺 *${s.title}* - Temporada 1\nElige un capítulo para descargar:\n\n⚠️ Se enviará un mensaje indicando que se está descargando y luego se enviará el capítulo.`;
 
