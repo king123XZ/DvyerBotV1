@@ -1,4 +1,4 @@
-const series = require("../lib/series");
+const series = require("../../lib/series"); // <-- ruta corregida
 
 module.exports = {
   command: ["series", "verseries"],
