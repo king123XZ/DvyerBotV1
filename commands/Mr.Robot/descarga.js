@@ -1,7 +1,7 @@
 const axios = require("axios");
 const series = require("../../lib/series");
 
-const API_KEY = "dvyer"; // Tu API Key de ADONIX
+const API_KEY = "dvyer";
 
 module.exports = {
   command: ["descargar", "descarga_cap"],
@@ -16,8 +16,8 @@ module.exports = {
       global.channelInfo
     );
 
-    const serieId = args[0];        // ej: "mr_robot"
-    const capArg = args[1];         // ej: "t1-1"
+    const serieId = args[0];       // ej: mr_robot
+    const capArg = args[1];        // ej: t1-1
     const [seasonPart, epPart] = capArg.replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
@@ -45,6 +45,7 @@ module.exports = {
       global.channelInfo
     );
 
+    // Mensaje discreto de descarga
     await client.reply(
       m.chat,
       `⏳ Se está descargando: ${s.title} - ${ep.title}\nSe enviará automáticamente cuando esté listo.`,
