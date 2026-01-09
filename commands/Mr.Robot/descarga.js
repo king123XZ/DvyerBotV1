@@ -21,7 +21,6 @@ module.exports = {
     const ep = season.episodes.find(e => e.ep === epNum);
     if (!ep) return m.reply("❌ Capítulo no encontrado.");
 
-    // ✅ Si el enlace aún está vacío
     if (!ep.url || ep.url === "") {
       return m.reply(`⚠️ Capítulo ${ep.title} aún no disponible.`);
     }
@@ -48,3 +47,4 @@ module.exports = {
     }
   }
 };
+
