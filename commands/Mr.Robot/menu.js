@@ -1,7 +1,7 @@
 const series = require("../../lib/series");
 
 module.exports = {
-  command: ["mr_robot_menu"],
+  command: [".mr_robot_menu"],
   category: "media",
   run: async (client, m) => {
     const s = series.find(x => x.id === "mr_robot");
