@@ -25,14 +25,14 @@ module.exports = {
 
       const file = files[0];
 
-      // Validar tamaño
       const sizeMatch = file.size.match(/([\d.]+)\s*MB/i);
       const sizeMB = sizeMatch ? parseFloat(sizeMatch[1]) : 0;
+
       if (sizeMB > MAX_MB) return m.reply(`❌ Archivo demasiado grande (${sizeMB} MB). Límite: ${MAX_MB} MB`);
 
       await m.reply(`📥 Preparando descarga...\n📄 ${file.nama}\n📏 ${file.size}`);
 
-      // Descargar archivo como stream
+      // Descarga como stream directo
       const stream = await axios({
         method: "get",
         url: file.link,
@@ -40,7 +40,7 @@ module.exports = {
         timeout: 0
       });
 
-      // Enviar directamente el stream
+      // Enviar stream directamente
       await client.sendMessage(
         m.chat,
         {
@@ -57,4 +57,4 @@ module.exports = {
       m.reply("❌ Error al descargar el archivo de MediaFire.");
     }
   }
-}; // <-- Cierre correcto de module.exports
+};
