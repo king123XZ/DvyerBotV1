@@ -1,4 +1,4 @@
-const series = require("../../lib/series");
+const series = require("../../../lib/series"); // <-- ruta corregida
 
 module.exports = {
   command: ["menu_serie"],
@@ -29,14 +29,13 @@ module.exports = {
       global.channelInfo
     );
 
-    // Crear botones de capítulos
     const buttons = season.episodes.map(ep => ({
       buttonId: `.descargar ${s.id} t1-${ep.ep}`,
-      buttonText: { displayText: ep.title }, // Eps 1.1, 1.2…
+      buttonText: { displayText: ep.title },
       type: 1
     }));
 
-    const caption = `📺 *${s.title}* - Temporada 1\nElige un capítulo para descargar:\n\n⚠️ Solo se enviará un mensaje indicando que se está descargando y luego se enviará el capítulo.`;
+    const caption = `📺 *${s.title}* - Temporada 1\nElige un capítulo para descargar:\n\n⚠️ Se enviará un mensaje indicando que se está descargando y luego se enviará el capítulo.`;
 
     await client.sendMessage(
       m.chat,
