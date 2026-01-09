@@ -1,17 +1,17 @@
 const series = require("../../lib/series");
+const downloadMF = require("../../commands/downloader/mediafire");
 
 module.exports = {
   command: ["mr_robot_menu"],
-  category: "media",
   run: async (client, m) => {
     const s = series.find(x => x.id === "mr_robot");
     if (!s) return m.reply("❌ Serie no encontrada.");
 
     const season = s.seasons[0];
 
-    // Solo primeros 4 capítulos como botones
+    // Solo primeros 4 botones (WhatsApp limita)
     const buttons = season.episodes.slice(0, 4).map(ep => ({
-      buttonId: `.mr_robot ${ep.ep}`, // cuando presionen, enviará .mr_robot <ep>
+      buttonId: `mf_${ep.ep}`, 
       buttonText: { displayText: ep.title },
       type: 1,
     }));
@@ -20,7 +20,7 @@ module.exports = {
       m.chat,
       {
         image: { url: s.image },
-        caption: `🎬 *${s.title} - Temporada 1*\n\n📌 Selecciona un capítulo (solo 4 botones visibles):\nSi tu capítulo no está en botones, escribe el comando: .mr_robot t1-5`,
+        caption: `🎬 *${s.title} - Temporada 1*\n\nPresiona un capítulo para descargar automáticamente.`,
         footer: "Killua Bot • DevYer",
         buttons,
         headerType: 4,
@@ -29,3 +29,20 @@ module.exports = {
     );
   },
 };
+
+// Manejo de botones
+client.ev.on("messages.upsert", async ({ messages }) => {
+  const m = messages[0];
+  if (!m.message?.buttonsResponseMessage) return;
+
+  const buttonId = m.message.buttonsResponseMessage.selectedButtonId;
+  if (!buttonId.startsWith("mf_")) return;
+
+  const epNum = parseInt(buttonId.replace("mf_", ""));
+  const s = series.find(x => x.id === "mr_robot");
+  const season = s.seasons[0];
+  const ep = season.episodes.find(e => e.ep === epNum);
+  if (!ep?.url) return;
+
+  downloadMF(client, m, ep.url);
+});
