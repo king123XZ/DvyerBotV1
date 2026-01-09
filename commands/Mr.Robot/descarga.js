@@ -1,5 +1,5 @@
 const axios = require("axios");
-const series = require("../../../lib/series"); // <-- ruta corregida
+const series = require("../../lib/series"); // <-- ruta corregida
 
 const API_KEY = "dvyer";
 
@@ -45,7 +45,6 @@ module.exports = {
       global.channelInfo
     );
 
-    // Mensaje discreto de descarga
     await client.reply(
       m.chat,
       `⏳ Se está descargando: ${s.title} - ${ep.title}\nSe enviará automáticamente cuando esté listo.`,
@@ -92,4 +91,3 @@ module.exports = {
     }
   }
 };
-
