@@ -1,15 +1,15 @@
-const series = require("../../lib/series");
+const series = require("../lib/series");
 
 module.exports = {
   command: ["verseries", "series"],
   category: "media",
-  description: "Muestra series y permite abrir menú de capítulos",
+  description: "Muestra todas las series disponibles",
 
   run: async (client, m) => {
     for (const s of series) {
       const buttons = [
         {
-          buttonId: `.menu_serie ${s.id}`, // comando para mostrar capítulos
+          buttonId: `.menu_serie ${s.id}`,
           buttonText: { displayText: "📺 Ver Capítulos" },
           type: 1
         }
