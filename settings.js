@@ -38,7 +38,7 @@ global.channelInfo = {
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
       newsletterJid: '120363207586611704@newsletter', // Cambia por tu ID de canal
-      newsletterName: 'dvyer - kali | 🧪KennyBot',
+      newsletterName: 'killua BOT| V1.00 Dvyer',
       serverMessageId: -1
     }
   }
