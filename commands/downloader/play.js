@@ -12,11 +12,23 @@ module.exports = {
   run: async (client, m, args) => {
     try {
       if (!args.length) {
-        return m.reply("⚠️ Ingresa el nombre de la canción o artista.");
+        return client.reply(
+          m.chat,
+          "⚠️ Ingresa el nombre de la canción o artista.",
+          m,
+          global.channelInfo
+        );
       }
 
       const query = args.join(" ");
-      await m.reply(`⏳ Buscando: *${query}* ...`);
+
+      // ⏳ Mensaje de búsqueda
+      await client.reply(
+        m.chat,
+        `⏳ Buscando: *${query}* ...`,
+        m,
+        global.channelInfo
+      );
 
       let video;
 
@@ -34,7 +46,12 @@ module.exports = {
 
         const items = r.data?.result?.items;
         if (!items || !items.length) {
-          return m.reply("❌ No se encontraron resultados.");
+          return client.reply(
+            m.chat,
+            "❌ No se encontraron resultados.",
+            m,
+            global.channelInfo
+          );
         }
 
         video = items[0];
@@ -43,7 +60,12 @@ module.exports = {
         // 🌍 BÚSQUEDA LOCAL (yt-search)
         const search = await yts(query);
         if (!search.videos || !search.videos.length) {
-          return m.reply("❌ No se encontraron resultados.");
+          return client.reply(
+            m.chat,
+            "❌ No se encontraron resultados.",
+            m,
+            global.channelInfo
+          );
         }
 
         const v = search.videos[0];
@@ -57,7 +79,7 @@ module.exports = {
         };
       }
 
-      // 🧾 MENSAJE
+      // 🧾 MENSAJE FINAL CON BOTONES
       const caption =
         `🎬 *Título:* ${video.title}\n` +
         `📌 *Canal:* ${video.author?.name || "YouTube"}\n` +
@@ -68,7 +90,7 @@ module.exports = {
       const buttons = [
         { buttonId: `.ytaudio ${video.url}`, buttonText: { displayText: "🎵 Audio" }, type: 1 },
         { buttonId: `.yt2 ${video.url}`, buttonText: { displayText: "🎬 Video" }, type: 1 },
-        { buttonId: `.ytdoc ${video.url}`, buttonText: { displayText: "📂DOC(Videos largos) " }, type: 1 }
+        { buttonId: `.ytdoc ${video.url}`, buttonText: { displayText: "📂DOC(Videos largos)" }, type: 1 }
       ];
 
       await client.sendMessage(
@@ -80,14 +102,21 @@ module.exports = {
           buttons,
           headerType: 4
         },
-        { quoted: m }
+        {
+          quoted: m,
+          ...global.channelInfo
+        }
       );
 
     } catch (err) {
       console.error("PLAY ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al buscar en YouTube.");
+      await client.reply(
+        m.chat,
+        "❌ Error al buscar en YouTube.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
-
 
