@@ -34,4 +34,5 @@ module.exports = {
         { quoted: m }
       );
     }
-  };
+  } // <- sin punto y coma
+};
