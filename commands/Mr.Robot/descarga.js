@@ -1,9 +1,3 @@
-// Comando exclusivo de Killua-BOT DV
-// Creador: DVYER
-
-// Comando de descarga de capítulos desde MediaFire
-// Creador: DVYER
-
 const series = require("../../lib/series");
 const axios = require("axios");
 
@@ -12,26 +6,18 @@ const API_KEY = "dvyer"; // Tu API key de ADONIX
 module.exports = {
   command: ["descargar", "descarga_cap"],
   category: "media",
-  description: "Descarga capítulos de series desde MediaFire",
+  description: "Descarga capítulos desde MediaFire",
 
   run: async (client, m, args) => {
-    if (!args[0]) return client.reply(
+    if (!args[0] || !args[1]) return client.reply(
       m.chat,
-      "❌ Debes indicar el capítulo. Ejemplo: .descargar mr_robot t1-1",
+      "❌ Debes indicar la serie y el capítulo. Ejemplo: .descargar mr_robot t1-1",
       m,
       global.channelInfo
     );
 
-    const serieId = args[0];        // ej: "mr_robot"
-    const capArg = args[1];         // ej: "t1-1"
-
-    if (!capArg) return client.reply(
-      m.chat,
-      "❌ Debes indicar el capítulo. Ejemplo: .descargar mr_robot t1-1",
-      m,
-      global.channelInfo
-    );
-
+    const serieId = args[0];
+    const capArg = args[1]; // ej: t1-1
     const [seasonPart, epPart] = capArg.replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
@@ -59,15 +45,15 @@ module.exports = {
       global.channelInfo
     );
 
+    // Mensaje discreto de descarga
     await client.reply(
       m.chat,
-      `⏳ Descargando capítulo: ${s.title} - ${ep.title}`,
+      `⏳ Se está descargando: ${s.title} - ${ep.title}\nSe enviará automáticamente cuando esté listo.`,
       m,
       global.channelInfo
     );
 
     try {
-      // Llamada a API de MediaFire
       const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
         params: { apikey: API_KEY, url: ep.url },
         timeout: 0
