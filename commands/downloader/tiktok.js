@@ -1,8 +1,8 @@
 const axios = require("axios");
 const fetch = require("node-fetch");
 
-const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
-const API_URL = "https://api-sky.ultraplus.click/tiktok";
+const API_KEY = "dvyer";
+const API_URL = "https://api-adonix.ultraplus.click/download/tiktok";
 
 module.exports = {
   command: ["tiktok", "tt"],
