@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const API_KEY = "sk_f606dcf6-f301-4d69-b54b-505c12ebec45";
+const API_KEY = "dvyer"; // Nueva API key de Donix
 const MAX_MB = 1800;
 
 module.exports = {
@@ -17,18 +17,18 @@ module.exports = {
     await m.reply("⏳ Analizando archivo de MediaFire...");
 
     try {
-      const res = await axios.post(
-        "https://api-sky.ultraplus.click/download/mediafire",
-        { url: args[0] },
-        {
-          headers: { apikey: API_KEY },
-          timeout: 20000
-        }
-      );
+      // 🌐 Llamada a la nueva API de Donix
+      const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
+        params: {
+          apikey: API_KEY,
+          url: args[0],
+        },
+        timeout: 20000,
+      });
 
-      const files = res.data?.result?.files;
-      if (!files || !files.length) {
-        return m.reply("❌ No se pudo obtener el archivo.");
+      const files = res.data?.result?.files || [];
+      if (!files.length) {
+        return m.reply("❌ No se pudo obtener el archivo de MediaFire.");
       }
 
       const file = files[0];
@@ -48,9 +48,9 @@ module.exports = {
       );
 
       // 📡 Descargar como stream
-      const stream = await axios.get(file.download, {
+      const stream = await axios.get(file.link || file.download, {
         responseType: "arraybuffer",
-        timeout: 0
+        timeout: 0,
       });
 
       // 📤 Enviar como DOCUMENTO
@@ -60,7 +60,7 @@ module.exports = {
           document: Buffer.from(stream.data),
           mimetype: "application/octet-stream",
           fileName: file.name,
-          caption: `📦 MediaFire\n👑 DevYer`
+          caption: `📦 MediaFire\n👑 DevYer`,
         },
         { quoted: m }
       );
@@ -71,6 +71,3 @@ module.exports = {
     }
   }
 };
-
-
-
