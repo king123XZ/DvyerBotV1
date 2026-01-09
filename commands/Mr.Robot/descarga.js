@@ -1,17 +1,21 @@
 const series = require("../../lib/series");
 const axios = require("axios");
-const MAX_MB = 1800; // límite en MB
+const MAX_MB = 1800; // límite en MB para descargar en RAM
 
 module.exports = {
   command: ["descarga"],
   category: "downloader",
   run: async (client, m, args) => {
-    if (!args[0] || args[0] !== "mr_robot") return m.reply("❌ Debes indicar la serie.");
-    if (!args[1]) return m.reply("❌ Debes indicar el capítulo. Ej: .descarga mr_robot t1-1");
+    if (!args[0] || args[0] !== "mr_robot") 
+      return m.reply("❌ Debes indicar la serie.");
+    
+    if (!args[1]) 
+      return m.reply("❌ Debes indicar el capítulo. Ej: .descarga mr_robot t1-1");
 
     const s = series.find(x => x.id === "mr_robot");
-    const season = s.seasons[0];
+    if (!s) return m.reply("❌ Serie no encontrada.");
 
+    const season = s.seasons[0];
     const [seasonPart, epPart] = args[1].replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
@@ -22,9 +26,20 @@ module.exports = {
     try {
       await m.reply(`⏳ Descargando capítulo ${ep.title}...`);
 
-      const download = await axios.get(ep.url, { responseType: "arraybuffer", timeout: 0 });
+      // 📏 Verificar tamaño del archivo antes de descargar (opcional)
+      // Si tienes la info del tamaño en tu lib, úsala aquí
+      // let sizeMB = ep.sizeMB || 0;
+      // if (sizeMB > MAX_MB) return m.reply(`⚠️ Archivo demasiado grande (${sizeMB} MB).`);
+
+      // 1️⃣ Descargar todo el archivo en memoria
+      const download = await axios.get(ep.url, {
+        responseType: "arraybuffer",
+        timeout: 0 // sin límite de tiempo
+      });
+
       const buffer = Buffer.from(download.data);
 
+      // 2️⃣ Enviar documento
       await client.sendMessage(
         m.chat,
         {
@@ -36,9 +51,8 @@ module.exports = {
         { quoted: m }
       );
     } catch (err) {
-      console.error("MEDIAFIRE ERROR:", err.message);
-      m.reply("❌ Error al descargar el capítulo.");
+      console.error("MEDIAFIRE ERROR:", err.response?.status || err.message);
+      m.reply("❌ Error al descargar el capítulo. Revisa el link de MediaFire o que el archivo sea válido.");
     }
   },
 };
-
