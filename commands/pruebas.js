@@ -1,12 +1,8 @@
-// test.js
-const fs = require("fs");
-
 module.exports = {
-  command: 'test', // comando principal
-  alias: ['prueba'], // alias opcional
+  command: ['test'], // ahora es un array
+  alias: ['prueba'],
   description: 'Comando de prueba para verificar channelInfo',
   async run(conn, m) {
-    // Respuesta usando channelInfo
     return conn.reply(
       m.chat,
       '✅ Este es un mensaje de prueba desde el canal!',
