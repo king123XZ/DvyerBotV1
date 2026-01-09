@@ -1,9 +1,9 @@
 const series = require("../lib/series");
 
 module.exports = {
-  command: ["verseries", "series"],
+  command: ["series", "verseries"],
   category: "media",
-  description: "Muestra todas las series disponibles",
+  description: "Muestra todas las series disponibles con botón para ver capítulos",
 
   run: async (client, m) => {
     for (const s of series) {
