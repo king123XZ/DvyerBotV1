@@ -1,3 +1,5 @@
+
+
 const axios = require("axios");
 
 const API_URL = "https://api-adonix.ultraplus.click/download/tiktok";
@@ -12,13 +14,21 @@ module.exports = {
       const url = args[0];
 
       if (!url || !url.startsWith("http")) {
-        return m.reply(
-          "📌 Usa:\n.tiktok https://www.tiktok.com/@user/video/123"
+        return client.reply(
+          m.chat,
+          "📌 Usa:\n.tiktok https://www.tiktok.com/@user/video/123",
+          m,
+          global.channelInfo
         );
       }
 
       // ⚡ Aviso rápido
-      await m.reply("⏳ Descargando video...");
+      await client.reply(
+        m.chat,
+        "⏳ Descargando video...",
+        m,
+        global.channelInfo
+      );
 
       // ✅ GET correcto
       const res = await axios.get(API_URL, {
@@ -32,7 +42,12 @@ module.exports = {
       // ✅ Validación REAL según la API
       if (res.data?.status !== "true" || !res.data?.data?.video) {
         console.log("RESPUESTA ADONIX:", res.data);
-        return m.reply("❌ No se pudo obtener el video.");
+        return client.reply(
+          m.chat,
+          "❌ No se pudo obtener el video.",
+          m,
+          global.channelInfo
+        );
       }
 
       const data = res.data.data;
@@ -49,7 +64,7 @@ module.exports = {
         `🔁 Compartidos: ${data.shares}\n` +
         `👁️ Vistas: ${data.views}`;
 
-      // 🎬 Enviar video (FORMA CORRECTA)
+      // 🎬 Enviar video usando channelInfo
       await client.sendMessage(
         m.chat,
         {
@@ -57,14 +72,17 @@ module.exports = {
           mimetype: "video/mp4",
           caption
         },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
       console.error("TIKTOK ERROR:", err.response?.data || err.message);
-      await m.reply("❌ Error al descargar el video.");
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar el video.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
-
-
