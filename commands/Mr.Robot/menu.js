@@ -1,4 +1,4 @@
-const series = require("../../lib/series"); // <-- ruta corregida
+const series = require("../../lib/series");
 
 module.exports = {
   command: ["menu_serie"],
@@ -29,6 +29,7 @@ module.exports = {
       global.channelInfo
     );
 
+    // Crear botón para cada capítulo
     const buttons = season.episodes.map(ep => ({
       buttonId: `.descargar ${s.id} t1-${ep.ep}`,
       buttonText: { displayText: ep.title },
@@ -48,6 +49,5 @@ module.exports = {
       },
       { quoted: m }
     );
-  } // fin de run
-}; // fin de module.exports
-
+  }
+};
