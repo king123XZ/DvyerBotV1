@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const API_KEY = "dvyer"; // Nueva API key de Donix
+const API_KEY = "dvyer"; // Tu API key de Donix
 const MAX_MB = 1800;
 
 module.exports = {
@@ -14,16 +14,16 @@ module.exports = {
       );
     }
 
-    await m.reply("⏳ Analizando archivo de MediaFire...");
+    await m.reply("⏳ Obteniendo información del archivo...");
 
     try {
-      // 🌐 Obtener info del archivo desde la API de Donix
+      // 🌐 Obtener info del archivo desde la API
       const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
         params: { apikey: API_KEY, url: args[0] },
-        timeout: 30000, // timeout de 30s solo para obtener info
+        timeout: 30000, // 30s solo para obtener info
       });
 
-      const files = res.data?.result?.files || [];
+      const files = res.data?.result || [];
       if (!files.length) {
         return m.reply("❌ No se pudo obtener el archivo de MediaFire.");
       }
@@ -36,18 +36,18 @@ module.exports = {
 
       if (sizeMB > MAX_MB) {
         return m.reply(
-          `❌ Archivo demasiado grande\n\n📦 Tamaño: ${sizeMB} MB\n🔒 Límite: ${MAX_MB} MB`
+          `❌ Archivo demasiado grande\n📦 Tamaño: ${sizeMB} MB\n🔒 Límite: ${MAX_MB} MB`
         );
       }
 
       await m.reply(
-        `📥 Preparando descarga...\n\n📄 ${file.name}\n📏 ${file.size}\n\n👑 DevYer`
+        `📥 Preparando descarga...\n\n📄 ${file.nama}\n📏 ${file.size}\n\n👑 DevYer`
       );
 
       // 📡 Descargar el archivo como stream directo
       const stream = await axios({
         method: "get",
-        url: file.link || file.download,
+        url: file.link,
         responseType: "stream",
         timeout: 0, // sin timeout para archivos grandes
       });
@@ -57,8 +57,8 @@ module.exports = {
         m.chat,
         {
           document: stream.data,
-          mimetype: "application/octet-stream",
-          fileName: file.name,
+          mimetype: `application/${file.mime}`,
+          fileName: file.nama,
           caption: `📦 MediaFire\n👑 DevYer`,
         },
         { quoted: m }
