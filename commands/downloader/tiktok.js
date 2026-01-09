@@ -17,27 +17,26 @@ module.exports = {
         );
       }
 
+      // ⚡ Aviso rápido
       await m.reply("⏳ Descargando video...");
 
-      const res = await axios.post(
-        API_URL,
-        { url },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            apikey: API_KEY
-          },
-          timeout: 60000
-        }
-      );
+      // ✅ MÉTODO CORRECTO: GET
+      const res = await axios.get(API_URL, {
+        params: {
+          url,
+          apikey: API_KEY
+        },
+        timeout: 60000
+      });
 
-      if (!res.data?.status || !res.data?.result?.media?.video) {
+      if (!res.data?.status || !res.data?.data?.video) {
+        console.log("RESPUESTA ADONIX:", res.data);
         throw new Error("Respuesta inválida de ADONIX");
       }
 
-      const videoUrl = res.data.result.media.video;
-      const author = res.data.result.author?.name || "Desconocido";
-      const title = res.data.result.title || "TikTok";
+      const videoUrl = res.data.data.video;
+      const author = res.data.data.author || "Desconocido";
+      const title = res.data.data.title || "TikTok";
 
       await client.sendMessage(
         m.chat,
@@ -49,9 +48,10 @@ module.exports = {
         { quoted: m }
       );
 
-    } catch (e) {
-      console.error("TIKTOK ERROR:", e.response?.data || e.message);
+    } catch (err) {
+      console.error("TIKTOK ADONIX ERROR:", err.response?.data || err.message);
       m.reply("❌ No se pudo descargar el video.");
     }
   }
 };
+
