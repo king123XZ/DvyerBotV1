@@ -1,23 +1,23 @@
-const series = require("../../lib/series");
 const axios = require("axios");
+const series = require("../../lib/series");
 
-const API_KEY = "dvyer"; // Tu API key de ADONIX
+const API_KEY = "dvyer"; // Tu API Key de ADONIX
 
 module.exports = {
   command: ["descargar", "descarga_cap"],
   category: "media",
-  description: "Descarga capítulos desde MediaFire",
+  description: "Descarga capítulos de series desde MediaFire",
 
   run: async (client, m, args) => {
     if (!args[0] || !args[1]) return client.reply(
       m.chat,
-      "❌ Debes indicar la serie y el capítulo. Ejemplo: .descargar mr_robot t1-1",
+      "❌ Debes indicar el capítulo. Ejemplo: .descargar mr_robot t1-1",
       m,
       global.channelInfo
     );
 
-    const serieId = args[0];
-    const capArg = args[1]; // ej: t1-1
+    const serieId = args[0];        // ej: "mr_robot"
+    const capArg = args[1];         // ej: "t1-1"
     const [seasonPart, epPart] = capArg.replace("t", "").split("-");
     const epNum = parseInt(epPart);
 
@@ -45,7 +45,6 @@ module.exports = {
       global.channelInfo
     );
 
-    // Mensaje discreto de descarga
     await client.reply(
       m.chat,
       `⏳ Se está descargando: ${s.title} - ${ep.title}\nSe enviará automáticamente cuando esté listo.`,
@@ -54,6 +53,7 @@ module.exports = {
     );
 
     try {
+      // Llamada a MediaFire vía ADONIX
       const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
         params: { apikey: API_KEY, url: ep.url },
         timeout: 0
