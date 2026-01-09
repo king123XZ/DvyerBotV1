@@ -17,13 +17,10 @@ module.exports = {
     await m.reply("⏳ Analizando archivo de MediaFire...");
 
     try {
-      // 🌐 Llamada a la nueva API de Donix
+      // 🌐 Obtener info del archivo desde la API de Donix
       const res = await axios.get("https://api-adonix.ultraplus.click/download/mediafire", {
-        params: {
-          apikey: API_KEY,
-          url: args[0],
-        },
-        timeout: 20000,
+        params: { apikey: API_KEY, url: args[0] },
+        timeout: 30000, // timeout de 30s solo para obtener info
       });
 
       const files = res.data?.result?.files || [];
@@ -44,20 +41,22 @@ module.exports = {
       }
 
       await m.reply(
-        `📥 Descargando archivo...\n\n📄 ${file.name}\n📏 ${file.size}\n\n👑 DevYer`
+        `📥 Preparando descarga...\n\n📄 ${file.name}\n📏 ${file.size}\n\n👑 DevYer`
       );
 
-      // 📡 Descargar como stream
-      const stream = await axios.get(file.link || file.download, {
-        responseType: "arraybuffer",
-        timeout: 0,
+      // 📡 Descargar el archivo como stream directo
+      const stream = await axios({
+        method: "get",
+        url: file.link || file.download,
+        responseType: "stream",
+        timeout: 0, // sin timeout para archivos grandes
       });
 
-      // 📤 Enviar como DOCUMENTO
+      // 📤 Enviar al chat como documento usando el stream
       await client.sendMessage(
         m.chat,
         {
-          document: Buffer.from(stream.data),
+          document: stream.data,
           mimetype: "application/octet-stream",
           fileName: file.name,
           caption: `📦 MediaFire\n👑 DevYer`,
