@@ -1,4 +1,4 @@
-const series = require("../../../lib/series"); // <-- ruta corregida
+const series = require("../../lib/series"); // <-- ruta corregida
 
 module.exports = {
   command: ["menu_serie"],
