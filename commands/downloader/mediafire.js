@@ -57,6 +57,4 @@ module.exports = {
       m.reply("❌ Error al descargar el archivo de MediaFire.");
     }
   }
-};
-
-};
+}; // <-- Cierre correcto de module.exports
