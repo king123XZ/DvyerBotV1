@@ -3,26 +3,40 @@ const series = require("../../lib/series");
 module.exports = {
   command: ["menu_serie"],
   category: "media",
-  description: "Muestra los capítulos de la temporada 1",
+  description: "Muestra los capítulos de la serie con botones de descarga",
 
   run: async (client, m, args) => {
-    if (!args[0]) return m.reply("❌ Debes indicar el ID de la serie.\nEjemplo: .menu_serie mr_robot");
+    if (!args[0]) return client.reply(
+      m.chat,
+      "❌ Debes indicar el ID de la serie.\nEjemplo: .menu_serie mr_robot",
+      m,
+      global.channelInfo
+    );
 
     const s = series.find(x => x.id === args[0]);
-    if (!s) return m.reply("❌ Serie no encontrada.");
+    if (!s) return client.reply(
+      m.chat,
+      "❌ Serie no encontrada.",
+      m,
+      global.channelInfo
+    );
 
     const season = s.seasons.find(t => t.season === 1); // Solo temporada 1
+    if (!season) return client.reply(
+      m.chat,
+      "❌ Temporada no encontrada.",
+      m,
+      global.channelInfo
+    );
 
-    let buttons = [];
-    for (const ep of season.episodes) {
-      buttons.push({
-        buttonId: `.${s.id} t1-${ep.ep}`, // formato .mr_robot t1-1
-        buttonText: { displayText: ep.title },
-        type: 1
-      });
-    }
+    // Crear botones de capítulos
+    const buttons = season.episodes.map(ep => ({
+      buttonId: `.descargar ${s.id} t1-${ep.ep}`,
+      buttonText: { displayText: ep.title },
+      type: 1
+    }));
 
-    const caption = `📺 *${s.title}* - Temporada 1\nElige un capítulo:`;
+    const caption = `📺 *${s.title}* - Temporada 1\nElige un capítulo para descargar:\n\n⚠️ Solo se enviará un mensaje indicando que se está descargando y luego se enviará el capítulo.`;
 
     await client.sendMessage(
       m.chat,
