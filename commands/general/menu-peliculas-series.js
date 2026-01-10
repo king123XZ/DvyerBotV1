@@ -11,12 +11,17 @@ module.exports = {
       },
       {
         buttonId: ".series",
-        buttonText: { displayText: "SERIES" },
+        buttonText: { displayText: "📺 Series" },
         type: 1
       },
       {
         buttonId: ".anime",
-        buttonText: { displayText: "ANIME" },
+        buttonText: { displayText: "🎌 Anime" },
+        type: 1
+      },
+      {
+        buttonId: ".reproductores",
+        buttonText: { displayText: "🧩 Archivos para reproducir" },
         type: 1
       }
     ];
@@ -28,14 +33,15 @@ module.exports = {
           url: "https://i.ibb.co/r2HCv5s9/killu-peliculas.png"
         },
         caption:
-          "👋 *hola soy dvyer creador del codigo solo echo para killua bot*\n\n" +
-           "REQUISITOS PARA PEDIR\n" +
-          "Recuerda apoyar mi git para subir mas contenido (https://github.com/DevYerZx/killua-bot-dev.git)\n" +
-          "🎬 Películas en alta calidad(2GB a 3GB de ram)\n" +
-          "⚡ Series(1GB A 2GB de ram)\n" +
-          "💳 Anime(1GB a 2GB de ram)\n\n" +
+          "👋 *Hola, soy DvYerZx creador del código para Killua Bot*\n\n" +
+          "📌 *REQUISITOS IMPORTANTES*\n" +
+          "Apoya el proyecto en GitHub para más contenido 👇\n" +
+          "🌐 https://github.com/DevYerZx/killua-bot-dev\n\n" +
+          "🎬 *Películas:* 2GB – 3GB de RAM\n" +
+          "📺 *Series:* 1GB – 2GB de RAM\n" +
+          "🎌 *Anime:* 1GB – 2GB de RAM\n\n" +
           "👇 *Selecciona una opción:*",
-        footer: "Killua Bot • DevYer",
+        footer: "Killua Bot • DevYerZx",
         buttons,
         headerType: 4
       },
