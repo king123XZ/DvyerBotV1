@@ -74,7 +74,7 @@ module.exports = {
 ╰───────────────`
 
     // 🔹 Enviar como video/GIF con URL
-    const videoURL = "https://h.uguu.se/JAbfqZeK.mp4" // tu video o GIF
+    const videoURL = "https://raw.githubusercontent.com/IrokzDal/database/main/1768070936627.mp4" // tu video o GIF
 
     await client.sendMessage(
       m.chat,
