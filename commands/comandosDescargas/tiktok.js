@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 
 // GAWRGURA DOWNLOAD API
@@ -15,7 +14,7 @@ module.exports = {
     try {
       const url = args[0];
 
-      // ❌ Validación
+      // ❌ Validar enlace
       if (!url || !/tiktok\.com/.test(url)) {
         return client.reply(
           m.chat,
@@ -40,23 +39,22 @@ module.exports = {
         { timeout: 120000 }
       );
 
-      const data = res.data?.result;
-      if (!data?.play) {
-        throw new Error("Respuesta inválida de la API TikTok");
+      // ✅ ESTRUCTURA REAL
+      const data = res.data?.data;
+      if (!Array.isArray(data) || !data[0]?.url) {
+        console.error("API RESPONSE:", res.data);
+        throw new Error("Formato inválido de la API TikTok");
       }
 
-      // 🧼 Limpiar título
-      const title = (data.title || "tiktok")
-        .replace(/[\\/:*?"<>|]/g, "")
-        .slice(0, 60);
+      const videoUrl = data[0].url;
 
       // 🎥 Enviar video
       await client.sendMessage(
         m.chat,
         {
-          video: { url: data.play }, // sin marca de agua
+          video: { url: videoUrl },
           mimetype: "video/mp4",
-          fileName: `${title}.mp4`
+          fileName: "tiktok.mp4"
         },
         { quoted: m, ...global.channelInfo }
       );
@@ -72,3 +70,4 @@ module.exports = {
     }
   }
 };
+
