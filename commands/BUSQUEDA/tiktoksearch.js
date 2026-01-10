@@ -7,7 +7,7 @@ const SEARCH_API = "https://gawrgura-api.onrender.com/search/tiktok";
 const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
-  command: ["tiktok", "tt"],
+  command: ["tiktok", "tt2"],
   category: "downloader",
 
   run: async (client, m, args) => {
