@@ -1,6 +1,7 @@
 module.exports = {
   command: ["menu_completo"],
   categoria: "informacion",
+  description: "todos los comandos del bot",
 
   run: async (client, m) => {
 
@@ -23,7 +24,11 @@ module.exports = {
         categorias[categoria] = []
       }
 
-      categorias[categoria].push(tag)
+      // Guardamos tanto el comando como su descripción
+      categorias[categoria].push({
+        nombre: tag,
+        descripcion: cmd.description || "Sin descripción"
+      })
     }
 
     if (!Object.keys(categorias).length) {
@@ -60,8 +65,9 @@ ${icono} *${cat.toUpperCase()}*
 ┈┈┈┈┈┈┈┈┈┈
 `
 
+      // Mostramos cada comando con su descripción
       text += categorias[cat]
-        .map(c => `▸ .${c}`)
+        .map(c => `▸ .${c.nombre}\n  ⤳ ${c.descripcion}`)
         .join("\n")
 
       text += "\n"
