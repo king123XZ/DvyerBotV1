@@ -1,5 +1,5 @@
 module.exports = {
-  command: ["peliculas"],
+  command: ["peliculas_series"],
   category: "general",
 
   run: async (client, m) => {
