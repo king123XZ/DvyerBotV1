@@ -14,16 +14,23 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      // Evitar múltiples descargas simultáneas
+      // Validar descargas pendientes
       if (global.pendingDownloads.get(m.sender)) {
-        return m.reply(
+        return client.reply(
+          m.chat,
           "⚠️ Tienes un archivo pendiente enviándose. Por favor espera a que termine antes de solicitar otro.",
-          m
+          m,
+          global.channelInfo
         );
       }
 
       if (!args.length) {
-        return m.reply("❌ Ingresa un enlace o nombre del video.", m);
+        return client.reply(
+          m.chat,
+          "❌ Ingresa un enlace o nombre del video.",
+          m,
+          global.channelInfo
+        );
       }
 
       let videoUrl = args.join(" ");
@@ -32,7 +39,12 @@ module.exports = {
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos || !search.videos.length) {
-          return m.reply("❌ No se encontraron resultados.", m);
+          return client.reply(
+            m.chat,
+            "❌ No se encontraron resultados.",
+            m,
+            global.channelInfo
+          );
         }
         videoUrl = search.videos[0].url;
       }
@@ -40,16 +52,16 @@ module.exports = {
       // Marcar descarga como pendiente
       global.pendingDownloads.set(m.sender, true);
 
-      // ⚡ Mensaje de aviso mejorado
+      // ⚡ Mensaje de aviso
       await client.sendMessage(
         m.chat,
         { 
           text: `⏳ Tu audio se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}` 
         },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
 
-      // 📡 Llamada a ADONIX
+      // 📡 Llamada a la API
       const res = await axios.get(
         `https://api-adonix.ultraplus.click/download/ytaudio?url=${encodeURIComponent(videoUrl)}&apikey=dvyer`,
         { timeout: 60000 }
@@ -65,7 +77,7 @@ module.exports = {
         .trim()
         .slice(0, 60);
 
-      // 🎧 Enviar audio
+      // 🎧 Enviar audio usando global.channelInfo
       await client.sendMessage(
         m.chat,
         {
@@ -74,17 +86,20 @@ module.exports = {
           fileName: `${title}.mp3`,
           caption: `🎧 ${title}\n🤖 Bot: ${BOT_NAME}`
         },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
       console.error("YTAUDIO ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar el audio.", m);
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar el audio.",
+        m,
+        global.channelInfo
+      );
     } finally {
-      // Quitar el bloqueo aunque falle
+      // Quitar bloqueo
       global.pendingDownloads.delete(m.sender);
     }
   }
 };
-
-
