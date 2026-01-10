@@ -3,7 +3,7 @@ const { gdrive } = require("lurcloud");
 module.exports = {
   command: ["drive", "gdrive"],
   description: "Descarga archivos de Google Drive",
-  category: "downloader",
+    categoria: "descarga",
   use: "https://drive.google.com",
   run: async (client, m, args) => {
     if (!args[0]) {
