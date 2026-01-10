@@ -9,7 +9,7 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
   command: ["instagram", "ig", "igdl"],
-  category: "downloader",
+   categoria: "descarga",
 
   run: async (client, m, args) => {
     try {
