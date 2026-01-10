@@ -8,10 +8,10 @@ module.exports = {
 ──────────────────────────────
 
 🛠 Comandos disponibles:
-
+• kick → elimina a mienbro del grupo
 • sticker → Crear sticker
 • speed → mide velocidad de internet del bot 
-• antilink on o off → borra enlaces de grupos o canales de whsap
+• antilink on o off → borra enlaces grupos/canales
 
 ──────────────────────────────
 🔹 Usa los botones para navegar:
