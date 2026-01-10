@@ -1,5 +1,5 @@
 module.exports = {
-  command: ["menu", "help", "comandos"],
+  command: ["a"],
   category: "general",
 
   run: async (client, m) => {
