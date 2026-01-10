@@ -55,7 +55,7 @@ Cada estrella ayuda a mejorar y mantener el bot actualizado.
             type: 1
           },
           {
-            buttonId: ".peliculas",
+            buttonId: ".peliculas_series",
             buttonText: { displayText: "PELICULAS/SERIES" },
             type: 1
           }
