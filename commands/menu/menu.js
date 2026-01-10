@@ -6,9 +6,9 @@ module.exports = {
     // 🌐 Array de imágenes y "GIFs" (MP4 convertidos a WebP/GIF)
     const mediaList = [
       "https://i.ibb.co/vxnNFXpY/menua3.webp", // imagen normal
-      "https://i.ibb.co/hFDcdpBg/menu.png",    // imagen normal
-      "https://files.catbox.moe/wv34z5.gif",    // GIF animado
-      "https://files.catbox.moe/5l90ml.gif"     // GIF animado
+      "https://i.ibb.co/hFDcdpBg/menu.png"   // imagen normal
+      //"https://files.catbox.moe/wv34z5.gif",    // GIF animado
+      //"https://files.catbox.moe/5l90ml.gif"     // GIF animado
     ];
 
     // 🎲 Elegir aleatoriamente uno
