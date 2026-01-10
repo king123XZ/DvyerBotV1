@@ -16,22 +16,28 @@ module.exports = {
     }
 
     const s = series.find(x => x.id === args[0]);
-    if (!s) {
-      return client.reply(m.chat, "❌ Serie no encontrada.", m);
-    }
+    if (!s) return client.reply(m.chat, "❌ Serie no encontrada.", m);
 
-    let text = `📺 *${s.title}*\n`;
+    let text = `📺 *${s.title}* – Temporada 1\n`;
     text += `📀 ${s.quality} | 🔊 ${s.audio}\n\n`;
 
-    for (const season of s.seasons) {
-      text += `📁 *Temporada ${season.season}*\n\n`;
-
-      for (const ep of season.episodes) {
+    for (const ep of s.seasons[0].episodes) {
+      if (!ep.url || ep.url.includes("xxxx")) {
+        text += `⏳ ${ep.title}\nPróximamente\n\n`;
+      } else {
         text += `▶️ ${ep.title}\n`;
-        text += `.descargar ${s.id} t${season.season}-${ep.ep}\n\n`;
+        text += `.descargar ${s.id} t1-${ep.ep}\n\n`;
       }
     }
 
-    await client.reply(m.chat, text, m, global.channelInfo);
+    await client.sendMessage(
+      m.chat,
+      {
+        image: { url: s.image },
+        caption: text
+      },
+      { quoted: m }
+    );
   }
 };
+
