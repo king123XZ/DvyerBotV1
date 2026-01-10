@@ -3,7 +3,7 @@ const fs = require("fs");
 module.exports = {
   command: ["sticker", "s"],
   description: "Crea una imagen a sticker",
-  category: "stickers",
+  categoria: "herramientas",
   run: async (client, m) => {
     const quoted = m.quoted || m;
     const mime = (quoted.msg || quoted).mimetype || "";
