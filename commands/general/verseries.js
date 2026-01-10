@@ -1,38 +1,24 @@
-const series = require("../../lib/series"); // <-- ruta corregida
+const series = require("../../lib/series");
 
 module.exports = {
   command: ["series", "verseries"],
   category: "media",
-  description: "Muestra todas las series disponibles con botón para ver capítulos",
+  description: "Muestra las series disponibles",
 
   run: async (client, m) => {
+    let text = "📺 *SERIES DISPONIBLES*\n\n";
+
     for (const s of series) {
-      const buttons = [
-        {
-          buttonId: `.menu_serie ${s.id}`,
-          buttonText: { displayText: "📺 Ver Capítulos" },
-          type: 1
-        }
-      ];
-
-      const caption =
-        `📺 *${s.title}* (${s.year})\n` +
-        `📀 Calidad: ${s.quality}\n` +
-        `🔊 Audio: ${s.audio}\n` +
-        `🎭 Género: ${s.genre.join(", ")}\n\n` +
-        `📝 Sinopsis:\n${s.description}`;
-
-      await client.sendMessage(
-        m.chat,
-        {
-          image: { url: s.image },
-          caption,
-          footer: "Killua Bot • DevYer",
-          buttons,
-          headerType: 4
-        },
-        { quoted: m }
-      );
+      text += `🎬 *${s.title}* (${s.year})\n`;
+      text += `🆔 ID: ${s.id}\n`;
+      text += `📀 Calidad: ${s.quality}\n`;
+      text += `🔊 Audio: ${s.audio}\n`;
+      text += `🎭 Género: ${s.genre.join(", ")}\n`;
+      text += `📝 ${s.description}\n\n`;
+      text += `📂 Ver capítulos:\n.menu_serie ${s.id}\n`;
+      text += "\n──────────────\n\n";
     }
-  } // <- sin punto y coma
+
+    await client.reply(m.chat, text, m, global.channelInfo);
+  }
 };
