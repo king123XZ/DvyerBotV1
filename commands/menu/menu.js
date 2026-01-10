@@ -7,8 +7,8 @@ module.exports = {
     const mediaList = [
       "https://i.ibb.co/vxnNFXpY/menua3.webp", // imagen 1
       "https://i.ibb.co/hFDcdpBg/menu.png", // imagen 2 (puedes agregar más)
-      "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif", // gif animado
-      "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif"  // gif animado 2
+      "https://files.catbox.moe/wv34z5.mp4", // gif animado
+      "https://files.catbox.moe/5l90ml.mp4"  // gif animado 2
     ];
 
     // 🎲 Elegir aleatoriamente uno de los medios
