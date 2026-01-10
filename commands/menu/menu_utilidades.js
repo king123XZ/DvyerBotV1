@@ -28,7 +28,7 @@ module.exports = {
     ];
 
     await client.sendMessage(m.chat, {
-      image: { url: "https://i.ibb.co/Hc4WW2s/b937a90c8a578fc77451f47fa43650b1.jpg" },
+      image: { url: "https://i.ibb.co/W4VQ7bwX/menu-ultidades-Grupos.webp" },
       caption: text,
       footer: "✨ YerTX Bot ✨",
       buttons: buttons,
