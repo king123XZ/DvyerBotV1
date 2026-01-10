@@ -5,8 +5,8 @@ const MAX_MB = 1800; // límite en MB
 
 module.exports = {
   command: ["mediafire", "mf"],
-  category: "downloader",
-  description: "Descarga archivos de MediaFire sin usar stream",
+  categoria: "descarga",
+  description: "Descarga archivos de MediaFire",
 
   run: async (client, m, args) => {
     if (!args[0] || !args[0].includes("mediafire.com")) {
