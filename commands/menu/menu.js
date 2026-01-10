@@ -3,18 +3,17 @@ module.exports = {
 
   run: async (client, m, { prefix }) => {
 
-    // 🌐 Array de imágenes y GIFs (URL)
+    // 🌐 Array de imágenes y "GIFs" (MP4 convertidos a WebP/GIF)
     const mediaList = [
-      "https://i.ibb.co/vxnNFXpY/menua3.webp", // imagen
-      "https://i.ibb.co/hFDcdpBg/menu.png",     // imagen
-      "https://files.catbox.moe/wv34z5.mp4",    // gif animado
-      "https://files.catbox.moe/5l90ml.mp4"     // gif animado 2
+      "https://i.ibb.co/vxnNFXpY/menua3.webp", // imagen normal
+      "https://i.ibb.co/hFDcdpBg/menu.png",    // imagen normal
+      "https://files.catbox.moe/wv34z5.gif",    // GIF animado
+      "https://files.catbox.moe/5l90ml.gif"     // GIF animado
     ];
 
-    // 🎲 Elegir aleatoriamente uno de los medios
+    // 🎲 Elegir aleatoriamente uno
     const randomMedia = mediaList[Math.floor(Math.random() * mediaList.length)];
 
-    // 📜 Texto del menú con diseño moderno y caracteres especiales
     const caption = `
 ╔═══════════════════════╗
 ║ ✦  𝗞𝗜𝗟𝗟𝗨𝗔 𝗕𝗢𝗧 𝗗𝗩 𝗩1.00 ✦ ║
@@ -24,15 +23,14 @@ module.exports = {
 🕶️ Versión: v1.00
 
 ✨ ¡Gracias por usar *Killua Bot DV*! ✨
-Si te gusta el bot, visita mi GitHub, sigue y dale ⭐ a tus proyectos favoritos.
+Si te gusta el bot, visita mi GitHub y dale ⭐.
 
-🔗 [Visita mi GitHub](https://github.com/DevYerZx/killua-bot-dev.git)
+🔗 [GitHub](https://github.com/DevYerZx/killua-bot-dev.git)
 
 ━━━━━━━━━━━━━━━━━━
 👑 *CREADOR: DVYER*
 `;
 
-    // 🔘 Botones del menú
     const buttons = [
       { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
       { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
@@ -40,21 +38,21 @@ Si te gusta el bot, visita mi GitHub, sigue y dale ⭐ a tus proyectos favoritos
       { buttonId: ".peliculas_series", buttonText: { displayText: "🎬 Películas/Series" }, type: 1 }
     ];
 
-    // 🔄 Enviar mensaje según tipo de media (imagen o GIF)
-    if (randomMedia.endsWith(".mp4")) {
+    // 🔄 Enviar como imagen/GIF animado para que se reproduzca solo
+    if (randomMedia.endsWith(".gif") || randomMedia.endsWith(".webp")) {
       await client.sendMessage(
         m.chat,
         {
-          video: { url: randomMedia },
+          image: { url: randomMedia }, // ⚡ GIF animado o WebP
           caption: caption,
           buttons: buttons,
           footer: "✨ YerTX Bot • DVYER ✨",
-          headerType: 4,
-          gifPlayback: true // 🔥 hace que se reproduzca automáticamente como GIF
+          headerType: 4
         },
         { quoted: m, ...global.channelInfo }
       );
     } else {
+      // enviar como imagen normal
       await client.sendMessage(
         m.chat,
         {
@@ -69,4 +67,3 @@ Si te gusta el bot, visita mi GitHub, sigue y dale ⭐ a tus proyectos favoritos
     }
   }
 };
-
