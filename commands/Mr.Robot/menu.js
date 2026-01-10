@@ -3,7 +3,7 @@ const series = require("../../lib/series");
 module.exports = {
   command: ["menu_serie"],
   category: "media",
-  description: "Muestra los capítulos disponibles con diseño",
+  description: "Muestra los capítulos disponibles de la serie",
 
   run: async (client, m, args) => {
     if (!args[0]) {
@@ -25,52 +25,56 @@ module.exports = {
       );
     }
 
-    // 1️⃣ Enviar SOLO la imagen
-    await client.sendMessage(
-      m.chat,
-      {
-        image: { url: s.image },
-        caption: `🎬 *${s.title}*\n📅 ${s.year}\n📀 ${s.quality}\n🔊 ${s.audio}`
-      },
-      { quoted: m }
-    );
-
-    // 2️⃣ Menú largo en TEXTO
     let text = "";
     text += "╔════════════════════╗\n";
     text += "║ 📺 MENÚ DE CAPÍTULOS ║\n";
     text += "╚════════════════════╝\n\n";
 
+    text += `🎬 *${s.title}*\n`;
+    text += `📅 Año: ${s.year}\n`;
+    text += `📀 Calidad: ${s.quality}\n`;
+    text += `🔊 Audio: ${s.audio}\n`;
     text += `🎭 Género: ${s.genre.join(", ")}\n\n`;
 
     text += "━━━━━━━━━━━━━━━━━━━━━━\n";
     text += "📁 TEMPORADA 1\n";
     text += "━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-    for (const ep of s.seasons[0].episodes) {
-      if (!ep.url || ep.url === "xxxx") {
-        text += `⏳ ${ep.title}\n`;
-        text += `🔒 Próximamente\n\n`;
-      } else {
-        text += `▶️ ${ep.title}\n`;
-        text += `📥 Descargar:\n`;
-        text += `.descargar ${s.id} t1-${ep.ep}\n\n`;
-      }
+    // 👉 SOLO capítulos disponibles
+    const disponibles = s.seasons[0].episodes.filter(
+      ep => ep.url && ep.url !== "xxxx"
+    );
+
+    for (const ep of disponibles) {
+      text += `▶️ *${ep.title}*\n`;
+      text += `📥 Descargar:\n`;
+      text += `.descargar ${s.id} t1-${ep.ep}\n\n`;
     }
+
+    text += "━━━━━━━━━━━━━━━━━━━━━━\n";
+    text += "⏳ *Más capítulos se agregarán con el transcurso del tiempo.*\n";
+    text += "📢 Mantente atento a futuras actualizaciones.\n\n";
 
     text += "══════════════════════\n";
     text += "👨‍💻 CRÉDITOS\n";
     text += "══════════════════════\n";
-    text += "🤖 Killua Bot\n";
-    text += "🛠️ Dev: DvYerZx\n";
+    text += "🤖 *Killua Bot*\n";
+    text += "🛠️ Creador: *DvYerZx*\n";
     text += "🌐 GitHub:\n";
-    text += "https://github.com/DevYerZx/killua-bot-dev\n\n";
-    text += "⭐ Sígueme para más actualizaciones\n";
+    text += "https://github.com/DevYerZx/killua-bot-dev\n";
 
     await client.sendMessage(
       m.chat,
-      { text },
-      { quoted: m }
+      {
+        image: { url: s.image },
+        caption: text,
+        footer: "Killua Bot • DevYer",
+        headerType: 4
+      },
+      {
+        quoted: m,
+        ...global.channelInfo
+      }
     );
   }
 };
