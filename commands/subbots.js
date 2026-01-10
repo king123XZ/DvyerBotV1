@@ -54,5 +54,6 @@ async function run(client, m) {
 
 module.exports = {
   command: ["subbots", "bots", "listbots"],
+   categoria: "descarga",
   run,
 };
