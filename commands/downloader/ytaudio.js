@@ -1,6 +1,10 @@
 const axios = require("axios");
 const yts = require("yt-search");
 
+// ADONIX API
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytaudio";
+const ADONIX_KEY = "dvyer";
+
 // BOT
 const BOT_NAME = "KILLUA-BOT v1.00";
 
@@ -14,11 +18,11 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      // ⚠️ Validar descargas pendientes
+      // Validar descargas pendientes
       if (global.pendingDownloads.get(m.sender)) {
         return client.reply(
           m.chat,
-          "⚠️ Tienes un archivo pendiente enviándose. Espera a que termine antes de solicitar otro.",
+          "⚠️ Tienes un archivo pendiente enviándose. Por favor espera a que termine antes de solicitar otro.",
           m,
           global.channelInfo
         );
@@ -35,7 +39,7 @@ module.exports = {
 
       let videoUrl = args.join(" ");
 
-      // 🔎 Buscar si no es link
+      // 🔎 Si no es link, buscar por nombre
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos || !search.videos.length) {
@@ -53,32 +57,30 @@ module.exports = {
       global.pendingDownloads.set(m.sender, true);
 
       // ⚡ Mensaje de aviso
-      await client.sendMessage(
+      await client.reply(
         m.chat,
-        { 
-          text: `⏳ Tu audio se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}` 
-        },
+        `⏳ Tu audio se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}`,
         m,
         global.channelInfo
       );
 
-      // 📡 Llamada a la API
+      // 📡 Llamada a ADONIX
       const res = await axios.get(
-        `https://api-adonix.ultraplus.click/download/ytaudio?url=${encodeURIComponent(videoUrl)}&apikey=dvyer`,
+        `${ADONIX_API}?url=${encodeURIComponent(videoUrl)}&apikey=${ADONIX_KEY}`,
         { timeout: 60000 }
       );
 
       if (!res.data?.data?.url) {
-        throw new Error("No se pudo obtener el audio.");
+        throw new Error("No se pudo obtener el audio desde ADONIX");
       }
 
-      const audioUrl = res.data.data.url;
-      const title = (res.data.data.title || "audio")
+      let audioUrl = res.data.data.url;
+      let title = (res.data.data.title || "audio")
         .replace(/[\\/:*?"<>|]/g, "")
         .trim()
         .slice(0, 60);
 
-      // 🎧 Enviar audio
+      // 🎧 Enviar audio usando channelInfo
       await client.sendMessage(
         m.chat,
         {
@@ -87,12 +89,11 @@ module.exports = {
           fileName: `${title}.mp3`,
           caption: `🎧 ${title}\n🤖 Bot: ${BOT_NAME}`
         },
-        m,
-        global.channelInfo
+        { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
-      console.error("YTAUDIO ERROR:", err.response?.data || err.message);
+      console.error("YTAUDIO ADONIX ERROR:", err.response?.data || err.message);
       await client.reply(
         m.chat,
         "❌ Error al descargar el audio.",
@@ -100,7 +101,7 @@ module.exports = {
         global.channelInfo
       );
     } finally {
-      // Quitar bloqueo
+      // Quitar bloqueo del usuario
       global.pendingDownloads.delete(m.sender);
     }
   }
