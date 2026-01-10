@@ -2,6 +2,7 @@ const antilink = require("./antilink")
 
 module.exports = {
   command: ["antilink"],
+  categoria: "grupos",
   isGroup: true,
   isAdmin: true,
   isBotAdmin: true,
