@@ -3,65 +3,46 @@ const axios = require("axios");
 // 🤖 Bot
 const BOT_NAME = "KILLUA-BOT v1.00";
 
-// API Gawrgura
-const GAW_API = "https://gawrgura-api.onrender.com/download/ytdl";
-
-// Map para controlar usuarios con video pendiente
-const pendingVideos = new Map();
+// Variable global para usuarios con descargas pendientes
+global.pendingDownloads = global.pendingDownloads || new Map();
 
 module.exports = {
-  command: ["ytdoc"],
-  category: "downloader",
-  description: "Descarga video de YouTube como documento",
+  command: ["ytdoc"],          // Nombre del comando
+  category: "descarga",         // Categoría
+  description: "Descarga video de YouTube como documento", // Descripción
 
   run: async (client, m, args) => {
     try {
-      const userId = m.sender;
-
-      // ⚠️ Verificar si usuario tiene un video pendiente
-      if (pendingVideos.has(userId)) {
-        return client.reply(
-          m.chat,
-          "❌ Tienes un video documento pendiente enviándose. Espera a que termine antes de pedir otro.",
-          m,
-          global.channelInfo
+      // Evitar múltiples descargas al mismo tiempo
+      if (global.pendingDownloads.get(m.sender)) {
+        return m.reply(
+          "⚠️ Tienes un archivo pendiente enviándose. Espera a que termine antes de pedir otro.",
+          m
         );
       }
 
       const url = args[0];
       if (!url || !url.startsWith("http")) {
-        return client.reply(
-          m.chat,
-          "❌ Uso correcto:\n.ytdoc <link de YouTube>",
-          m,
-          global.channelInfo
-        );
+        return m.reply("❌ Usa:\n.ytdoc <link de YouTube>", m);
       }
 
-      // Marcar usuario como pendiente
-      pendingVideos.set(userId, true);
+      // Marcar descarga como pendiente
+      global.pendingDownloads.set(m.sender, true);
 
-      // Mensaje de aviso mejorado
+      // Mensaje informativo
       await client.sendMessage(
         m.chat,
-        {
-          text: `⏳ Tu video se está procesando y enviando…\n⚠️ Puede tardar un poco si pesa mucho.\n🤖 ${BOT_NAME}`
-        },
-        { quoted: m, ...global.channelInfo }
+        { text: `⏳ Se está procesando tu video...\nPuede tardar si el archivo es grande.\n🤖 ${BOT_NAME}` },
+        { quoted: m }
       );
 
-      // Llamar API
+      // Llamada a API de ejemplo (puedes cambiar por la de Gawrgura o tu preferida)
+      const GAW_API = "https://gawrgura-api.onrender.com/download/ytdl";
       const res = await axios.get(`${GAW_API}?url=${encodeURIComponent(url)}`, { timeout: 60000 });
       const result = res.data?.result;
 
       if (!result || !result.mp4) {
-        pendingVideos.delete(userId);
-        return client.reply(
-          m.chat,
-          "❌ Error al obtener el video de YouTube.",
-          m,
-          global.channelInfo
-        );
+        throw new Error("No se obtuvo video");
       }
 
       const safeTitle = (result.title || "video").replace(/[\\/:*?"<>|]/g, "").trim();
@@ -75,35 +56,15 @@ module.exports = {
           fileName: `${safeTitle}.mp4`,
           caption: `🎬 ${result.title}\n✅ API: Gawrgura\n🤖 ${BOT_NAME}`
         },
-        { quoted: m, ...global.channelInfo }
+        { quoted: m }
       );
-
-      // Opcional: enviar también audio si existe
-      if (result.mp3) {
-        await client.sendMessage(
-          m.chat,
-          {
-            document: { url: result.mp3 },
-            mimetype: "audio/mpeg",
-            fileName: `${safeTitle}.mp3`,
-            caption: `🎵 Audio extraído del video\n🤖 ${BOT_NAME}`
-          },
-          { quoted: m, ...global.channelInfo }
-        );
-      }
-
-      // Desmarcar usuario como pendiente
-      pendingVideos.delete(userId);
 
     } catch (err) {
       console.error("YTDOC ERROR:", err.response?.data || err.message);
-      pendingVideos.delete(m.sender);
-      await client.reply(
-        m.chat,
-        "❌ Error al descargar el video.",
-        m,
-        global.channelInfo
-      );
+      m.reply("❌ Error al descargar el video.", m);
+    } finally {
+      // Quitar el bloqueo aunque falle
+      global.pendingDownloads.delete(m.sender);
     }
   }
 };
