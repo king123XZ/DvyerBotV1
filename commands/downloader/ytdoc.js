@@ -11,7 +11,7 @@ global.pendingDownloads = global.pendingDownloads || new Map();
 
 module.exports = {
   command: ["ytdoc"],
-  category: "descarga",
+  categoria: "descarga",
   description: "Descarga video de YouTube como documento (MP4)",
 
   run: async (client, m, args) => {
