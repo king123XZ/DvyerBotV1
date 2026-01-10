@@ -25,65 +25,53 @@ module.exports = {
       );
     }
 
-    const season = s.seasons.find(t => t.season === 1);
-    if (!season) {
-      return client.reply(
-        m.chat,
-        "❌ No hay temporadas disponibles.",
-        m,
-        global.channelInfo
-      );
-    }
+    // 1️⃣ Enviar SOLO la imagen
+    await client.sendMessage(
+      m.chat,
+      {
+        image: { url: s.image },
+        caption: `🎬 *${s.title}*\n📅 ${s.year}\n📀 ${s.quality}\n🔊 ${s.audio}`
+      },
+      { quoted: m }
+    );
 
+    // 2️⃣ Menú largo en TEXTO
     let text = "";
     text += "╔════════════════════╗\n";
-    text += "║ 📺 *MENÚ DE CAPÍTULOS* ║\n";
+    text += "║ 📺 MENÚ DE CAPÍTULOS ║\n";
     text += "╚════════════════════╝\n\n";
 
-    text += `🎬 *${s.title}*\n`;
-    text += `📅 Año: ${s.year}\n`;
-    text += `📀 Calidad: ${s.quality}\n`;
-    text += `🔊 Audio: ${s.audio}\n`;
     text += `🎭 Género: ${s.genre.join(", ")}\n\n`;
 
     text += "━━━━━━━━━━━━━━━━━━━━━━\n";
-    text += "📁 *TEMPORADA 1*\n";
+    text += "📁 TEMPORADA 1\n";
     text += "━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-    for (const ep of season.episodes) {
-      if (!ep.url || ep.url.includes("xxxx")) {
-        text += `⏳ *${ep.title}*\n`;
-        text += "🔒 Próximamente\n\n";
+    for (const ep of s.seasons[0].episodes) {
+      if (!ep.url || ep.url === "xxxx") {
+        text += `⏳ ${ep.title}\n`;
+        text += `🔒 Próximamente\n\n`;
       } else {
-        text += `▶️ *${ep.title}*\n`;
+        text += `▶️ ${ep.title}\n`;
         text += `📥 Descargar:\n`;
         text += `.descargar ${s.id} t1-${ep.ep}\n\n`;
       }
     }
 
     text += "══════════════════════\n";
-    text += "👨‍💻 *CRÉDITOS*\n";
+    text += "👨‍💻 CRÉDITOS\n";
     text += "══════════════════════\n";
-    text += "🤖 Bot: *Killua Bot*\n";
-    text += "🛠️ Creador: *DvYerZx*\n";
+    text += "🤖 Killua Bot\n";
+    text += "🛠️ Dev: DvYerZx\n";
     text += "🌐 GitHub:\n";
     text += "https://github.com/DevYerZx/killua-bot-dev\n\n";
-
-    text += "⚠️ *Nota:*\n";
-    text += "Los capítulos marcados como *Próximamente* se habilitarán cuando estén disponibles.\n";
+    text += "⭐ Sígueme para más actualizaciones\n";
 
     await client.sendMessage(
       m.chat,
-      {
-        image: { url: s.image },
-        caption: text,
-        footer: "Killua Bot • DevYer",
-        headerType: 4
-      },
-      {
-        quoted: m,
-        ...global.channelInfo
-      }
+      { text },
+      { quoted: m }
     );
   }
 };
+
