@@ -72,7 +72,7 @@ module.exports = {
       },
       {
         quoted: m,
-        ...global.channelInfo
+        global.channelInfo
       }
     );
   }
