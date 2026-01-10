@@ -1,4 +1,5 @@
-const movies = require("../../lib/movies");
+// Ajusta la ruta según la ubicación de este archivo
+const movies = require("../../../lib/movies"); // 🔹 Ruta corregida
 const axios = require("axios");
 
 const API_KEY = "dvyer"; // Tu API Key para el downloader
@@ -36,7 +37,7 @@ module.exports = {
           buttons,
           headerType: 4
         },
-        { quoted: m, ...global.channelInfo }
+        { quoted: m, ...global.channelInfo } // ✅ Evita errores de paréntesis
       );
     }
   }
@@ -66,7 +67,7 @@ module.exports.descargarpelicula = {
       m.chat,
       `⏳ Descargando *${movie.title}*\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: KILLUA-BOT v1.00`,
       m,
-      { ...global.channelInfo } // ✅ Corrección
+      { ...global.channelInfo }
     );
 
     try {
@@ -99,8 +100,9 @@ module.exports.descargarpelicula = {
         m.chat,
         "❌ Error al descargar la película.",
         m,
-        { ...global.channelInfo } // ✅ Corrección
+        { ...global.channelInfo }
       );
     }
   }
 };
+
