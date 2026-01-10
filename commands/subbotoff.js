@@ -22,5 +22,6 @@ async function run(client, m, args) {
 
 module.exports = {
   command: ["subbotoff", "offsubbot", "suboff"],
+ categoria: "subbot",
   run,
 };
