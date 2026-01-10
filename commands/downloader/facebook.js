@@ -3,7 +3,7 @@ const { fetchDownloadLinks, getDownloadLink } = require("lurcloud");
 module.exports = {
   command: ["fb", "facebook"],
   description: "Descarga videos de Facebook.",
-  category: "downloader",
+   categoria: "descarga",
   use: "https://www.facebook.com/share/r/15kXJEJXPA/",
   run: async (client, m, args) => {
     if (!args[0]) {
