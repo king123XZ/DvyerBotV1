@@ -59,11 +59,6 @@ module.exports = {
     text += "🌐 GitHub:\n";
     text += "https://github.com/DevYerZx/killua-bot-dev\n\n";
 
-    text += "💙 *Apoya el proyecto*\n";
-    text += "⭐ Dale una estrella en GitHub\n";
-    text += "📢 Comparte el bot\n";
-    text += "🚀 Síguenos para más actualizaciones\n\n";
-
     text += "⚠️ *Nota:*\n";
     text += "Los capítulos marcados como *Próximamente* se habilitarán cuando estén disponibles.\n";
 
@@ -71,9 +66,14 @@ module.exports = {
       m.chat,
       {
         image: { url: s.image },
-        caption: text
+        caption: text,
+        footer: "Killua Bot • DevYer",
+        headerType: 4
       },
-      { quoted: m }
+      {
+        quoted: m,
+        ...global.channelInfo
+      }
     );
   }
 };
