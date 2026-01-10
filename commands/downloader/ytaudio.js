@@ -13,7 +13,7 @@ global.pendingDownloads = global.pendingDownloads || new Map();
 
 module.exports = {
   command: ["ytaudio"],
-  category: "descarga",
+  categoria: "descarga",
   description: "Descarga el audio de un video de YouTube en formato MP3",
 
   run: async (client, m, args) => {
