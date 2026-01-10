@@ -39,11 +39,12 @@ module.exports = {
       // Marcar descarga como pendiente
       global.pendingDownloads.set(m.sender, true);
 
-      // Mensaje de aviso
-      await client.sendMessage(
+      // ⚡ Mensaje de aviso igual que audio
+      await client.reply(
         m.chat,
-        { text: `⏳ Tu video se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}` },
-        { quoted: m, ...global.channelInfo }
+        `⏳ Tu video se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}`,
+        m,
+        global.channelInfo
       );
 
       // Llamada a API Gawrgura
@@ -83,5 +84,4 @@ module.exports = {
     }
   }
 };
-
 
