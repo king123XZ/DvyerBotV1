@@ -19,7 +19,9 @@ module.exports = {
     await client.sendMessage(
       m.chat,
       {
-        image: { url: "https://i.ibb.co/vlc-player.png" },
+        image: {
+          url: "https://i.ibb.co/rSNgkpm/killua15.jpg"
+        },
         caption:
           "╔════════════════════╗\n" +
           "║ 🧩 REPRODUCCIÓN DE VIDEO ║\n" +
@@ -38,3 +40,4 @@ module.exports = {
     );
   }
 };
+
