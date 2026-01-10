@@ -4,7 +4,7 @@ const API_KEY = "dvyer";
 
 // 🔴 TU LINK DE MEDIAFIRE AQUÍ
 const VLC_MEDIAFIRE =
-  "https://www.mediafire.com/file/TU_APK_AQUI/VLC.apk/file";
+  "https://www.mediafire.com/file/n6hqydz5sk31l3u/vlc-3-7-0-beta-1.apk/file";
 
 module.exports = {
   command: ["descargar_vlc"],
