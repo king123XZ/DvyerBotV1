@@ -34,36 +34,41 @@ module.exports = {
         global.channelInfo
       );
 
-      // 📡 Llamada API
+      // 📡 API
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
         { timeout: 120000 }
       );
 
-      const data = res.data?.data;
-      if (!data || !data.url) {
+      if (!res.data?.status || !Array.isArray(res.data.data)) {
         throw new Error("Respuesta inválida de Adonix");
       }
 
-      const mediaUrl = data.url;
-      const type = data.type || "video"; // video | image
+      // 🔁 Enviar todos los medios (reels / carrusel)
+      for (const media of res.data.data) {
+        if (!media.url) continue;
 
-      // 📤 Enviar según tipo
-      if (type === "image") {
-        await client.sendMessage(
-          m.chat,
-          { image: { url: mediaUrl } },
-          { quoted: m, ...global.channelInfo }
-        );
-      } else {
-        await client.sendMessage(
-          m.chat,
-          {
-            video: { url: mediaUrl },
-            mimetype: "video/mp4"
-          },
-          { quoted: m, ...global.channelInfo }
-        );
+        // 🎥 Video
+        if (media.url.endsWith(".mp4")) {
+          await client.sendMessage(
+            m.chat,
+            {
+              video: { url: media.url },
+              mimetype: "video/mp4"
+            },
+            { quoted: m, ...global.channelInfo }
+          );
+        } 
+        // 🖼 Imagen
+        else {
+          await client.sendMessage(
+            m.chat,
+            {
+              image: { url: media.url }
+            },
+            { quoted: m, ...global.channelInfo }
+          );
+        }
       }
 
     } catch (err) {
@@ -77,3 +82,4 @@ module.exports = {
     }
   }
 };
+
