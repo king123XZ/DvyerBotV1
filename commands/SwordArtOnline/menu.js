@@ -40,7 +40,7 @@ module.exports = {
     text += "══════════════════════\n";
     text += "👨‍💻 *CRÉDITOS*\n";
     text += "🤖 Bot: Killua Bot\n";
-    text += "🛠️ Dev: *DvYerZx*\n";
+    text += "🛠️ Creador: *DvYerZx*\n";
     text += "🌐 github.com/DevYerZx/killua-bot-dev\n";
 
     await client.sendMessage(
