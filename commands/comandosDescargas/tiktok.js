@@ -1,7 +1,7 @@
 const axios = require("axios");
 
-// GAWRGURA DOWNLOAD API
-const DOWNLOAD_API = "https://gawrgura-api.onrender.com/download/tiktok";
+// GAWRGURA API (search funciona también con link)
+const API_URL = "https://gawrgura-api.onrender.com/search/tiktok";
 
 // BOT
 const BOT_NAME = "KILLUA-BOT v1.00";
@@ -14,7 +14,7 @@ module.exports = {
     try {
       const url = args[0];
 
-      // ❌ Validar enlace
+      // ❌ validar enlace
       if (!url || !/tiktok\.com/.test(url)) {
         return client.reply(
           m.chat,
@@ -35,26 +35,30 @@ module.exports = {
 
       // 📡 API
       const res = await axios.get(
-        `${DOWNLOAD_API}?url=${encodeURIComponent(url)}`,
-        { timeout: 120000 }
+        `${API_URL}?q=${encodeURIComponent(url)}`,
+        { timeout: 60000 }
       );
 
-      // ✅ ESTRUCTURA REAL
-      const data = res.data?.data;
-      if (!Array.isArray(data) || !data[0]?.url) {
+      const list = res.data?.result;
+      if (!Array.isArray(list) || !list[0]?.play) {
         console.error("API RESPONSE:", res.data);
-        throw new Error("Formato inválido de la API TikTok");
+        throw new Error("Respuesta inválida de TikTok API");
       }
 
-      const videoUrl = data[0].url;
+      const video = list[0];
 
-      // 🎥 Enviar video
+      // 🧼 limpiar título
+      const title = (video.title || "tiktok")
+        .replace(/[\\/:*?"<>|]/g, "")
+        .slice(0, 60);
+
+      // 🎥 enviar video
       await client.sendMessage(
         m.chat,
         {
-          video: { url: videoUrl },
+          video: { url: video.play }, // SIN marca
           mimetype: "video/mp4",
-          fileName: "tiktok.mp4"
+          fileName: `${title}.mp4`
         },
         { quoted: m, ...global.channelInfo }
       );
@@ -70,4 +74,5 @@ module.exports = {
     }
   }
 };
+
 
