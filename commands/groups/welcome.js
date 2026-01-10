@@ -1,5 +1,6 @@
 module.exports = {
   command: ["welcome"],
+  categoria: "grupos",
   isGroup: true,
   isAdmin: true,
 
