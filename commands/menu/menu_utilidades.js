@@ -1,5 +1,6 @@
 module.exports = {
   command: ["menu_utilidades"],
+   categoria: "menu",
   description: "Muestra el menú de utilidades",
   run: async (client, m) => {
 
