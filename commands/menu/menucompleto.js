@@ -7,12 +7,21 @@ module.exports = {
 ──────────────────\n`
 
     const categorias = {}
+    const usados = new Set() // 👈 evita duplicados
 
-    // recorrer comandos cargados
     for (let cmd of global.comandos.values()) {
 
-      // ❌ si NO tiene categoria, no se muestra
+      // solo comandos con categoria
       if (!cmd.categoria) continue
+
+      // usar el archivo como identificador
+      const tag = Array.isArray(cmd.command)
+        ? cmd.command[0]
+        : cmd.command
+
+      // ❌ si ya fue agregado, saltar
+      if (usados.has(tag)) continue
+      usados.add(tag)
 
       const categoria = cmd.categoria.toLowerCase()
 
@@ -20,19 +29,13 @@ module.exports = {
         categorias[categoria] = []
       }
 
-      // tag principal
-      const tag = Array.isArray(cmd.command)
-        ? cmd.command[0]
-        : cmd.command
-
       categorias[categoria].push(tag)
     }
 
-    if (Object.keys(categorias).length === 0) {
-      return m.reply("⚠️ No hay comandos con categoría definida.")
+    if (!Object.keys(categorias).length) {
+      return m.reply("⚠️ No hay comandos con categoría.")
     }
 
-    // construir menú
     for (let cat in categorias) {
       text += `\n📂 *${cat.toUpperCase()}*\n`
       text += categorias[cat]
