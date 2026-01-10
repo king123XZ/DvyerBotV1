@@ -5,7 +5,7 @@ const axios = require("axios");
 const API_KEY = "dvyer"; // Tu API Key para el downloader
 
 module.exports = {
-  command: ["verpeliculas"],
+  //command: ["verpeliculas"],
   category: "media",
 
   run: async (client, m) => {
