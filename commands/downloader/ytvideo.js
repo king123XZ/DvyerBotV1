@@ -7,7 +7,9 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
   command: ["ytvideo"],
-  category: "downloader",
+  categoria: "descarga",
+  description: "descarga video de yt",
+
 
   run: async (client, m, args) => {
     try {
