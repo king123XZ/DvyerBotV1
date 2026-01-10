@@ -1,9 +1,11 @@
-
-
 const axios = require("axios");
 
-const API_URL = "https://api-adonix.ultraplus.click/download/tiktok";
-const API_KEY = "dvyer";
+// APIs
+const SEARCH_API = "https://gawrgura-api.onrender.com/search/tiktok";
+const DOWNLOAD_API = "https://gawrgura-api.onrender.com/download/tiktok";
+
+// BOT
+const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
   command: ["tiktok", "tt"],
@@ -11,75 +13,89 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      const url = args[0];
+      const input = args.join(" ");
 
-      if (!url || !url.startsWith("http")) {
+      if (!input) {
         return client.reply(
           m.chat,
-          "📌 Usa:\n.tiktok https://www.tiktok.com/@user/video/123",
+          "❌ Escribe un texto o pega un enlace de TikTok.\n" +
+          "Ejemplo:\n" +
+          ".tiktok goku\n" +
+          ".tiktok https://tiktok.com/...",
           m,
           global.channelInfo
         );
       }
 
-      // ⚡ Aviso rápido
+      // ⏳ UX
       await client.reply(
         m.chat,
-        "⏳ Descargando video...",
+        `⏳ *Procesando TikTok...*\n🤖 ${BOT_NAME}`,
         m,
         global.channelInfo
       );
 
-      // ✅ GET correcto
-      const res = await axios.get(API_URL, {
-        params: {
-          url,
-          apikey: API_KEY
-        },
-        timeout: 60000
-      });
+      let videoUrl;
+      let title = "tiktok";
 
-      // ✅ Validación REAL según la API
-      if (res.data?.status !== "true" || !res.data?.data?.video) {
-        console.log("RESPUESTA ADONIX:", res.data);
-        return client.reply(
-          m.chat,
-          "❌ No se pudo obtener el video.",
-          m,
-          global.channelInfo
+      // 🔗 SI ES LINK DE TIKTOK
+      if (/tiktok\.com/.test(input)) {
+
+        const res = await axios.get(
+          `${DOWNLOAD_API}?url=${encodeURIComponent(input)}`,
+          { timeout: 120000 }
         );
+
+        const data = res.data?.result;
+        if (!data?.play) {
+          throw new Error("Descarga TikTok inválida");
+        }
+
+        videoUrl = data.play;
+        title = data.title || title;
+
+      } 
+      // 🔎 SI ES BÚSQUEDA
+      else {
+        const res = await axios.get(
+          `${SEARCH_API}?q=${encodeURIComponent(input)}`,
+          { timeout: 60000 }
+        );
+
+        const results = res.data?.result;
+        if (!Array.isArray(results) || results.length === 0) {
+          return client.reply(
+            m.chat,
+            "❌ No se encontraron resultados.",
+            m,
+            global.channelInfo
+          );
+        }
+
+        const video = results[0];
+        videoUrl = video.play;
+        title = video.title || title;
       }
 
-      const data = res.data.data;
+      // 🧼 Limpiar nombre
+      title = title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60);
 
-      const videoUrl = data.video;
-      const title = data.title || "TikTok";
-      const author = data.author?.name || "Desconocido";
-
-      const caption =
-        `🎬 *TikTok*\n` +
-        `👤 Autor: ${author}\n` +
-        `❤️ Likes: ${data.likes}\n` +
-        `💬 Comentarios: ${data.comments}\n` +
-        `🔁 Compartidos: ${data.shares}\n` +
-        `👁️ Vistas: ${data.views}`;
-
-      // 🎬 Enviar video usando channelInfo
+      // 🎥 Enviar video
       await client.sendMessage(
         m.chat,
         {
           video: { url: videoUrl },
           mimetype: "video/mp4",
-          caption
+          fileName: `${title}.mp4`
         },
         { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
-      console.error("TIKTOK ERROR:", err.response?.data || err.message);
+      console.error("TIKTOK ALL-IN-ONE ERROR:", err.response?.data || err.message);
       await client.reply(
         m.chat,
-        "❌ Error al descargar el video.",
+        "❌ Error al procesar TikTok.",
         m,
         global.channelInfo
       );
