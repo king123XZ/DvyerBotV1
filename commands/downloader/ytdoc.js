@@ -1,22 +1,22 @@
 const axios = require("axios");
 
-// 🤖 Bot
+// BOT
 const BOT_NAME = "KILLUA-BOT v1.00";
 
 // API Gawrgura
 const GAW_API = "https://gawrgura-api.onrender.com/download/ytdl";
 
-// Global: control de descargas pendientes por usuario
+// Usuarios con descargas pendientes
 global.pendingDownloads = global.pendingDownloads || new Map();
 
 module.exports = {
   command: ["ytdoc"],
   category: "descarga",
-  description: "Descarga video de YouTube como documento",
+  description: "Descarga video de YouTube como documento (MP4)",
 
   run: async (client, m, args) => {
     try {
-      // ⚠️ Verifica si el usuario ya tiene un video pendiente
+      // Validar descargas pendientes
       if (global.pendingDownloads.get(m.sender)) {
         return client.reply(
           m.chat,
@@ -30,33 +30,31 @@ module.exports = {
       if (!url || !url.startsWith("http")) {
         return client.reply(
           m.chat,
-          "❌ Usa el comando así:\n.ytdoc <link de YouTube>",
+          "❌ Usa:\n.ytdoc <link de YouTube>",
           m,
           global.channelInfo
         );
       }
 
-      // Marca el usuario como "pendiente"
+      // Marcar descarga como pendiente
       global.pendingDownloads.set(m.sender, true);
 
-      // Aviso de que se está procesando la descarga
+      // Mensaje de aviso
       await client.sendMessage(
         m.chat,
-        {
-          text: `⏳ Tu video se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}`
-        },
-        m,
-        global.channelInfo
+        { text: `⏳ Tu video se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}` },
+        { quoted: m, ...global.channelInfo }
       );
 
-      // Llamada a API
+      // Llamada a API Gawrgura
       const res = await axios.get(`${GAW_API}?url=${encodeURIComponent(url)}`, { timeout: 60000 });
       const result = res.data?.result;
 
       if (!result?.mp4) {
-        throw new Error("No se pudo obtener el video.");
+        throw new Error("No se pudo obtener el video de YouTube.");
       }
 
+      // Limpiar título
       const safeTitle = (result.title || "video").replace(/[\\/:*?"<>|]/g, "").trim();
 
       // Enviar video como documento
@@ -68,8 +66,7 @@ module.exports = {
           fileName: `${safeTitle}.mp4`,
           caption: `🎬 ${result.title}\n🤖 Bot: ${BOT_NAME}`
         },
-        m,
-        global.channelInfo
+        { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
@@ -81,9 +78,10 @@ module.exports = {
         global.channelInfo
       );
     } finally {
-      // Limpia el estado de descarga pendiente
+      // Quitar bloqueo
       global.pendingDownloads.delete(m.sender);
     }
   }
 };
+
 
