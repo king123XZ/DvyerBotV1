@@ -27,7 +27,12 @@ module.exports = {
     }
 
     if (!Object.keys(categorias).length) {
-      return m.reply("⚠️ No hay comandos con categoría.")
+      return client.reply(
+        m.chat,
+        "⚠️ No hay comandos con categoría.",
+        m,
+        global.channelInfo
+      )
     }
 
     // 🧠 header
@@ -68,6 +73,11 @@ ${icono} *${cat.toUpperCase()}*
 │ 💬 Usa: .menu_completo
 ╰───────────────`
 
-    m.reply(text.trim())
+    await client.reply(
+      m.chat,
+      text.trim(),
+      m,
+      global.channelInfo
+    )
   }
 }
