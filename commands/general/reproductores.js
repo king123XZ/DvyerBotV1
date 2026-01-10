@@ -1,42 +1,39 @@
 module.exports = {
   command: ["reproductores", "codecs"],
   category: "general",
-  description: "Archivos necesarios para reproducir los videos",
 
   run: async (client, m) => {
-    const text =
-      "╔════════════════════╗\n" +
-      "║ 🧩 REPRODUCCIÓN DE VIDEO ║\n" +
-      "╚════════════════════╝\n\n" +
-
-      "📌 *Recomendaciones para reproducir correctamente*\n\n" +
-
-      "▶️ *PC / Laptop*\n" +
-      "✔️ VLC Media Player (RECOMENDADO)\n" +
-      "https://www.videolan.org/vlc/\n\n" +
-
-      "▶️ *Android*\n" +
-      "✔️ VLC for Android\n" +
-      "✔️ MX Player\n\n" +
-
-      "▶️ *Formatos usados*\n" +
-      "📁 MP4 (H.264 / H.265)\n" +
-      "🔊 Audio AAC / MP3\n\n" +
-
-      "⚠️ *IMPORTANTE*\n" +
-      "Si el video no reproduce, asegúrate de:\n" +
-      "✔️ Tener espacio suficiente\n" +
-      "✔️ Usar un reproductor actualizado\n\n" +
-
-      "══════════════════════\n" +
-      "👨‍💻 *CRÉDITOS*\n" +
-      "🤖 Killua Bot\n" +
-      "🛠️ Dev: *DvYerZx*\n" +
-      "🌐 github.com/DevYerZx/killua-bot-dev";
+    const buttons = [
+      {
+        buttonId: ".descargar_vlc",
+        buttonText: { displayText: "📥 Descargar VLC (APK)" },
+        type: 1
+      },
+      {
+        buttonId: ".tutorial_vlc",
+        buttonText: { displayText: "🎥 Descargar Tutorial" },
+        type: 1
+      }
+    ];
 
     await client.sendMessage(
       m.chat,
-      { text },
+      {
+        image: { url: "https://i.ibb.co/vlc-player.png" },
+        caption:
+          "╔════════════════════╗\n" +
+          "║ 🧩 REPRODUCCIÓN DE VIDEO ║\n" +
+          "╚════════════════════╝\n\n" +
+
+          "📌 *Descarga los archivos necesarios para reproducir videos*\n\n" +
+          "📥 VLC Media Player (Android)\n" +
+          "🎥 Video tutorial paso a paso\n\n" +
+          "⚠️ *Los archivos se enviarán automáticamente*\n" +
+          "👇 Selecciona una opción:",
+        footer: "Killua Bot • DvYerZx",
+        buttons,
+        headerType: 4
+      },
       { quoted: m }
     );
   }
