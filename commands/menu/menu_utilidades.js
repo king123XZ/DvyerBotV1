@@ -4,30 +4,33 @@ module.exports = {
   run: async (client, m) => {
 
     const text = `
-⧼ KILLUA-BOT V1.00 - UTILIDADES/GRUPOS ⧽
-──────────────────────────────
+╔═══════════════════════╗
+║ ⌬  𝗞𝗜𝗟𝗟𝗨𝗔-𝗕𝗢𝗧 𝗩1.00 ⌬ ║
+║      ✦ UTILIDADES / GRUPOS ✦
+╚═══════════════════════╝
 
-🛠 Comandos disponibles:
-• kick → elimina a mienbro del grupo
-• sticker → Crear sticker
-• speed → mide velocidad de internet del bot 
-• antilink on o off → borra enlaces grupos/canales
+🛠  𝗖𝗼𝗺𝗮𝗻𝗱𝗼𝘀 𝗱𝗶𝘀𝗽𝗼𝗻𝗶𝗯𝗹𝗲𝘀:
+💥 kick → Elimina a un miembro del grupo
+🎨 sticker → Crear sticker con imagen o video
+⚡ speed → Mide velocidad de internet del bot
+🚫 antilink on/off → Borra enlaces de grupos/canales
 
 ──────────────────────────────
-🔹 Usa los botones para navegar:
+✨ Usa los botones para navegar y explorar más ✨
+💡 ¡Puedes usar stickers para interactuar!
 `;
 
     const buttons = [
       { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
       { buttonId: ".menu", buttonText: { displayText: "🏠 Menú Principal" }, type: 1 },
-      { buttonId: ".canal", buttonText: { displayText: "📢 Canal" }, type: 1 } // Nuevo botón
+      { buttonId: ".canal", buttonText: { displayText: "📢 Canal" }, type: 1 }
     ];
 
     await client.sendMessage(m.chat, {
       image: { url: "https://i.ibb.co/Hc4WW2s/b937a90c8a578fc77451f47fa43650b1.jpg" },
       caption: text,
-      footer: "YerTX Bot",
+      footer: "✨ YerTX Bot ✨",
       buttons: buttons,
       headerType: 4
     });
