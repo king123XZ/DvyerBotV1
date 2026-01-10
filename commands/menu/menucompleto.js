@@ -3,23 +3,17 @@ module.exports = {
   categoria: "informacion",
 
   run: async (client, m) => {
-    let text = `👾 *MENÚ DEL BOT*
-──────────────────\n`
 
     const categorias = {}
-    const usados = new Set() // 👈 evita duplicados
+    const usados = new Set()
 
     for (let cmd of global.comandos.values()) {
-
-      // solo comandos con categoria
       if (!cmd.categoria) continue
 
-      // usar el archivo como identificador
       const tag = Array.isArray(cmd.command)
         ? cmd.command[0]
         : cmd.command
 
-      // ❌ si ya fue agregado, saltar
       if (usados.has(tag)) continue
       usados.add(tag)
 
@@ -36,17 +30,44 @@ module.exports = {
       return m.reply("⚠️ No hay comandos con categoría.")
     }
 
+    // 🧠 header
+    let text = `
+╭─❒ 👾 *KILLUA BOT* ❒
+│ 📅 Fecha: ${new Date().toLocaleDateString()}
+│ ⚙️ Comandos: ${usados.size}
+╰───────────────\n`
+
+    // 🎨 emojis por categoría
+    const iconos = {
+      descargas: "📥",
+      grupos: "👥",
+      dueño: "👑",
+      busqueda: "🔍",
+      informacion: "ℹ️",
+      utilidades: "🧰"
+    }
+
     for (let cat in categorias) {
-      text += `\n📂 *${cat.toUpperCase()}*\n`
+      const icono = iconos[cat] || "📂"
+
+      text += `
+${icono} *${cat.toUpperCase()}*
+┈┈┈┈┈┈┈┈┈┈
+`
+
       text += categorias[cat]
-        .map(c => `• .${c}`)
+        .map(c => `▸ .${c}`)
         .join("\n")
+
       text += "\n"
     }
 
-    text += `\n──────────────────
-🤖 Killua Bot`
+    text += `
+╭───────────────
+│ 🤖 *Killua Bot*
+│ 💬 Usa: .menu_completo
+╰───────────────`
 
-    m.reply(text)
+    m.reply(text.trim())
   }
 }
