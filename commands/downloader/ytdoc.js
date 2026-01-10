@@ -45,7 +45,8 @@ module.exports = {
         {
           text: `⏳ Tu video se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}`
         },
-        { quoted: m, ...global.channelInfo }
+        m,
+        global.channelInfo
       );
 
       // Llamada a API
@@ -67,7 +68,8 @@ module.exports = {
           fileName: `${safeTitle}.mp4`,
           caption: `🎬 ${result.title}\n🤖 Bot: ${BOT_NAME}`
         },
-        { quoted: m, ...global.channelInfo }
+        m,
+        global.channelInfo
       );
 
     } catch (err) {
