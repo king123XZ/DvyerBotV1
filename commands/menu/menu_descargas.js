@@ -3,6 +3,7 @@ const path = require("path");
 
 module.exports = {
   command: ["menu_descargas"],
+   categoria: "menu",
   description: "Muestra el menú de descargas",
   run: async (client, m) => {
 
