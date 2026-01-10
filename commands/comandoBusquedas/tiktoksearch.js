@@ -8,7 +8,7 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 
 module.exports = {
   command: ["tiktoksearch", "tiktokbuscar", "ttks"],
-  category: "search",
+ category: "busqueda",
 
   run: async (client, m, args) => {
     try {
