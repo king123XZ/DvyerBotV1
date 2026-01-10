@@ -33,7 +33,7 @@ Si te gusta el bot, visita mi GitHub y dale ⭐.
 
     const buttons = [
       { buttonId: ".menu_descargas", buttonText: { displayText: "📥 Descargas" }, type: 1 },
-      { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades" }, type: 1 },
+      { buttonId: ".menu_utilidades", buttonText: { displayText: "🛠 Utilidades/grupos" }, type: 1 },
       { buttonId: ".menu_infobot", buttonText: { displayText: "🤖 InfoBot" }, type: 1 },
       { buttonId: ".peliculas_series", buttonText: { displayText: "🎬 Películas/Series" }, type: 1 }
     ];
