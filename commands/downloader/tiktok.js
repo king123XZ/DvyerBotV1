@@ -4,7 +4,7 @@ const API = "https://gawrgura-api.onrender.com/download/tiktok";
 
 module.exports = {
   command: ["tiktok", "tt"],
-  categoria: "downloader",
+  categoria: "descarga",
   description: "Descarga TikTok automáticamente (video y audio)",
 
   run: async (client, m, args) => {
