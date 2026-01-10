@@ -4,7 +4,7 @@ const API_KEY = "dvyer";
 
 // 🔴 TU VIDEO DE MEDIAFIRE AQUÍ
 const TUTORIAL_MEDIAFIRE =
-  "https://www.mediafire.com/file/p02ad6nop7frixo/lv_0_20260109235558.mp4/file";
+  "https://www.mediafire.com/file/m2htdkmnu4jhy3j/2026-01-10-001054428.mp4/file";
 
 module.exports = {
   command: ["tutorial_vlc"],
