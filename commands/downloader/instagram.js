@@ -29,7 +29,7 @@ module.exports = {
       await client.reply(
         m.chat,
         `⏳ *Descargando Instagram...*\n` +
-        `✅ API: ADONIX\n` +
+        `✅ video enviando\n` +
         `🤖 ${BOT_NAME}`,
         m,
         global.channelInfo
