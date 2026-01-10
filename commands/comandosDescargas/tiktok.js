@@ -1,10 +1,7 @@
 const axios = require("axios");
 
-// GAWRGURA API (search funciona también con link)
-const API_URL = "https://gawrgura-api.onrender.com/search/tiktok";
-
-// BOT
-const BOT_NAME = "KILLUA-BOT v1.00";
+// API
+const DOWNLOAD_API = "https://gawrgura-api.onrender.com/download/tiktok";
 
 module.exports = {
   command: ["tiktok", "tt"],
@@ -14,65 +11,54 @@ module.exports = {
     try {
       const url = args[0];
 
-      // ❌ validar enlace
       if (!url || !/tiktok\.com/.test(url)) {
         return client.reply(
           m.chat,
-          "❌ Enlace de TikTok no válido.\nEjemplo:\n" +
-          ".tiktok https://www.tiktok.com/@user/video/123",
+          "❌ Enlace de TikTok no válido.\nEjemplo:\n.tiktok https://www.tiktok.com/@user/video/123",
           m,
           global.channelInfo
         );
       }
 
-      // ⏳ UX
-      await client.reply(
-        m.chat,
-        `⏳ *Descargando TikTok...*\n🤖 ${BOT_NAME}`,
-        m,
-        global.channelInfo
-      );
+      // Guardar URL temporalmente (cache simple)
+      global.ttCache = global.ttCache || {};
+      global.ttCache[m.sender] = url;
 
-      // 📡 API
-      const res = await axios.get(
-        `${API_URL}?q=${encodeURIComponent(url)}`,
-        { timeout: 60000 }
-      );
+      // Botones
+      const buttons = [
+        {
+          buttonId: "tt_video",
+          buttonText: { displayText: "🎥 Video" },
+          type: 1
+        },
+        {
+          buttonId: "tt_audio",
+          buttonText: { displayText: "🎧 Audio" },
+          type: 1
+        },
+        {
+          buttonId: "tt_both",
+          buttonText: { displayText: "🎥 + 🎧 Ambos" },
+          type: 1
+        }
+      ];
 
-      const list = res.data?.result;
-      if (!Array.isArray(list) || !list[0]?.play) {
-        console.error("API RESPONSE:", res.data);
-        throw new Error("Respuesta inválida de TikTok API");
-      }
-
-      const video = list[0];
-
-      // 🧼 limpiar título
-      const title = (video.title || "tiktok")
-        .replace(/[\\/:*?"<>|]/g, "")
-        .slice(0, 60);
-
-      // 🎥 enviar video
       await client.sendMessage(
         m.chat,
         {
-          video: { url: video.play }, // SIN marca
-          mimetype: "video/mp4",
-          fileName: `${title}.mp4`
+          text: "📥 *¿Qué deseas descargar de TikTok?*",
+          buttons,
+          headerType: 1
         },
         { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
-      console.error("TIKTOK DOWNLOAD ERROR:", err.response?.data || err.message);
-      await client.reply(
-        m.chat,
-        "❌ Error al descargar el video de TikTok.",
-        m,
-        global.channelInfo
-      );
+      console.error(err);
+      client.reply(m.chat, "❌ Error al procesar TikTok.", m);
     }
   }
 };
+
 
 
