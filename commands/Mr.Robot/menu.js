@@ -2,7 +2,7 @@ const series = require("../../lib/series");
 
 module.exports = {
   command: ["menu_serie"],
-  categoria: "serie",
+  //categoria: "serie",
   description: "Muestra los capítulos disponibles de la serie",
 
   run: async (client, m, args) => {
