@@ -6,19 +6,31 @@ module.exports = {
   description: "Muestra las series disponibles",
 
   run: async (client, m) => {
-    let text = "📺 *SERIES DISPONIBLES*\n\n";
-
     for (const s of series) {
-      text += `🎬 *${s.title}* (${s.year})\n`;
-      text += `🆔 ID: ${s.id}\n`;
-      text += `📀 Calidad: ${s.quality}\n`;
-      text += `🔊 Audio: ${s.audio}\n`;
-      text += `🎭 Género: ${s.genre.join(", ")}\n`;
-      text += `📝 ${s.description}\n\n`;
-      text += `📂 Ver capítulos:\n.menu_serie ${s.id}\n`;
-      text += "\n──────────────\n\n";
-    }
+      const caption =
+        `📺 *${s.title}* (${s.year})\n\n` +
+        `📀 Calidad: ${s.quality}\n` +
+        `🔊 Audio: ${s.audio}\n` +
+        `🎭 Género: ${s.genre.join(", ")}\n\n` +
+        `📝 ${s.description}`;
 
-    await client.reply(m.chat, text, m, global.channelInfo);
+      await client.sendMessage(
+        m.chat,
+        {
+          image: { url: s.image },
+          caption,
+          footer: "Killua Bot • DevYer",
+          buttons: [
+            {
+              buttonId: `.menu_serie ${s.id}`,
+              buttonText: { displayText: "📂 Ver capítulos" },
+              type: 1
+            }
+          ],
+          headerType: 4
+        },
+        { quoted: m }
+      );
+    }
   }
 };
