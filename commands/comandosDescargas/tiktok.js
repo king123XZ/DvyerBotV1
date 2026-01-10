@@ -18,32 +18,38 @@ module.exports = {
         );
       }
 
-      const msg = await client.reply(m.chat, "⏳ Descargando video y audio...", m);
+      // Aviso de descarga
+      await client.reply(m.chat, "⏳ Descargando video y audio...", m);
 
-      // Llamar a la API
+      // Llamar API
       const res = await axios.get(`${API}?url=${encodeURIComponent(url)}`);
       const result = res.data?.result;
 
-      if (!result) {
-        return client.reply(m.chat, "❌ Error al descargar TikTok.", m);
+      if (!result || !result.video_nowm) {
+        return client.reply(m.chat, "❌ Error al obtener video TikTok.", m);
       }
+
+      // Descargar video como buffer
+      const videoResp = await axios.get(result.video_nowm, { responseType: "arraybuffer" });
+      const videoBuffer = Buffer.from(videoResp.data);
+
+      // Descargar audio como buffer
+      const audioResp = await axios.get(result.audio_url, { responseType: "arraybuffer" });
+      const audioBuffer = Buffer.from(audioResp.data);
 
       // Enviar video
       await client.sendMessage(
         m.chat,
-        { video: { url: result.video_nowm }, mimetype: "video/mp4", fileName: "tiktok.mp4" },
+        { video: videoBuffer, mimetype: "video/mp4", fileName: "tiktok.mp4" },
         { quoted: m }
       );
 
       // Enviar audio
       await client.sendMessage(
         m.chat,
-        { audio: { url: result.audio_url }, mimetype: "audio/mpeg", ptt: false },
+        { audio: audioBuffer, mimetype: "audio/mpeg", fileName: "tiktok.mp3", ptt: false },
         { quoted: m }
       );
-
-      // Borrar mensaje temporal
-      await client.deleteMessage(m.chat, { id: msg.key.id, remoteJid: m.chat });
 
     } catch (err) {
       console.error("TIKTOK DOWNLOAD ERROR:", err);
@@ -51,3 +57,4 @@ module.exports = {
     }
   }
 };
+
