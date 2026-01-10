@@ -25,6 +25,16 @@ module.exports = {
       );
     }
 
+    const season = s.seasons.find(t => t.season === 1);
+    if (!season) {
+      return client.reply(
+        m.chat,
+        "❌ No hay temporadas disponibles.",
+        m,
+        global.channelInfo
+      );
+    }
+
     let text = "";
     text += "╔════════════════════╗\n";
     text += "║ 📺 *MENÚ DE CAPÍTULOS* ║\n";
@@ -40,7 +50,7 @@ module.exports = {
     text += "📁 *TEMPORADA 1*\n";
     text += "━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-    for (const ep of s.seasons[0].episodes) {
+    for (const ep of season.episodes) {
       if (!ep.url || ep.url.includes("xxxx")) {
         text += `⏳ *${ep.title}*\n`;
         text += "🔒 Próximamente\n\n";
@@ -72,7 +82,7 @@ module.exports = {
       },
       {
         quoted: m,
-        global.channelInfo
+        ...global.channelInfo
       }
     );
   }
