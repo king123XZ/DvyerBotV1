@@ -14,19 +14,20 @@ module.exports = {
         return client.reply(
           m.chat,
           "❌ Enlace inválido.\nEjemplo:\n.tiktok https://www.tiktok.com/@user/video/123",
-          m
+          m,
+          global.channelInfo
         );
       }
 
       // Aviso de descarga
-      await client.reply(m.chat, "⏳ Descargando video y audio...", m);
+      await client.reply(m.chat, "⏳ Descargando video y audio...", m, global.channelInfo);
 
       // Llamar API
       const res = await axios.get(`${API}?url=${encodeURIComponent(url)}`);
       const result = res.data?.result;
 
       if (!result || !result.video_nowm) {
-        return client.reply(m.chat, "❌ Error al obtener video TikTok.", m);
+        return client.reply(m.chat, "❌ Error al obtener video TikTok.", m, global.channelInfo);
       }
 
       // Descargar video como buffer
@@ -41,20 +42,21 @@ module.exports = {
       await client.sendMessage(
         m.chat,
         { video: videoBuffer, mimetype: "video/mp4", fileName: "tiktok.mp4" },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
 
       // Enviar audio
       await client.sendMessage(
         m.chat,
         { audio: audioBuffer, mimetype: "audio/mpeg", fileName: "tiktok.mp3", ptt: false },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
 
     } catch (err) {
       console.error("TIKTOK DOWNLOAD ERROR:", err);
-      client.reply(m.chat, "❌ Error al descargar TikTok.", m);
+      client.reply(m.chat, "❌ Error al descargar TikTok.", m, global.channelInfo);
     }
   }
 };
+
 
