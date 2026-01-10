@@ -6,6 +6,9 @@ const BOT_NAME = "KILLUA-BOT v1.00";
 // API Gawrgura
 const GAW_API = "https://gawrgura-api.onrender.com/download/ytdl";
 
+// Map para controlar usuarios con video pendiente
+const pendingVideos = new Map();
+
 module.exports = {
   command: ["ytdoc"],
   category: "downloader",
@@ -13,16 +16,38 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      const url = args[0];
-      if (!url || !url.startsWith("http")) {
-        return m.reply("❌ Usa:\n.ytdoc <link de YouTube>");
+      const userId = m.sender;
+
+      // ⚠️ Verificar si usuario tiene un video pendiente
+      if (pendingVideos.has(userId)) {
+        return client.reply(
+          m.chat,
+          "❌ Tienes un video documento pendiente enviándose. Espera a que termine antes de pedir otro.",
+          m,
+          global.channelInfo
+        );
       }
 
-      // Mensaje de aviso
+      const url = args[0];
+      if (!url || !url.startsWith("http")) {
+        return client.reply(
+          m.chat,
+          "❌ Uso correcto:\n.ytdoc <link de YouTube>",
+          m,
+          global.channelInfo
+        );
+      }
+
+      // Marcar usuario como pendiente
+      pendingVideos.set(userId, true);
+
+      // Mensaje de aviso mejorado
       await client.sendMessage(
         m.chat,
-        { text: `⏳ Descargando video...\n🤖 ${BOT_NAME}` },
-        { quoted: m }
+        {
+          text: `⏳ Tu video se está procesando y enviando…\n⚠️ Puede tardar un poco si pesa mucho.\n🤖 ${BOT_NAME}`
+        },
+        { quoted: m, ...global.channelInfo }
       );
 
       // Llamar API
@@ -30,7 +55,13 @@ module.exports = {
       const result = res.data?.result;
 
       if (!result || !result.mp4) {
-        return m.reply("❌ Error al obtener el video de YouTube.");
+        pendingVideos.delete(userId);
+        return client.reply(
+          m.chat,
+          "❌ Error al obtener el video de YouTube.",
+          m,
+          global.channelInfo
+        );
       }
 
       const safeTitle = (result.title || "video").replace(/[\\/:*?"<>|]/g, "").trim();
@@ -44,13 +75,35 @@ module.exports = {
           fileName: `${safeTitle}.mp4`,
           caption: `🎬 ${result.title}\n✅ API: Gawrgura\n🤖 ${BOT_NAME}`
         },
-        { quoted: m }
+        { quoted: m, ...global.channelInfo }
       );
+
+      // Opcional: enviar también audio si existe
+      if (result.mp3) {
+        await client.sendMessage(
+          m.chat,
+          {
+            document: { url: result.mp3 },
+            mimetype: "audio/mpeg",
+            fileName: `${safeTitle}.mp3`,
+            caption: `🎵 Audio extraído del video\n🤖 ${BOT_NAME}`
+          },
+          { quoted: m, ...global.channelInfo }
+        );
+      }
+
+      // Desmarcar usuario como pendiente
+      pendingVideos.delete(userId);
 
     } catch (err) {
       console.error("YTDOC ERROR:", err.response?.data || err.message);
-      m.reply("❌ Error al descargar el video.");
+      pendingVideos.delete(m.sender);
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar el video.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
-
