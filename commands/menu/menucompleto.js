@@ -24,7 +24,6 @@ module.exports = {
         categorias[categoria] = []
       }
 
-      // Guardamos tanto el comando como su descripción
       categorias[categoria].push({
         nombre: tag,
         descripcion: cmd.description || "Sin descripción"
@@ -40,14 +39,13 @@ module.exports = {
       )
     }
 
-    // 🧠 header
+    // 🧠 header del texto
     let text = `
 ╭─❒ 👾 *KILLUA BOT* ❒
 │ 📅 Fecha: ${new Date().toLocaleDateString()}
 │ ⚙️ Comandos: ${usados.size}
 ╰───────────────\n`
 
-    // 🎨 emojis por categoría
     const iconos = {
       descargas: "📥",
       grupos: "👥",
@@ -60,12 +58,8 @@ module.exports = {
     for (let cat in categorias) {
       const icono = iconos[cat] || "📂"
 
-      text += `
-${icono} *${cat.toUpperCase()}*
-┈┈┈┈┈┈┈┈┈┈
-`
+      text += `\n${icono} *${cat.toUpperCase()}*\n┈┈┈┈┈┈┈┈┈┈\n`
 
-      // Mostramos cada comando con su descripción
       text += categorias[cat]
         .map(c => `▸ .${c.nombre}\n  ⤳ ${c.descripcion}`)
         .join("\n")
@@ -79,11 +73,17 @@ ${icono} *${cat.toUpperCase()}*
 │ 💬 Usa: .menu_completo
 ╰───────────────`
 
-    await client.reply(
+    // 🔹 Enviar como video/GIF con URL
+    const videoURL = "https://qu.ax/0MTVf" // tu video o GIF
+
+    await client.sendMessage(
       m.chat,
-      text.trim(),
-      m,
-      global.channelInfo
+      {
+        video: { url: videoURL },
+        caption: text.trim(),
+        gifPlayback: true, // esto hace que se reproduzca como GIF
+      },
+      { quoted: m }
     )
   }
 }
