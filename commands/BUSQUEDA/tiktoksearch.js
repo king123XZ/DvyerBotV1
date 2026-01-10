@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-// GAWRGURA SEARCH API
+// GAWRGURA API
 const SEARCH_API = "https://gawrgura-api.onrender.com/search/tiktok";
 
 // BOT
@@ -17,7 +17,7 @@ module.exports = {
       if (!query) {
         return client.reply(
           m.chat,
-          "❌ Escribe algo para buscar en TikTok.\nEjemplo:\n.tiktoksearch gatos",
+          "❌ Escribe algo para buscar en TikTok.\nEjemplo:\n.tiktoksearch goku",
           m,
           global.channelInfo
         );
@@ -26,8 +26,7 @@ module.exports = {
       // ⏳ UX
       await client.reply(
         m.chat,
-        `🔎 *Buscando en TikTok...*\n` +
-        `🤖 ${BOT_NAME}`,
+        `🔎 *Buscando en TikTok...*\n🤖 ${BOT_NAME}`,
         m,
         global.channelInfo
       );
@@ -38,7 +37,7 @@ module.exports = {
         { timeout: 60000 }
       );
 
-      const results = res.data?.result || res.data?.data;
+      const results = res.data?.result;
       if (!Array.isArray(results) || results.length === 0) {
         return client.reply(
           m.chat,
@@ -50,16 +49,18 @@ module.exports = {
 
       // 🔢 Limitar resultados
       const max = 5;
-      let text = `🔎 *Resultados TikTok*\n\n`;
+      let text = `🔎 *Resultados de TikTok*\n\n`;
 
       results.slice(0, max).forEach((v, i) => {
         text +=
-          `*${i + 1}.* 👤 ${v.author || v.username || "Desconocido"}\n` +
-          `❤️ ${v.like || v.likes || 0} | 👁 ${v.view || v.views || 0}\n` +
-          `🔗 ${v.url || v.link}\n\n`;
+          `*${i + 1}.* ${v.title || "Sin título"}\n` +
+          `👤 ${v.author?.nickname || "Desconocido"}\n` +
+          `👁 ${v.play_count || 0} | ❤️ ${v.digg_count || 0}\n` +
+          `⏱ ${v.duration || 0}s\n` +
+          `🔗 https://www.tiktok.com/@${v.author?.unique_id}/video/${v.video_id}\n\n`;
       });
 
-      // 📤 Enviar lista
+      // 📤 Enviar resultados
       await client.reply(
         m.chat,
         text.trim(),
@@ -78,3 +79,4 @@ module.exports = {
     }
   }
 };
+
