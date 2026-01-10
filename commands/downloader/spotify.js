@@ -5,7 +5,8 @@ const API_KEY = "dvyer";
 
 module.exports = {
   command: ["spotify", "sp"],
-  category: "downloader",
+  categoria: "descarga",
+  description: "Descarga  audio de spotify",
 
   run: async (client, m, args) => {
     try {
