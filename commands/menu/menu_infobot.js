@@ -1,5 +1,6 @@
 module.exports = {
   command: ["menu_infobot"],
+   categoria: "menu",
   description: "Muestra la información del bot",
   run: async (client, m) => {
 
