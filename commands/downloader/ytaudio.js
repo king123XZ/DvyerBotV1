@@ -14,11 +14,11 @@ module.exports = {
 
   run: async (client, m, args) => {
     try {
-      // Validar descargas pendientes
+      // ⚠️ Validar descargas pendientes
       if (global.pendingDownloads.get(m.sender)) {
         return client.reply(
           m.chat,
-          "⚠️ Tienes un archivo pendiente enviándose. Por favor espera a que termine antes de solicitar otro.",
+          "⚠️ Tienes un archivo pendiente enviándose. Espera a que termine antes de solicitar otro.",
           m,
           global.channelInfo
         );
@@ -58,7 +58,8 @@ module.exports = {
         { 
           text: `⏳ Tu audio se está procesando...\nPuede tardar un momento si el archivo es pesado.\n🤖 Bot: ${BOT_NAME}` 
         },
-        { quoted: m, ...global.channelInfo }
+        m,
+        global.channelInfo
       );
 
       // 📡 Llamada a la API
@@ -71,13 +72,13 @@ module.exports = {
         throw new Error("No se pudo obtener el audio.");
       }
 
-      let audioUrl = res.data.data.url;
-      let title = (res.data.data.title || "audio")
+      const audioUrl = res.data.data.url;
+      const title = (res.data.data.title || "audio")
         .replace(/[\\/:*?"<>|]/g, "")
         .trim()
         .slice(0, 60);
 
-      // 🎧 Enviar audio usando global.channelInfo
+      // 🎧 Enviar audio
       await client.sendMessage(
         m.chat,
         {
@@ -86,7 +87,8 @@ module.exports = {
           fileName: `${title}.mp3`,
           caption: `🎧 ${title}\n🤖 Bot: ${BOT_NAME}`
         },
-        { quoted: m, ...global.channelInfo }
+        m,
+        global.channelInfo
       );
 
     } catch (err) {
@@ -103,3 +105,4 @@ module.exports = {
     }
   }
 };
+
