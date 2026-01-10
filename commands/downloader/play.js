@@ -7,7 +7,7 @@ const SKY_SEARCH_URL = "https://api-sky.ultraplus.click/search/youtube";
 module.exports = {
   command: ["play"],
   description: "Buscar música en YouTube",
-  category: "downloader",
+  categoria: "descarga",
 
   run: async (client, m, args) => {
     try {
