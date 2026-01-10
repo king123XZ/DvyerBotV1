@@ -1,7 +1,7 @@
 const movies = require("../../lib/movies");
 
 module.exports = {
-  command: ["verpeliculas"],
+  //command: ["verpeliculas"],
   category: "media",
 
   run: async (client, m) => {
