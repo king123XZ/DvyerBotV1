@@ -1,6 +1,6 @@
 module.exports = {
   command: ["menu_completo"],
-  categoria: "informacion",
+  categoria: "menu",
   description: "todos los comandos del bot",
 
   run: async (client, m) => {
