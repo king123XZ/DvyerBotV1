@@ -1,49 +1,79 @@
 const axios = require("axios");
 
+// ADONIX API
+const ADONIX_API = "https://api-adonix.ultraplus.click/download/instagram";
+const ADONIX_KEY = "dvyer";
+
+// BOT
+const BOT_NAME = "KILLUA-BOT v1.00";
+
 module.exports = {
-  command: ["instavid", "instagram"],
-  description: "Descarga automáticamente videos o imágenes de Instagram",
+  command: ["instagram", "ig", "igdl"],
   category: "downloader",
-  use: "instavid <link>",
 
   run: async (client, m, args) => {
-    if (!args.length) return m.reply("❌ Ingresa un enlace de Instagram.");
-
-    const url = args[0];
-
     try {
-      await m.reply("⏳ Procesando tu contenido de Instagram...");
+      const url = args[0];
 
-      // Llamada al endpoint
-      const { data } = await axios.post(
-        "https://api-sky.ultraplus.click/instagram",
-        { url },
-        { headers: { apikey: "sk_f606dcf6-f301-4d69-b54b-505c12ebec45" } }
+      if (!url || !url.startsWith("http")) {
+        return client.reply(
+          m.chat,
+          "❌ Enlace de Instagram no válido.",
+          m,
+          global.channelInfo
+        );
+      }
+
+      // ⏳ UX
+      await client.reply(
+        m.chat,
+        `⏳ *Descargando Instagram...*\n` +
+        `✅ API: ADONIX\n` +
+        `🤖 ${BOT_NAME}`,
+        m,
+        global.channelInfo
       );
 
-      if (!data.status) return m.reply("❌ No se pudo procesar el enlace de Instagram.");
+      // 📡 Llamada API
+      const res = await axios.get(
+        `${ADONIX_API}?url=${encodeURIComponent(url)}&apikey=${ADONIX_KEY}`,
+        { timeout: 120000 }
+      );
 
-      const items = data.result.media.items;
-      if (!items || !items.length) return m.reply("❌ No se encontró contenido.");
+      const data = res.data?.data;
+      if (!data || !data.url) {
+        throw new Error("Respuesta inválida de Adonix");
+      }
 
-      // Selecciona el primer video o imagen disponible
-      const item = items.find(i => i.type === "video") || items.find(i => i.type === "image");
-      if (!item) return m.reply("❌ No se encontró contenido compatible.");
+      const mediaUrl = data.url;
+      const type = data.type || "video"; // video | image
 
-      // Descargar contenido
-      const mediaData = await axios.get(item.url, { responseType: "arraybuffer" });
-
-      // Enviar contenido
-      await client.sendMessage(m.chat, {
-        [item.type]: mediaData.data,
-        mimetype: item.type === "video" ? "video/mp4" : "image/jpeg",
-        fileName: `instagram_${item.type}.${item.type === "video" ? "mp4" : "jpg"}`,
-        caption: `🎬 Contenido de Instagram descargado (${item.type})`
-      }, { quoted: m });
+      // 📤 Enviar según tipo
+      if (type === "image") {
+        await client.sendMessage(
+          m.chat,
+          { image: { url: mediaUrl } },
+          { quoted: m, ...global.channelInfo }
+        );
+      } else {
+        await client.sendMessage(
+          m.chat,
+          {
+            video: { url: mediaUrl },
+            mimetype: "video/mp4"
+          },
+          { quoted: m, ...global.channelInfo }
+        );
+      }
 
     } catch (err) {
-      console.error("ERROR INSTAGRAM:", err.response?.data || err.message);
-      m.reply("❌ Ocurrió un error al descargar el contenido de Instagram.");
+      console.error("INSTAGRAM ADONIX ERROR:", err.response?.data || err.message);
+      await client.reply(
+        m.chat,
+        "❌ Error al descargar contenido de Instagram.",
+        m,
+        global.channelInfo
+      );
     }
   }
 };
